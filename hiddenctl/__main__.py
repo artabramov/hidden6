@@ -1,4 +1,4 @@
-# cli/__main__.py
+# ctl/__main__.py
 import sys
 
 
@@ -17,15 +17,15 @@ def main(argv: list[str] | None = None) -> int:
         argv = sys.argv[1:]
 
     if not argv:
-        print("Usage: cli <command>", file=sys.stderr)
-        print("Run 'cli help' for available commands.", file=sys.stderr)
+        print("Usage: hiddenctl <command>", file=sys.stderr)
+        print("Run 'hiddenctl help' for available commands.", file=sys.stderr)
         return 1
 
     command, *args = argv
 
     if command not in _COMMANDS:
         print(f"Unknown command: {command!r}", file=sys.stderr)
-        print("Run 'cli help' for available commands.", file=sys.stderr)
+        print("Run 'hiddenctl help' for available commands.", file=sys.stderr)
         return 2
 
     handler, _ = _COMMANDS[command]
