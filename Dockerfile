@@ -6,7 +6,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY . .
-RUN pip install --no-cache-dir -r requirements.txt \
- && ln -s /opt/hidden/bin/hiddenctl /usr/local/bin/hiddenctl
+RUN pip install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT ["./entrypoint.sh"]
