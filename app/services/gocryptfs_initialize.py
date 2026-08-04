@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 # service performs best-effort cleanup of artifacts created during
 # the current attempt.
 
-async def create_cipherdir(master_password: str) -> None:
+async def initialize_gocryptfs(master_password: str) -> None:
     """
     Initialize encrypted storage by generating and encrypting a random
     gocryptfs passphrase, initializing the cipherdir, creating the JWT

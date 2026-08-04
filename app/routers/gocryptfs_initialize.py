@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Response, status
 
 from app.schemas.gocryptfs_initialize import GocryptfsInitializeRequest
-# from app.services.cipherdir_create import create_cipherdir
+from app.services.gocryptfs_initialize import initialize_gocryptfs
 
 router = APIRouter(tags=["gocryptfs"])
 
@@ -43,5 +43,5 @@ async def create_cipherdir_router(
     This endpoint is intended for one-time initialization immediately
     after installation.
     """
-    # await create_cipherdir(data.master_password)
+    await initialize_gocryptfs(data.master_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
