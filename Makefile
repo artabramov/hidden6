@@ -1,6 +1,8 @@
 .PHONY: install develop
 
-PORT ?= 80
+PORT              ?= 80
+INSTALL_CIPHERDIR ?= /var/lib/cipherdir
+INSTALL_SECRETS   ?= /media/secrets
 
 install:
 	docker build -t hidden .
@@ -11,8 +13,8 @@ install:
 	--device /dev/fuse \
 	--security-opt apparmor:unconfined \
 	-p $(PORT):80 \
-	-v hidden-cipherdir:/var/lib/cipherdir \
-	-v hidden-secrets:/media/secrets \
+	-v hidden-cipherdir:$(INSTALL_CIPHERDIR) \
+	-v hidden-secrets:$(INSTALL_SECRETS) \
 	--name hidden \
 	hidden
 
