@@ -13,6 +13,10 @@ set -a
 . /etc/hidden/.env
 set +a
 
+mkdir -p \
+  "$INSTALL_CIPHERDIR_VOLUME_DIR" \
+  "$INSTALL_MOUNTPOINT_DIR"
+
 exec uvicorn app.main:app \
   --host "$UVICORN_HOST" \
   --port "$UVICORN_PORT" \
