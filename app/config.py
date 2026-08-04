@@ -40,15 +40,6 @@ class Config(BaseSettings):
             FERNET_ENCRYPTION_KEY_FILENAME,
         )
 
-    @cached_property
-    def FERNET_ENCRYPTION_KEY(self) -> str:
-        """
-        Return the Fernet key loaded from the configured file path.
-        The value is loaded lazily and cached after the first access.
-        """
-        with open(self.FERNET_ENCRYPTION_KEY_PATH, "r", encoding="utf-8") as f:
-            return f.read().strip()
-
     model_config = SettingsConfigDict(
         extra="ignore",
     )

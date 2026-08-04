@@ -1,4 +1,4 @@
-# app/routers/cipherdir_create.py
+# app/routers/gocryptfs_initialize.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from fastapi import APIRouter, Response, status

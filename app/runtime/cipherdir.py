@@ -13,6 +13,10 @@ from app.repositories.file import isdir, isfile, read
 
 logger = logging.getLogger(__name__)
 
+# NOTE: Must be a memory-backed filesystem to prevent passphrase from
+# touching disk.
+_PASSFILE_DIR = "/dev/shm"
+
 
 async def is_cipherdir_created(cipherdir: str) -> bool:
     """
@@ -150,7 +154,7 @@ def _write_passfile(passphrase: str) -> str:
     a single line. The file is fsynced and returned by path. It must
     be removed by the caller.
     """
-    fd, path = tempfile.mkstemp(dir="/dev/shm")
+    fd, path = tempfile.mkstemp(dir=_PASSFILE_DIR)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(passphrase + "\n")

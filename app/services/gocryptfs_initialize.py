@@ -1,4 +1,4 @@
-# app/services/cipherdir_create.py
+# app/services/gocryptfs_initialize.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
