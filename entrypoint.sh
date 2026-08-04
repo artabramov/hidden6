@@ -14,8 +14,8 @@ set -a
 set +a
 
 mkdir -p \
-  "$INSTALL_CIPHERDIR_VOLUME_DIR" \
-  "$INSTALL_MOUNTPOINT_DIR"
+  "$INSTALL_CIPHERDIR" \
+  "$INSTALL_MOUNTPOINT"
 
 exec uvicorn app.main:app \
   --host "$UVICORN_HOST" \

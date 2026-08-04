@@ -14,7 +14,7 @@ from app.repositories.file import isdir, isfile, read
 logger = logging.getLogger(__name__)
 
 
-async def is_gocryptfs_initialized(cipherdir: str) -> bool:
+async def is_cipherdir_created(cipherdir: str) -> bool:
     """
     Checks whether the given directory appears to be a valid gocryptfs
     cipherdir by verifying the presence and readability of its config.
@@ -41,7 +41,7 @@ async def is_gocryptfs_initialized(cipherdir: str) -> bool:
 # and passed using -passfile. The file exists only for the duration
 # of the mount operation and is removed immediately after use.
 
-async def init_gocryptfs(
+async def cipherdir_create(
     passphrase: str,
     cipherdir: str
 ) -> None:
@@ -79,7 +79,7 @@ async def init_gocryptfs(
             pass
 
 
-async def mount_gocryptfs(
+async def cipherdir_mount(
     passphrase: str,
     cipherdir: str,
     mountpoint: str
@@ -119,7 +119,7 @@ async def mount_gocryptfs(
             pass
 
 
-async def unmount_gocryptfs(mountpoint: str) -> None:
+async def cipherdir_unmount(mountpoint: str) -> None:
     """
     Unmount a gocryptfs mountpoint using fusermount3 or
     fusermount. Raises error if the unmount operation fails.

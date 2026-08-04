@@ -87,7 +87,7 @@ def generate_fernet_key() -> str:
 @lru_cache(maxsize=1)
 def get_fernet() -> Fernet:
     config = get_config()
-    return Fernet(config.FERNET_KEY.encode())
+    return Fernet(config.FERNET_ENCRYPTION_KEY.encode())
 
 
 def encrypt_string(value: str) -> str:

@@ -12,7 +12,7 @@ from app.locks import LockType, locks
 from app.repositories.file import delete, isfile, write
 from app.security.encryption import encrypt_passphrase, generate_fernet_key
 from app.security.randoms import generate_random_string
-from app.runtime.gocryptfs import init_gocryptfs, is_gocryptfs_initialized
+from app.runtime.cipherdir import is_cipherdir_created, cipherdir_create
 
 log = logging.getLogger(__name__)
 
@@ -33,11 +33,11 @@ async def initialize_gocryptfs(master_password: str) -> None:
     config = get_config()
 
     async with locks.lock_directory(
-        config.INSTALL_SECRETS_VOLUME_DIR,
+        config.INSTALL_SECRETS,
         LockType.WRITE
     ):
 
-        if await is_gocryptfs_initialized(config.INSTALL_CIPHERDIR_VOLUME_DIR):
+        if await is_cipherdir_created(config.INSTALL_CIPHERDIR):
             # log.warning("event=%s", E.CIPHERDIR_CREATE_ALREADY_CREATED)
             raise ResourceConflictError
 
@@ -45,7 +45,7 @@ async def initialize_gocryptfs(master_password: str) -> None:
             # log.warning("event=%s", E.CIPHERDIR_CREATE_PASSPHRASE_EXISTS)
             raise ResourceConflictError
 
-        if await isfile(config.FERNET_KEY_PATH):
+        if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):
             # log.warning("event=%s", E.CIPHERDIR_CREATE_FERNET_KEY_EXISTS)
             raise ResourceConflictError
 
@@ -63,27 +63,27 @@ async def initialize_gocryptfs(master_password: str) -> None:
                 passphrase_encrypted,
             )
 
-            await init_gocryptfs(
+            await cipherdir_create(
                 passphrase,
-                config.INSTALL_CIPHERDIR_VOLUME_DIR
+                config.INSTALL_CIPHERDIR
             )
 
             await write(
-                config.FERNET_KEY_PATH,
+                config.FERNET_ENCRYPTION_KEY_PATH,
                 fernet_key.encode("utf-8")
             )
 
         except Exception:
             await delete(config.GOCRYPTFS_PASSPHRASE_PATH)
             await delete(os.path.join(
-                config.INSTALL_CIPHERDIR_VOLUME_DIR,
+                config.INSTALL_CIPHERDIR,
                 "gocryptfs.conf"
             ))
             await delete(os.path.join(
-                config.INSTALL_CIPHERDIR_VOLUME_DIR,
+                config.INSTALL_CIPHERDIR,
                 "gocryptfs.diriv"
             ))
-            await delete(config.FERNET_KEY_PATH)
+            await delete(config.FERNET_ENCRYPTION_KEY_PATH)
 
             # log.exception("event=%s", E.CIPHERDIR_CREATE_FAILED)
             raise
