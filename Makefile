@@ -1,8 +1,8 @@
 .PHONY: install develop
 
-PORT              ?= 80
-INSTALL_CIPHERDIR ?= /var/lib/cipherdir
-INSTALL_SECRETS   ?= /media/secrets
+-include .env
+
+PORT ?= 80
 
 install:
 	docker build -t hidden .

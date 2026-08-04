@@ -4,7 +4,7 @@ umask 077
 
 mkdir -p /etc/hidden
 if [ ! -f /etc/hidden/.env ]; then
-  cp /opt/hidden/.env.example /etc/hidden/.env
+  cp /opt/hidden/.env /etc/hidden/.env
   chmod 600 /etc/hidden/.env
   echo "[hidden] created .env"
 fi
