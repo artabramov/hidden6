@@ -11,7 +11,7 @@ install:
 	--device /dev/fuse \
 	--security-opt apparmor:unconfined \
 	-p $(PORT):80 \
-	-v hidden-cipherdir:/var/lib/hidden/cipherdir \
+	-v hidden-cipherdir:/var/lib/cipherdir \
 	-v hidden-secrets:/media/secrets \
 	--name hidden \
 	hidden
