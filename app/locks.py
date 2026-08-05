@@ -84,11 +84,13 @@ class LockManager:
         overlapping directory or file lock.
         """
         resource = self._build_directory_resource(dir_path)
-        await self._acquire(resource, lock_type)
+        owner = self._get_current_task()
+
+        await self._acquire(resource, lock_type, owner)
         try:
             yield
         finally:
-            await self._release(resource, lock_type)
+            await self._release(resource, lock_type, owner)
 
     @asynccontextmanager
     async def lock_file(
@@ -106,11 +108,23 @@ class LockManager:
         overlapping directory or file lock.
         """
         resource = self._build_file_resource(file_path)
-        await self._acquire(resource, lock_type)
+        owner = self._get_current_task()
+
+        await self._acquire(resource, lock_type, owner)
         try:
             yield
         finally:
-            await self._release(resource, lock_type)
+            await self._release(resource, lock_type, owner)
+
+    def _get_current_task(self) -> asyncio.Task:
+        task = asyncio.current_task()
+
+        if task is None:
+            raise RuntimeError(
+                "Lock operations require a running asyncio task."
+            )
+
+        return task
 
     def _build_directory_resource(self, dir_path: str) -> LockResource:
         directory = os.path.abspath(os.path.normpath(dir_path))
@@ -135,7 +149,12 @@ class LockManager:
         self,
         resource: LockResource,
         lock_type: LockType,
+        owner: asyncio.Task,
     ) -> None:
+        """
+        Wait until the requested lock becomes available and register it
+        for the specified task.
+        """
         async with self._condition:
             while self._has_conflict(resource, lock_type):
                 await self._condition.wait()
@@ -144,7 +163,7 @@ class LockManager:
                 LockHolder(
                     resource=resource,
                     lock_type=lock_type,
-                    owner=asyncio.current_task(),
+                    owner=owner,
                 ),
             )
 
@@ -152,23 +171,25 @@ class LockManager:
         self,
         resource: LockResource,
         lock_type: LockType,
+        owner: asyncio.Task,
     ) -> None:
-        owner = asyncio.current_task()
-
+        """
+        Release a previously acquired lock owned by the specified task.
+        Raises RuntimeError if the task does not own the lock.
+        """
         async with self._condition:
             for index, holder in enumerate(self._holders):
                 if (
                     holder.resource == resource
                     and holder.lock_type == lock_type
-                    and holder.owner == owner
+                    and holder.owner is owner
                 ):
                     del self._holders[index]
                     self._condition.notify_all()
                     return
 
             raise RuntimeError(
-                "Attempted to release a lock that is not held by the "
-                "current task: "
+                "Attempted to release a lock not held by its owner: "
                 f"resource={resource!r}, "
                 f"lock_type={lock_type!r}, "
                 f"owner={owner!r}"
