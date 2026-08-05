@@ -4,6 +4,22 @@
 
 PORT ?= 80
 
+# NOTE (ADR-03): Application runs inside a Docker container.
+# 1. Packages all dependencies and runtime environment, ensuring
+#    consistent behavior across different hosts.
+# 2. Isolates encryption runtime and secret handling from the host,
+#    reducing the risk of accidental exposure or interference.
+# 3. Keeps the decrypted filesystem mountpoint internal to
+#    the container by default, limiting direct host access.
+
+# NOTE (ADR-05): Cipherdir and secrets are stored in Docker volumes.
+# 1. The secrets volume allows the encrypted passphrase to be removed
+#    at runtime; its absence is detected by the watchdog, which triggers
+#    automatic unmount of the gocryptfs mountpoint.
+# 2. The cipherdir volume keeps encrypted data portable, enabling
+#    backup, migration between instances, and emergency recovery using
+#    gocryptfs without the application.
+
 install:
 	docker build -t hidden .
 	docker run -dit \

@@ -10,7 +10,7 @@ from typing import AsyncIterator
 
 
 class LockType(StrEnum):
-    """Supported lock types for directory and file resources."""
+    """Lock modes supported by the lock manager."""
 
     READ = "read"
     WRITE = "write"
@@ -18,7 +18,12 @@ class LockType(StrEnum):
 
 @dataclass(frozen=True)
 class LockResource:
-    """Internal normalized resource descriptor."""
+    """
+    Normalized directory or file resource used for lock comparisons.
+
+    A directory resource has no filename. A file resource consists of
+    its parent directory and filename.
+    """
 
     directory: str
     filename: str | None = None
@@ -26,33 +31,24 @@ class LockResource:
 
 @dataclass(frozen=True)
 class LockHolder:
-    """Internal active lock record."""
+    """Lock currently held by an asyncio task."""
 
     resource: LockResource
     lock_type: LockType
     owner: asyncio.Task
 
 
-# NOTE (ADR-44): Filesystem locks use hierarchical semantics.
-# 1. Directory locks cover the subtree rooted at that directory.
-# 2. File locks cover only the specific file.
-# 3. Overlapping resources are compatible only for READ + READ.
-#    +------------+------------+------------+------------+------------+
-#    |            | DIR READ   | DIR WRITE  | FILE READ  | FILE WRITE |
-#    +------------+------------+------------+------------+------------+
-#    | DIR READ   | YES        | -          | YES        | -          |
-#    | DIR WRITE  | -          | -          | -          | -          |
-#    | FILE READ  | YES        | -          | YES        | -          |
-#    | FILE WRITE | -          | -          | -          | -          |
-#    +------------+------------+------------+------------+------------+
-# Overlapping resources:
-# 1. A directory overlaps with itself and any descendant directory.
-# 2. A directory overlaps with any file in its subtree.
-# 3. Two files overlap only if they refer to the same file.
-
 class LockManager:
     """
-    In-process asyncio lock manager for directory and file resources.
+    Coordinate in-process locks for filesystem resources.
+
+    Directory locks cover the entire directory subtree. File locks cover
+    one normalized file path. Overlapping read locks are compatible; any
+    overlap involving a write lock is exclusive.
+
+    Locks are local to the current process and are neither reentrant
+    nor fair. Paths are normalized lexically without resolving symbolic
+    links.
     """
 
     def __init__(self) -> None:
@@ -66,7 +62,7 @@ class LockManager:
         lock_type: LockType,
     ) -> AsyncIterator[None]:
         """
-        Acquire a lock for a directory subtree.
+        Acquire a lock covering a directory and its entire subtree.
 
         READ: shared lock for reading the subtree. Compatible only with
         other READ locks on overlapping resources.

@@ -14,8 +14,10 @@ from app.constants import (
 
 class Config(BaseSettings):
     """
-    Runtime configuration loaded from environment variables,
-    plus computed filesystem paths derived from those values.
+    Centralized runtime configuration.
+
+    Combines environment variables, application constants,
+    and derived values into a single configuration object.
     """
 
     INSTALL_SOURCE_CODE: str

@@ -1,3 +1,6 @@
+# app/main.py
+# SPDX-License-Identifier: GPL-3.0-only
+
 from fastapi import FastAPI
 
 from app.errors import (

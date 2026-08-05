@@ -13,8 +13,13 @@ from app.repositories.file import isdir, isfile, read
 
 logger = logging.getLogger(__name__)
 
-# NOTE: Must be a memory-backed filesystem to prevent passphrase from
-# touching disk.
+# NOTE (ADR-07): Passphrase is provided using a temporary file in tmpfs.
+# The temporary file is created in /dev/shm to prevent the passphrase
+# from touching persistent storage. Command-line arguments and stdin
+# are avoided to prevent exposure in process listings (argv) and to
+# bypass TTY-based input behavior. The file is removed immediately
+# after use.
+
 _PASSFILE_DIR = "/dev/shm"
 
 
@@ -37,13 +42,12 @@ async def is_cipherdir_created(cipherdir: str) -> bool:
 
     return bool(content)
 
+# NOTE (ADR-08): Cipherdir initialization uses best-effort rollback.
+# The service creates the gocryptfs filesystem and all related secrets
+# together. The operation is not transactional, so on failure the
+# service performs best-effort cleanup of artifacts created during
+# the current attempt.
 
-# NOTE (ADR-06): Passphrase is provided via a temporary file in tmpfs.
-# Command-line arguments and stdin are avoided to prevent exposure
-# in process listings (argv) and to bypass TTY-based input behavior.
-# The passphrase is written to a temporary file in tmpfs (/dev/shm)
-# and passed using -passfile. The file exists only for the duration
-# of the mount operation and is removed immediately after use.
 
 async def cipherdir_create(
     passphrase: str,
