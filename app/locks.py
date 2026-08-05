@@ -42,13 +42,26 @@ class LockManager:
     """
     Coordinate in-process locks for filesystem resources.
 
-    Directory locks cover the entire directory subtree. File locks cover
-    one normalized file path. Overlapping read locks are compatible; any
-    overlap involving a write lock is exclusive.
+    Locks use hierarchical semantics. Directory locks cover entire
+    directory subtrees, while file locks cover only the specific file.
+    Overlapping resources are compatible only for READ + READ.
 
-    Locks are local to the current process and are neither reentrant
-    nor fair. Paths are normalized lexically without resolving symbolic
-    links.
+    +------------+------------+------------+------------+------------+
+    |            | DIR READ   | DIR WRITE  | FILE READ  | FILE WRITE |
+    +------------+------------+------------+------------+------------+
+    | DIR READ   | YES        | -          | YES        | -          |
+    | DIR WRITE  | -          | -          | -          | -          |
+    | FILE READ  | YES        | -          | YES        | -          |
+    | FILE WRITE | -          | -          | -          | -          |
+    +------------+------------+------------+------------+------------+
+
+    A directory overlaps with itself and any descendant directory, and
+    with any file in its subtree. Two files overlap only if they refer
+    to the same file.
+
+    Locks are local to the current process, are neither reentrant nor
+    fair, and compare normalized paths lexically without resolving
+    symbolic links.
     """
 
     def __init__(self) -> None:
