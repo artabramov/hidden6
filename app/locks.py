@@ -90,7 +90,7 @@ class LockManager:
         try:
             yield
         finally:
-            await self._release(resource, lock_type, owner)
+            await self._release_safely(resource, lock_type, owner)
 
     @asynccontextmanager
     async def lock_file(
@@ -114,7 +114,7 @@ class LockManager:
         try:
             yield
         finally:
-            await self._release(resource, lock_type, owner)
+            await self._release_safely(resource, lock_type, owner)
 
     def _get_current_task(self) -> asyncio.Task:
         task = asyncio.current_task()
@@ -206,6 +206,26 @@ class LockManager:
                 f"lock_type={lock_type!r}, "
                 f"owner={owner!r}"
             )
+
+    async def _release_safely(
+        self,
+        resource: LockResource,
+        lock_type: LockType,
+        owner: asyncio.Task,
+    ) -> None:
+        """
+        Release a lock while guaranteeing that task cancellation cannot
+        leave the lock registered.
+        """
+        release_task = asyncio.create_task(
+            self._release(resource, lock_type, owner)
+        )
+
+        try:
+            await asyncio.shield(release_task)
+        except asyncio.CancelledError:
+            await release_task
+            raise
 
     def _has_conflict(
         self,
