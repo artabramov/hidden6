@@ -17,12 +17,6 @@ from app.runtime.cipherdir import is_cipherdir_created, cipherdir_create
 log = logging.getLogger(__name__)
 
 
-# NOTE (ADR-07): Cipherdir initialization is a one-time operation.
-# The service creates the gocryptfs filesystem and all related secrets
-# together. This operation is not transactional, so on failure the
-# service performs best-effort cleanup of artifacts created during
-# the current attempt.
-
 async def initialize_gocryptfs(master_password: str) -> None:
     """
     Initialize encrypted storage by generating and encrypting a random

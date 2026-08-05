@@ -31,7 +31,7 @@ router = APIRouter(tags=["gocryptfs"])
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Initialize gocryptfs cipherdir (on first boot)",
 )
-async def create_cipherdir_router(
+async def initialize_gocryptfs_router(
     data: GocryptfsInitializeRequest,
 ) -> Response:
     """
