@@ -42,12 +42,6 @@ async def is_cipherdir_created(cipherdir: str) -> bool:
 
     return bool(content)
 
-# NOTE (ADR-08): Cipherdir initialization uses best-effort rollback.
-# The service creates the gocryptfs filesystem and all related secrets
-# together. The operation is not transactional, so on failure the
-# service performs best-effort cleanup of artifacts created during
-# the current attempt.
-
 
 async def cipherdir_create(
     passphrase: str,

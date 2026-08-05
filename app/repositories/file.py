@@ -32,7 +32,7 @@ def get_tmp_path() -> str:
     Return a unique temporary file path inside the encrypted storage.
     """
     config = get_config()
-    return os.path.join(config.FILES_TMP_DIR, str(uuid.uuid4()))
+    return os.path.join(config.TMP_DIR, str(uuid.uuid4()))
 
 
 async def get_mimetype(path: str) -> str | None:

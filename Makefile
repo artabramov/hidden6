@@ -13,7 +13,7 @@ PORT ?= 80
 
 FORCE ?= 0
 
-# NOTE (ADR-02): Cipherdir and secrets are stored in Docker volumes.
+# NOTE (ADR-02): Cipherdir uses a Docker volume; secrets use a bind mount.
 # 1. The cipherdir volume keeps encrypted data portable, enabling
 #    backup, migration between instances, and emergency recovery using
 #    gocryptfs without the application.

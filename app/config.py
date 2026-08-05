@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.constants import (
     GOCRYPTFS_PASSPHRASE_FILENAME,
     FERNET_ENCRYPTION_KEY_FILENAME,
+    TMP_DIRNAME,
 )
 
 
@@ -40,6 +41,13 @@ class Config(BaseSettings):
         return os.path.join(
             self.INSTALL_SECRETS,
             FERNET_ENCRYPTION_KEY_FILENAME,
+        )
+
+    @cached_property
+    def TMP_DIR(self) -> str:
+        return os.path.join(
+            self.GOCRYPTFS_MOUNTPOINT,
+            TMP_DIRNAME,
         )
 
     model_config = SettingsConfigDict(
