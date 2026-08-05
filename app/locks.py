@@ -154,8 +154,20 @@ class LockManager:
         """
         Wait until the requested lock becomes available and register it
         for the specified task.
+
+        Raises RuntimeError if the task attempts to acquire a conflicting
+        lock it already holds.
         """
         async with self._condition:
+            if self._has_owner_conflict(resource, lock_type, owner):
+                raise RuntimeError(
+                    "Attempted to acquire a conflicting lock already "
+                    "held by the same task: "
+                    f"resource={resource!r}, "
+                    f"lock_type={lock_type!r}, "
+                    f"owner={owner!r}"
+                )
+
             while self._has_conflict(resource, lock_type):
                 await self._condition.wait()
 
@@ -226,6 +238,23 @@ class LockManager:
         return not (
             requested_lock_type == LockType.READ
             and held_lock_type == LockType.READ
+        )
+
+    def _has_owner_conflict(
+        self,
+        resource: LockResource,
+        lock_type: LockType,
+        owner: asyncio.Task,
+    ) -> bool:
+        return any(
+            holder.owner is owner
+            and self._conflicts(
+                requested_resource=resource,
+                requested_lock_type=lock_type,
+                held_resource=holder.resource,
+                held_lock_type=holder.lock_type,
+            )
+            for holder in self._holders
         )
 
     def _resources_overlap(
