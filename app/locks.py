@@ -59,9 +59,10 @@ class LockManager:
     with any file in its subtree. Two files overlap only if they refer
     to the same file.
 
-    Locks are local to the current process, are neither reentrant nor
-    fair, and compare normalized paths lexically without resolving
-    symbolic links.
+    Locks are local to the current process and are not fair. Tasks may
+    reacquire overlapping READ locks they already hold. Attempting to
+    acquire a conflicting overlapping lock already held by the same task
+    raises RuntimeError instead of waiting, preventing self-deadlock.
     """
 
     def __init__(self) -> None:
@@ -132,9 +133,7 @@ class LockManager:
 
     def _build_file_resource(self, file_path: str) -> LockResource:
         normalized_path = os.path.abspath(os.path.normpath(file_path))
-        directory = os.path.normpath(
-            os.path.dirname(normalized_path) or "."
-        )
+        directory = os.path.dirname(normalized_path)
         filename = os.path.basename(normalized_path)
 
         if not filename:
@@ -152,11 +151,13 @@ class LockManager:
         owner: asyncio.Task,
     ) -> None:
         """
-        Wait until the requested lock becomes available and register it
-        for the specified task.
+        Wait until the requested lock becomes available and register
+        it for the specified task.
 
-        Raises RuntimeError if the task attempts to acquire a conflicting
-        lock it already holds.
+        Raises RuntimeError if the task attempts to acquire an
+        overlapping lock that conflicts with one it already holds.
+
+        Repeated READ locks on overlapping resources are allowed.
         """
         async with self._condition:
             if self._has_owner_conflict(resource, lock_type, owner):
@@ -224,7 +225,7 @@ class LockManager:
         try:
             await asyncio.shield(release_task)
         except asyncio.CancelledError:
-            await release_task
+            await asyncio.shield(release_task)
             raise
 
     def _has_conflict(
