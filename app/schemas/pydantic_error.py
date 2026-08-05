@@ -8,8 +8,11 @@ from pydantic import BaseModel, Field
 
 class PydanticErrorDetail(BaseModel):
     """
-    Single item in a 422 validation error response, matching the
-    shape produced by Pydantic / FastAPI request validation.
+    Single item in a 422 validation error response.
+
+    Mirrors the shape produced by Pydantic / FastAPI request
+    validation. Declared explicitly so Swagger documents a clear
+    error structure rather than relying on the default 422 schema.
     """
 
     type: str = Field(
