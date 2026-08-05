@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Response, status
 
 from app.schemas.gocryptfs_initialize import GocryptfsInitializeRequest
+from app.schemas.pydantic_error import PydanticErrorResponse
 from app.services.gocryptfs_initialize import initialize_gocryptfs
 
 router = APIRouter(tags=["gocryptfs"])
@@ -20,7 +21,7 @@ router = APIRouter(tags=["gocryptfs"])
             ),
         },
         422: {
-            # "model": PydanticErrorResponse,
+            "model": PydanticErrorResponse,
             "description": (
                 "Input values failed validation (master password is "
                 "missing or does not meet the required length or "
