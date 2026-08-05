@@ -38,7 +38,7 @@ async def create_cipherdir_router(
     Initializes encrypted application storage. It generates a strong
     random gocryptfs passphrase, encrypts it with the provided master
     password, and initializes the cipherdir. It also creates internal
-    application keys used for JWT signing and symmetric encryption.
+    application keys used for symmetric encryption.
 
     This endpoint is intended for one-time initialization immediately
     after installation.

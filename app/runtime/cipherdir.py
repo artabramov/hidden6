@@ -1,4 +1,4 @@
-# app/runtime/gocryptfs.py
+# app/runtime/cipherdir.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import asyncio

@@ -13,6 +13,14 @@ PORT ?= 80
 
 FORCE ?= 0
 
+# NOTE (ADR-02): Cipherdir and secrets are stored in Docker volumes.
+# 1. The cipherdir volume keeps encrypted data portable, enabling
+#    backup, migration between instances, and emergency recovery using
+#    gocryptfs without the application.
+# 2. Secrets are bind-mounted from VOLUME_SECRETS so the path can point
+#    at removable media. When the media is removed, the passphrase
+#    disappears and the watchdog unmounts the gocryptfs mountpoint.
+
 # NOTE (ADR-03): Application runs inside a Docker container.
 # 1. Packages all dependencies and runtime environment, ensuring
 #    consistent behavior across different hosts.
@@ -20,14 +28,6 @@ FORCE ?= 0
 #    reducing the risk of accidental exposure or interference.
 # 3. Keeps the decrypted filesystem mountpoint internal to
 #    the container by default, limiting direct host access.
-
-# NOTE (ADR-05): Cipherdir and secrets are stored in Docker volumes.
-# 1. The cipherdir volume keeps encrypted data portable, enabling
-#    backup, migration between instances, and emergency recovery using
-#    gocryptfs without the application.
-# 2. Secrets are bind-mounted from VOLUME_SECRETS so the path can point
-#    at removable media. When the media is removed, the passphrase
-#    disappears and the watchdog unmounts the gocryptfs mountpoint.
 
 VOLUME_SECRETS ?= /mnt/hidden-secrets
 

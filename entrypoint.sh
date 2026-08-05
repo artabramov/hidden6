@@ -17,7 +17,7 @@ mkdir -p \
   "$INSTALL_CIPHERDIR" \
   "$INSTALL_MOUNTPOINT"
 
-# NOTE (ADR-04): Application uses a single Uvicorn worker.
+# NOTE (ADR-05): Application uses a single Uvicorn worker.
 # This is not a tuning choice but a consequence of the encryption stack:
 # gocryptfs is hostile to server-class DBs on FUSE, which forces SQLite,
 # which is itself single-writer. Multiple workers therefore provide
