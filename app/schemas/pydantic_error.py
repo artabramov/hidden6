@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 
 class PydanticErrorDetail(BaseModel):
     """
-    Pydantic-like error detail item used in 422 responses. Mirrors
-    the structure produced by PydanticError.detail in app/errors.py.
+    Single item in a 422 validation error response, matching the
+    shape produced by Pydantic / FastAPI request validation.
     """
 
     type: str = Field(

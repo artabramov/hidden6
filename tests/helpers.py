@@ -1,0 +1,21 @@
+# tests/helpers.py
+# SPDX-License-Identifier: GPL-3.0-only
+
+import os
+
+
+def build_default_config_values() -> dict[str, object]:
+    return {
+        "INSTALL_SOURCE_CODE": "/opt/hidden",
+        "INSTALL_CIPHERDIR": "/var/lib/cipherdir",
+        "INSTALL_MOUNTPOINT": "/var/lib/mountpoint",
+        "INSTALL_SECRETS": "/var/lib/secrets",
+        "UVICORN_HOST": "127.0.0.1",
+        "UVICORN_PORT": 80,
+        "API_PREFIX": "/api/v1",
+    }
+
+
+def set_minimal_app_config_env() -> None:
+    for key, value in build_default_config_values().items():
+        os.environ.setdefault(key, str(value))
