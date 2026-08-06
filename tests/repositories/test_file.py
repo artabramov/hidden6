@@ -11,34 +11,6 @@ from app.repositories import file as rf
 
 
 class TestFileRepository(unittest.IsolatedAsyncioTestCase):
-    # --- get_tmp_path ---
-
-    def test_get_tmp_path_uses_config_and_uuid(self):
-        with patch("app.repositories.file.get_config") as mock_config, \
-             patch("app.repositories.file.uuid.uuid4") as mock_uuid, \
-             patch("app.repositories.file.os.path.join") as mock_join:
-
-            mock_config.return_value.FILES_TMP_DIR = "/tmp/storage"
-            mock_uuid.return_value = "abc-123"
-            mock_join.return_value = "/tmp/storage/abc-123"
-
-            result = rf.get_tmp_path()
-
-        mock_config.assert_called_once_with()
-        mock_uuid.assert_called_once_with()
-        mock_join.assert_called_once_with("/tmp/storage", "abc-123")
-        self.assertEqual(result, "/tmp/storage/abc-123")
-
-    def test_get_tmp_path_returns_different_values(self):
-        with patch("app.repositories.file.get_config") as mock_config:
-            mock_config.return_value.FILES_TMP_DIR = "/tmp/storage"
-
-            path1 = rf.get_tmp_path()
-            path2 = rf.get_tmp_path()
-
-        self.assertNotEqual(path1, path2)
-        self.assertTrue(path1.startswith("/tmp/storage"))
-        self.assertTrue(path2.startswith("/tmp/storage"))
 
     # --- _parent_dir ---
 

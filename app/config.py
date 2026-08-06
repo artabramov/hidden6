@@ -9,7 +9,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.constants import (
     GOCRYPTFS_PASSPHRASE_FILENAME,
     FERNET_ENCRYPTION_KEY_FILENAME,
-    TMP_DIRNAME,
+    MOUNTPOINT_DB_DIRNAME,
+    MOUNTPOINT_BUCKETS_DIRNAME,
+    MOUNTPOINT_VERSIONS_DIRNAME,
+    MOUNTPOINT_TMP_DIRNAME,
 )
 
 
@@ -44,10 +47,31 @@ class Config(BaseSettings):
         )
 
     @cached_property
-    def TMP_DIR(self) -> str:
+    def MOUNTPOINT_DB_DIR(self) -> str:
         return os.path.join(
-            self.GOCRYPTFS_MOUNTPOINT,
-            TMP_DIRNAME,
+            self.INSTALL_MOUNTPOINT,
+            MOUNTPOINT_DB_DIRNAME,
+        )
+
+    @cached_property
+    def MOUNTPOINT_BUCKETS_DIR(self) -> str:
+        return os.path.join(
+            self.INSTALL_MOUNTPOINT,
+            MOUNTPOINT_BUCKETS_DIRNAME,
+        )
+
+    @cached_property
+    def MOUNTPOINT_VERSIONS_DIR(self) -> str:
+        return os.path.join(
+            self.INSTALL_MOUNTPOINT,
+            MOUNTPOINT_VERSIONS_DIRNAME,
+        )
+
+    @cached_property
+    def MOUNTPOINT_TMP_DIR(self) -> str:
+        return os.path.join(
+            self.INSTALL_MOUNTPOINT,
+            MOUNTPOINT_TMP_DIRNAME,
         )
 
     model_config = SettingsConfigDict(

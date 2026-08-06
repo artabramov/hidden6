@@ -14,7 +14,6 @@ import aiofiles.ospath
 import filetype
 import magic
 
-from app.config import get_config
 from app.constants import (
     FILE_CHUNK_SIZE_BYTES,
     FILE_MIMETYPE_READ_BYTES,
@@ -25,14 +24,6 @@ class AsyncReadable(Protocol):
     """Async source that returns bytes from read(size)."""
 
     async def read(self, size: int = -1) -> bytes: ...
-
-
-def get_tmp_path() -> str:
-    """
-    Return a unique temporary file path inside the encrypted storage.
-    """
-    config = get_config()
-    return os.path.join(config.TMP_DIR, str(uuid.uuid4()))
 
 
 async def get_mimetype(path: str) -> str | None:
@@ -240,10 +231,6 @@ async def _iter_read(
                 break
             yield chunk
 
-
-# NOTE (ADR-46): File writes follow POSIX durability semantics.
-# The file is fsynced before atomic replace, then the parent
-# directory is fsynced to persist the directory entry update.
 
 async def _atomic_write_stream(
     data: AsyncIterable[bytes],
