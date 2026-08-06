@@ -13,6 +13,11 @@ def build_default_config_values() -> dict[str, object]:
         "UVICORN_HOST": "127.0.0.1",
         "UVICORN_PORT": 80,
         "API_PREFIX": "/api/v1",
+        "LOG_LEVEL": "INFO",
+        "LOG_FORMAT": (
+            "%(asctime)s %(levelname)s %(name)s:%(lineno)d "
+            "request_uuid=%(request_uuid)s %(message)s"
+        ),
     }
 
 
