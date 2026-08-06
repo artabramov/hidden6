@@ -6,7 +6,7 @@ from __future__ import annotations
 from app.hooks import Events, HookManager
 
 
-async def init_gocryptfs(obj: None) -> None:
+async def init_gocryptfs(_: None) -> None:
     ...
 
 
