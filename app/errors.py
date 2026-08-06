@@ -7,11 +7,6 @@ class InternalServerError(Exception):
     pass
 
 
-class BadRequestError(Exception):
-    """Raised when the request is invalid or unprocessable (400)."""
-    pass
-
-
 class ResourceNotFoundError(Exception):
     """Raised when the requested resource does not exist (404)."""
     pass

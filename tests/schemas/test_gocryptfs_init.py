@@ -47,3 +47,33 @@ class TestGocryptfsInitRequest(unittest.TestCase):
         error = cm.exception.errors()[0]
         self.assertEqual(error["loc"], ("master_password",))
         self.assertEqual(error["type"], "string_too_short")
+
+    def test_rejects_password_without_lowercase(self):
+        with self.assertRaises(ValidationError) as cm:
+            GocryptfsInitRequest(
+                master_password="AAAAAAAAAAAAAAA1",
+            )
+
+        error = cm.exception.errors()[0]
+        self.assertEqual(error["loc"], ("master_password",))
+        self.assertEqual(error["type"], "value_error")
+
+    def test_rejects_password_without_uppercase(self):
+        with self.assertRaises(ValidationError) as cm:
+            GocryptfsInitRequest(
+                master_password="aaaaaaaaaaaaaaa1",
+            )
+
+        error = cm.exception.errors()[0]
+        self.assertEqual(error["loc"], ("master_password",))
+        self.assertEqual(error["type"], "value_error")
+
+    def test_rejects_password_without_digit(self):
+        with self.assertRaises(ValidationError) as cm:
+            GocryptfsInitRequest(
+                master_password="StrongMasterPass",
+            )
+
+        error = cm.exception.errors()[0]
+        self.assertEqual(error["loc"], ("master_password",))
+        self.assertEqual(error["type"], "value_error")

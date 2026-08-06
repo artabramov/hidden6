@@ -12,13 +12,6 @@ router = APIRouter(tags=["gocryptfs"])
 @router.post(
     "/gocryptfs/init",
     responses={
-        400: {
-            "description": (
-                "Master password does not meet the required strength: "
-                "it must contain at least one lowercase letter, one "
-                "uppercase letter, and one digit."
-            ),
-        },
         409: {
             "description": (
                 "Cipherdir is already initialized or required secret "
@@ -28,7 +21,10 @@ router = APIRouter(tags=["gocryptfs"])
         },
         422: {
             "description": (
-                "Request body failed basic Pydantic validation."
+                "Request body failed basic Pydantic validation. This "
+                "includes master password validation, which requires "
+                "at least one lowercase letter, one uppercase letter, "
+                "and one digit."
             ),
         },
     },

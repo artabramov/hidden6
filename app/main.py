@@ -13,13 +13,11 @@ from app.log import init_logging
 
 from app.errors import (
     InternalServerError,
-    BadRequestError,
     ResourceConflictError,
 )
 
 from app.handlers import (
     internal_server_error_handler,
-    bad_request_handler,
     resource_conflict_handler,
 )
 
@@ -67,5 +65,4 @@ app.add_middleware(GZipMiddleware)
 app.include_router(gocryptfs_init, prefix=config.API_PREFIX)
 
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
-app.add_exception_handler(BadRequestError, bad_request_handler)
 app.add_exception_handler(ResourceConflictError, resource_conflict_handler)

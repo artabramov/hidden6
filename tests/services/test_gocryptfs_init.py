@@ -13,7 +13,7 @@ from app.services.gocryptfs_init import gocryptfs_init
 
 
 class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
-    VALID_PASSWORD = "Master-passphrase1"
+    VALID_PASSWORD = "MasterPassphrase1"
 
     def setUp(self):
         self.log_patcher = patch("app.services.gocryptfs_init.log")
