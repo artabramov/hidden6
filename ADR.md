@@ -17,3 +17,4 @@ ADR-XX: Request context is a per-task key-value store.
 ADR-XX: X-Request-ID is accepted for request correlation.
 ADR-XX: Request context is reset before and after request.
 ADR-XX: Middleware order is intentionally fixed.
+ADR-XX: SQLite is used as the database backend.

@@ -22,6 +22,12 @@ def build_default_config_values() -> dict[str, object]:
             "http://localhost:3000,http://127.0.0.1:3000"
         ),
         "CORS_MAX_AGE_SECONDS": 86400,
+        "EXTENSIONS_ENABLED": "",
+        "SQLITE_JOURNAL_MODE": "DELETE",
+        "SQLITE_SYNCHRONOUS": "FULL",
+        "SQLITE_BUSY_TIMEOUT": 5000,
+        "SQLITE_TEMP_STORE": "MEMORY",
+        "SQLITE_FILENAME": "hidden.db",
     }
 
 

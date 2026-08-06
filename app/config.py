@@ -35,6 +35,11 @@ class Config(BaseSettings):
     LOG_FORMAT: str
     CORS_ALLOW_ORIGINS: str
     CORS_MAX_AGE_SECONDS: int
+    SQLITE_JOURNAL_MODE: str
+    SQLITE_SYNCHRONOUS: str
+    SQLITE_BUSY_TIMEOUT: int
+    SQLITE_TEMP_STORE: str
+    SQLITE_FILENAME: str
     EXTENSIONS_ENABLED: str = ""
 
     @cached_property
@@ -78,6 +83,17 @@ class Config(BaseSettings):
             self.INSTALL_MOUNTPOINT,
             MOUNTPOINT_TMP_DIRNAME,
         )
+
+    @cached_property
+    def SQLITE_PATH(self) -> str:
+        return os.path.join(
+            self.MOUNTPOINT_DB_DIR,
+            self.SQLITE_FILENAME,
+        )
+
+    @cached_property
+    def SQLITE_URL(self) -> str:
+        return "sqlite+aiosqlite:///" + self.SQLITE_PATH
 
     model_config = SettingsConfigDict(
         extra="ignore",

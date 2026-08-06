@@ -1,7 +1,9 @@
 aiofiles==25.1.0
+aiosqlite==0.22.1
 cryptography==50.0.0
 fastapi==0.136.3
 filetype==1.2.0
 pydantic-settings==2.14.2
 python-magic==0.4.27
+SQLAlchemy==2.0.48
 uvicorn[standard]==0.30.6
