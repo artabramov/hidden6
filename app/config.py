@@ -31,6 +31,8 @@ class Config(BaseSettings):
     UVICORN_HOST: str
     UVICORN_PORT: int
     API_PREFIX: str
+    LOG_LEVEL: str
+    LOG_FORMAT: str
 
     @cached_property
     def GOCRYPTFS_PASSPHRASE_PATH(self) -> str:

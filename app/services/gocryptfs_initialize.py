@@ -29,7 +29,7 @@ async def initialize_gocryptfs(master_password: str) -> None:
     gocryptfs passphrase, initializing the cipherdir, creating the
     internal application keys, and persisting all created secrets.
     """
-    # log.info("event=%s", E.CIPHERDIR_CREATE_STARTED)
+    log.info("msg=%s", "gocryptfs_init:started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -38,15 +38,15 @@ async def initialize_gocryptfs(master_password: str) -> None:
     ):
 
         if await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            # log.warning("event=%s", E.CIPHERDIR_CREATE_ALREADY_CREATED)
+            log.warning("msg=%s", "gocryptfs_init:already_created")
             raise ResourceConflictError
 
         if await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            # log.warning("event=%s", E.CIPHERDIR_CREATE_PASSPHRASE_EXISTS)
+            log.warning("msg=%s", "gocryptfs_init:passphrase_exists")
             raise ResourceConflictError
 
         if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):
-            # log.warning("event=%s", E.CIPHERDIR_CREATE_FERNET_KEY_EXISTS)
+            log.warning("msg=%s", "gocryptfs_init:fernet_key_exists")
             raise ResourceConflictError
 
         passphrase = generate_random_string(GOCRYPTFS_PASSPHRASE_LENGTH)
@@ -85,7 +85,7 @@ async def initialize_gocryptfs(master_password: str) -> None:
             ))
             await delete(config.FERNET_ENCRYPTION_KEY_PATH)
 
-            # log.exception("event=%s", E.CIPHERDIR_CREATE_FAILED)
+            log.exception("msg=%s", "gocryptfs_init:failed")
             raise
 
-        # log.info("event=%s", E.CIPHERDIR_CREATE_COMPLETED)
+        log.info("msg=%s", "gocryptfs_init:completed")

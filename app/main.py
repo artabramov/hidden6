@@ -15,6 +15,8 @@ from app.handlers import (
     resource_conflict_handler,
 )
 
+from app.middleware.request_context import request_context_middleware
+
 from app.routers.gocryptfs_initialize import router as initialize_gocryptfs
 
 config = get_config()
@@ -26,6 +28,8 @@ app = FastAPI(
         "tryItOutEnabled": True,
     }
 )
+
+app.middleware("http")(request_context_middleware)
 
 app.include_router(initialize_gocryptfs, prefix=config.API_PREFIX)
 
