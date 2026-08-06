@@ -19,6 +19,7 @@ class Events:
     registration and emission, not for logging.
     """
     GOCRYPTFS_INIT_COMPLETED = "gocryptfs_init:completed"
+    GOCRYPTFS_MOUNT_COMPLETED = "gocryptfs_mount:completed"
 
 
 class HookManager:
