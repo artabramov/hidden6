@@ -7,6 +7,16 @@ class InternalServerError(Exception):
     pass
 
 
+class BadRequestError(Exception):
+    """Raised when the request is invalid or unprocessable (400)."""
+    pass
+
+
+class ResourceNotFoundError(Exception):
+    """Raised when the requested resource does not exist (404)."""
+    pass
+
+
 class ResourceConflictError(Exception):
-    """Operation conflicts with current resource state (409)."""
+    """Raised when the requested operation causes a conflict (409)."""
     pass

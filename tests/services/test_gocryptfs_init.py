@@ -13,12 +13,11 @@ from app.services.gocryptfs_init import gocryptfs_init
 
 
 class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
+    VALID_PASSWORD = "Master-passphrase1"
+
     def setUp(self):
         self.log_patcher = patch("app.services.gocryptfs_init.log")
         self.log_patcher.start()
-
-    def tearDown(self):
-        self.log_patcher.stop()
 
     def _build_lock_context(self):
         ctx = AsyncMock()
@@ -41,6 +40,9 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             os.path.join(config.INSTALL_CIPHERDIR, "gocryptfs.diriv"),
             config.FERNET_ENCRYPTION_KEY_PATH,
         ]
+
+    def tearDown(self):
+        self.log_patcher.stop()
 
     async def test_raises_conflict_when_cipherdir_already_initialized(self):
         config = self._build_config()
@@ -85,7 +87,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ) as fernet_mock,
         ):
             with self.assertRaises(ResourceConflictError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
@@ -134,7 +136,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ) as create_mock,
         ):
             with self.assertRaises(ResourceConflictError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         isfile_mock.assert_awaited_once_with(config.GOCRYPTFS_PASSPHRASE_PATH)
         write_mock.assert_not_awaited()
@@ -175,7 +177,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ) as create_mock,
         ):
             with self.assertRaises(ResourceConflictError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         self.assertEqual(isfile_mock.await_count, 2)
         isfile_mock.assert_any_await(config.GOCRYPTFS_PASSPHRASE_PATH)
@@ -234,7 +236,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            await gocryptfs_init("master-password")
+            await gocryptfs_init(self.VALID_PASSWORD)
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
@@ -245,7 +247,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
         random_mock.assert_called_once_with(GOCRYPTFS_PASSPHRASE_LENGTH)
         encrypt_mock.assert_called_once_with(
             b"generated-passphrase",
-            b"master-password",
+            self.VALID_PASSWORD.encode("utf-8"),
         )
         fernet_mock.assert_called_once_with()
 
@@ -318,7 +320,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(RuntimeError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         create_mock.assert_not_awaited()
         self.assertEqual(delete_mock.await_count, 4)
@@ -372,7 +374,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(RuntimeError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         self.assertEqual(write_mock.await_count, 1)
         create_mock.assert_awaited_once_with(
@@ -433,7 +435,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(RuntimeError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         self.assertEqual(write_mock.await_count, 2)
         self.assertEqual(delete_mock.await_count, 4)
@@ -488,6 +490,6 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             with self.assertRaises(RuntimeError):
-                await gocryptfs_init("master-password")
+                await gocryptfs_init(self.VALID_PASSWORD)
 
         emit_mock.assert_not_awaited()

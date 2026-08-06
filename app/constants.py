@@ -3,7 +3,6 @@
 
 HIDDEN_TITLE = "Hidden — S3-compatible storage powered by gocryptfs"
 
-GOCRYPTFS_MASTER_PASSWORD_MIN_LENGTH = 16
 GOCRYPTFS_PASSPHRASE_LENGTH = 80
 GOCRYPTFS_PASSPHRASE_FILENAME = "gocryptfs_passphrase.enc"
 

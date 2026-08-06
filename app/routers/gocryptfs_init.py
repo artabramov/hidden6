@@ -4,7 +4,6 @@
 from fastapi import APIRouter, Response, status
 
 from app.schemas.gocryptfs_init import GocryptfsInitRequest
-from app.schemas.pydantic_error import PydanticErrorResponse
 from app.services.gocryptfs_init import gocryptfs_init
 
 router = APIRouter(tags=["gocryptfs"])
@@ -13,6 +12,13 @@ router = APIRouter(tags=["gocryptfs"])
 @router.post(
     "/gocryptfs/init",
     responses={
+        400: {
+            "description": (
+                "Master password does not meet the required strength: "
+                "it must contain at least one lowercase letter, one "
+                "uppercase letter, and one digit."
+            ),
+        },
         409: {
             "description": (
                 "Cipherdir is already initialized or required secret "
@@ -21,11 +27,8 @@ router = APIRouter(tags=["gocryptfs"])
             ),
         },
         422: {
-            "model": PydanticErrorResponse,
             "description": (
-                "Input values failed validation (master password is "
-                "missing or does not meet the required length or "
-                "strength)."
+                "Request body failed basic Pydantic validation."
             ),
         },
     },

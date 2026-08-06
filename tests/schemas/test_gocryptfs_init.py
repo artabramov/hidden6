@@ -5,7 +5,6 @@ import unittest
 
 from pydantic import ValidationError
 
-from app.constants import GOCRYPTFS_MASTER_PASSWORD_MIN_LENGTH
 from app.schemas.gocryptfs_init import GocryptfsInitRequest
 
 
@@ -48,37 +47,3 @@ class TestGocryptfsInitRequest(unittest.TestCase):
         error = cm.exception.errors()[0]
         self.assertEqual(error["loc"], ("master_password",))
         self.assertEqual(error["type"], "string_too_short")
-        self.assertEqual(
-            error["ctx"]["min_length"],
-            GOCRYPTFS_MASTER_PASSWORD_MIN_LENGTH,
-        )
-
-    def test_rejects_password_without_lowercase(self):
-        with self.assertRaises(ValidationError) as cm:
-            GocryptfsInitRequest(
-                master_password="AAAAAAAAAAAAAAA1",
-            )
-
-        error = cm.exception.errors()[0]
-        self.assertEqual(error["loc"], ("master_password",))
-        self.assertEqual(error["type"], "value_missing_lowercase")
-
-    def test_rejects_password_without_uppercase(self):
-        with self.assertRaises(ValidationError) as cm:
-            GocryptfsInitRequest(
-                master_password="aaaaaaaaaaaaaaa1",
-            )
-
-        error = cm.exception.errors()[0]
-        self.assertEqual(error["loc"], ("master_password",))
-        self.assertEqual(error["type"], "value_missing_uppercase")
-
-    def test_rejects_password_without_digit(self):
-        with self.assertRaises(ValidationError) as cm:
-            GocryptfsInitRequest(
-                master_password="StrongMasterPass",
-            )
-
-        error = cm.exception.errors()[0]
-        self.assertEqual(error["loc"], ("master_password",))
-        self.assertEqual(error["type"], "value_missing_digit")

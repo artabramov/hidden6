@@ -4,7 +4,11 @@
 from fastapi import Request, status
 from fastapi.responses import Response
 
-from app.errors import InternalServerError, ResourceConflictError
+from app.errors import (
+    InternalServerError,
+    BadRequestError,
+    ResourceConflictError,
+)
 
 
 async def internal_server_error_handler(
@@ -12,6 +16,13 @@ async def internal_server_error_handler(
     exc: InternalServerError,
 ) -> Response:
     return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+async def bad_request_handler(
+    request: Request,
+    exc: BadRequestError,
+) -> Response:
+    return Response(status_code=status.HTTP_400_BAD_REQUEST)
 
 
 async def resource_conflict_handler(
