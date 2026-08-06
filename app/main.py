@@ -20,7 +20,7 @@ from app.handlers import (
 
 from app.middleware.request_context import request_context_middleware
 
-from app.routers.gocryptfs_initialize import router as initialize_gocryptfs
+from app.routers.gocryptfs_init import router as gocryptfs_init
 
 config = get_config()
 
@@ -42,7 +42,7 @@ app = FastAPI(
 
 app.middleware("http")(request_context_middleware)
 
-app.include_router(initialize_gocryptfs, prefix=config.API_PREFIX)
+app.include_router(gocryptfs_init, prefix=config.API_PREFIX)
 
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
 app.add_exception_handler(ResourceConflictError, resource_conflict_handler)

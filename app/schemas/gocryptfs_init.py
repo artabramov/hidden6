@@ -1,4 +1,4 @@
-# app/schemas/gocryptfs_initialize.py
+# app/schemas/gocryptfs_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -7,7 +7,7 @@ from app.constants import GOCRYPTFS_MASTER_PASSWORD_MIN_LENGTH
 from app.validators.master_password import validate_master_password
 
 
-class GocryptfsInitializeRequest(BaseModel):
+class GocryptfsInitRequest(BaseModel):
     """
     Request schema for creating the encrypted storage requiring
     a master password with validation of strength and length.

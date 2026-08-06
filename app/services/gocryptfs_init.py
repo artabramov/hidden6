@@ -1,4 +1,4 @@
-# app/services/gocryptfs_initialize.py
+# app/services/gocryptfs_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 # the current attempt.
 
 
-async def initialize_gocryptfs(master_password: str) -> None:
+async def gocryptfs_init(master_password: str) -> None:
     """
     Initialize encrypted storage by generating and encrypting a random
     gocryptfs passphrase, initializing the cipherdir, creating the

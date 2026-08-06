@@ -1,17 +1,17 @@
-# app/routers/gocryptfs_initialize.py
+# app/routers/gocryptfs_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from fastapi import APIRouter, Response, status
 
-from app.schemas.gocryptfs_initialize import GocryptfsInitializeRequest
+from app.schemas.gocryptfs_init import GocryptfsInitRequest
 from app.schemas.pydantic_error import PydanticErrorResponse
-from app.services.gocryptfs_initialize import initialize_gocryptfs
+from app.services.gocryptfs_init import gocryptfs_init
 
 router = APIRouter(tags=["gocryptfs"])
 
 
 @router.post(
-    "/gocryptfs/initialize",
+    "/gocryptfs/init",
     responses={
         409: {
             "description": (
@@ -32,8 +32,8 @@ router = APIRouter(tags=["gocryptfs"])
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Initialize gocryptfs cipherdir (on first boot)",
 )
-async def initialize_gocryptfs_router(
-    data: GocryptfsInitializeRequest,
+async def gocryptfs_init_router(
+    data: GocryptfsInitRequest,
 ) -> Response:
     """
     Initializes encrypted application storage. It generates a strong
@@ -44,5 +44,5 @@ async def initialize_gocryptfs_router(
     This endpoint is intended for one-time initialization immediately
     after installation.
     """
-    await initialize_gocryptfs(data.master_password)
+    await gocryptfs_init(data.master_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
