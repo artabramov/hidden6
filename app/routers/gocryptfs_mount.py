@@ -31,8 +31,7 @@ router = APIRouter(tags=["gocryptfs"])
         },
         422: {
             "description": (
-                "Request body failed basic Pydantic validation. This "
-                "includes field validation and custom validators."
+                "Request body failed basic Pydantic validation."
             ),
         },
     },
