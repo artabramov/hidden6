@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import GOCRYPTFS_PASSPHRASE_LENGTH
 from app.errors import ResourceConflictError
+from app.hooks import Events
 from app.locks import LockType
 from app.services.gocryptfs_init import gocryptfs_init
 
@@ -228,6 +229,10 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 "app.services.gocryptfs_init.delete",
                 new=AsyncMock(),
             ) as delete_mock,
+            patch(
+                "app.services.gocryptfs_init.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
         ):
             await gocryptfs_init("master-password")
 
@@ -259,6 +264,9 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             config.INSTALL_CIPHERDIR,
         )
         delete_mock.assert_not_awaited()
+        emit_mock.assert_awaited_once_with(
+            Events.GOCRYPTFS_INIT_COMPLETED,
+        )
 
     async def test_cleans_up_when_first_write_fails(self):
         config = self._build_config()
@@ -431,3 +439,55 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(delete_mock.await_count, 4)
         for path in self._expected_cleanup_paths(config):
             delete_mock.assert_any_await(path)
+
+    async def test_does_not_emit_hook_on_failure(self):
+        config = self._build_config()
+
+        with (
+            patch(
+                "app.services.gocryptfs_init.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.gocryptfs_init.locks.lock_directory",
+                return_value=self._build_lock_context(),
+            ),
+            patch(
+                "app.services.gocryptfs_init.is_cipherdir_created",
+                new=AsyncMock(return_value=False),
+            ),
+            patch(
+                "app.services.gocryptfs_init.isfile",
+                new=AsyncMock(side_effect=[False, False]),
+            ),
+            patch(
+                "app.services.gocryptfs_init.generate_random_string",
+                return_value="generated-passphrase",
+            ),
+            patch(
+                "app.services.gocryptfs_init.encrypt_passphrase",
+                return_value=b"encrypted-passphrase",
+            ),
+            patch(
+                "app.services.gocryptfs_init.generate_fernet_key",
+                return_value="generated-fernet-key",
+            ),
+            patch(
+                "app.services.gocryptfs_init.write",
+                new=AsyncMock(
+                    side_effect=[RuntimeError("write failed")],
+                ),
+            ),
+            patch(
+                "app.services.gocryptfs_init.delete",
+                new=AsyncMock(),
+            ),
+            patch(
+                "app.services.gocryptfs_init.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
+        ):
+            with self.assertRaises(RuntimeError):
+                await gocryptfs_init("master-password")
+
+        emit_mock.assert_not_awaited()
