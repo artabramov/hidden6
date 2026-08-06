@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from starlette.middleware.gzip import GZipMiddleware
 from fastapi import FastAPI
 
+from app.version import __version__
 from app.config import get_config
 from app.log import init_logging
 
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
+    version=__version__,
     lifespan=lifespan,
     swagger_ui_parameters={
         "persistAuthorization": True,
