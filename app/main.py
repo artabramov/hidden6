@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from app.version import __version__
 from app.config import get_config
+from app.hooks import hooks
 from app.log import init_logging
 
 from app.errors import (
@@ -32,6 +33,7 @@ config = get_config()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_logging()
+    hooks.load_extensions()
     yield
 
 

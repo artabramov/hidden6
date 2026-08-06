@@ -7,7 +7,7 @@ import os
 from app.config import get_config
 from app.constants import GOCRYPTFS_PASSPHRASE_LENGTH
 from app.errors import ResourceConflictError
-# from app.events import Events as E
+from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.repositories.file import delete, isfile, write
 from app.security.encryption import encrypt_passphrase, generate_fernet_key
@@ -89,3 +89,4 @@ async def gocryptfs_init(master_password: str) -> None:
             raise
 
         log.info("msg=%s", "gocryptfs_init:completed")
+        await hooks.emit(Events.GOCRYPTFS_INIT_COMPLETED)

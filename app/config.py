@@ -35,6 +35,7 @@ class Config(BaseSettings):
     LOG_FORMAT: str
     CORS_ALLOW_ORIGINS: str
     CORS_MAX_AGE_SECONDS: int
+    EXTENSIONS_ENABLED: str = ""
 
     @cached_property
     def GOCRYPTFS_PASSPHRASE_PATH(self) -> str:
