@@ -1,16 +1,16 @@
-# app/routers/gocryptfs_mount.py
+# app/routers/gocryptfs_unmount.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from fastapi import APIRouter, Response, status
 
-from app.schemas.gocryptfs_mount import GocryptfsMountRequest
-from app.services.gocryptfs_mount import gocryptfs_mount
+from app.schemas.gocryptfs_unmount import GocryptfsUnmountRequest
+from app.services.gocryptfs_unmount import gocryptfs_unmount
 
 router = APIRouter(tags=["gocryptfs"])
 
 
 @router.post(
-    "/gocryptfs/mount",
+    "/gocryptfs/unmount",
     responses={
         400: {
             "description": (
@@ -20,13 +20,13 @@ router = APIRouter(tags=["gocryptfs"])
         },
         404: {
             "description": (
-                "Cipherdir is not initialized or gocryptfs passphrase "
-                "is not found."
+                "Cipherdir is not initialized or encrypted passphrase "
+                "file is missing."
             ),
         },
         409: {
             "description": (
-                "Cipherdir is already mounted."
+                "Cipherdir is not mounted."
             ),
         },
         422: {
@@ -36,18 +36,18 @@ router = APIRouter(tags=["gocryptfs"])
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Mount gocryptfs cipherdir",
+    summary="Unmount gocryptfs cipherdir",
 )
-async def gocryptfs_mount_router(
-    data: GocryptfsMountRequest,
+async def unmount_cipherdir_router(
+    data: GocryptfsUnmountRequest,
 ) -> Response:
     """
-    Mounts encrypted application storage. It decrypts the stored
+    Unmounts encrypted application storage. It decrypts the stored
     gocryptfs passphrase with the provided master password and uses
-    it to mount the cipherdir.
+    it to unmount the cipherdir.
 
-    `GOCRYPTFS_MOUNT_COMPLETED` — hook executed after the gocryptfs
-    cipherdir is successfully mounted.
+    `GOCRYPTFS_UNMOUNT_COMPLETED` — hook executed after the gocryptfs
+    cipherdir is successfully unmounted.
     """
-    await gocryptfs_mount(master_password=data.master_password)
+    await gocryptfs_unmount(master_password=data.master_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

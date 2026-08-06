@@ -47,7 +47,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             raise ResourceNotFoundError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=%s", "gocryptfs_mount:passphrase_missing")
+            log.warning("msg=%s", "gocryptfs_mount:passphrase_not_found")
             raise ResourceNotFoundError
 
         if await ismount(config.INSTALL_MOUNTPOINT):
