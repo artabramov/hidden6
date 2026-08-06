@@ -29,7 +29,7 @@ async def gocryptfs_unmount(
     log.info("msg=%s", "gocryptfs_unmount:started")
     config = get_config()
 
-    async with locks.lock_file(
+    async with locks.lock_directory(
         config.INSTALL_SECRETS,
         LockType.WRITE,
     ):

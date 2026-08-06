@@ -38,13 +38,13 @@ router = APIRouter(tags=["gocryptfs"])
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Unmount gocryptfs cipherdir",
 )
-async def unmount_cipherdir_router(
+async def gocryptfs_unmount_router(
     data: GocryptfsUnmountRequest,
 ) -> Response:
     """
-    Unmounts encrypted application storage. It decrypts the stored
-    gocryptfs passphrase with the provided master password and uses
-    it to unmount the cipherdir.
+    Unmounts encrypted application storage. It verifies the master
+    password by decrypting the stored gocryptfs passphrase, then
+    unmounts the cipherdir.
 
     `GOCRYPTFS_UNMOUNT_COMPLETED` — hook executed after the gocryptfs
     cipherdir is successfully unmounted.
