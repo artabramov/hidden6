@@ -18,6 +18,10 @@ def build_default_config_values() -> dict[str, object]:
             "%(asctime)s %(levelname)s %(name)s:%(lineno)d "
             "request_uuid=%(request_uuid)s %(message)s"
         ),
+        "CORS_ALLOW_ORIGINS": (
+            "http://localhost:3000,http://127.0.0.1:3000"
+        ),
+        "CORS_MAX_AGE_SECONDS": 86400,
     }
 
 

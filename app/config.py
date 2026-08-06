@@ -33,6 +33,8 @@ class Config(BaseSettings):
     API_PREFIX: str
     LOG_LEVEL: str
     LOG_FORMAT: str
+    CORS_ALLOW_ORIGINS: str
+    CORS_MAX_AGE_SECONDS: int
 
     @cached_property
     def GOCRYPTFS_PASSPHRASE_PATH(self) -> str:

@@ -18,6 +18,7 @@ from app.handlers import (
     resource_conflict_handler,
 )
 
+from app.middleware.cors_setup import cors_setup_middleware
 from app.middleware.request_context import request_context_middleware
 from app.middleware.request_logging import request_logging_middleware
 from app.middleware.security_headers import security_headers_middleware
@@ -45,6 +46,7 @@ app = FastAPI(
 app.middleware("http")(request_logging_middleware)
 app.middleware("http")(request_context_middleware)
 app.middleware("http")(security_headers_middleware)
+cors_setup_middleware(app)
 
 app.include_router(gocryptfs_init, prefix=config.API_PREFIX)
 
