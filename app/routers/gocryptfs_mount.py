@@ -1,4 +1,4 @@
-# app/routers/cipherdir_mount.py
+# app/routers/gocryptfs_mount.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from fastapi import APIRouter, Response, status
@@ -12,6 +12,12 @@ router = APIRouter(tags=["gocryptfs"])
 @router.post(
     "/gocryptfs/mount",
     responses={
+        400: {
+            "description": (
+                "Master password is invalid or encrypted passphrase "
+                "cannot be decrypted."
+            ),
+        },
         404: {
             "description": (
                 "Cipherdir is not initialized or gocryptfs passphrase "
@@ -41,7 +47,7 @@ async def gocryptfs_mount_router(
     gocryptfs passphrase with the provided master password and uses
     it to mount the cipherdir.
 
-    `CIPHERDIR_MOUNT_COMPLETED` — hook executed after the gocryptfs
+    `GOCRYPTFS_MOUNT_COMPLETED` — hook executed after the gocryptfs
     cipherdir is successfully mounted.
     """
     await gocryptfs_mount(

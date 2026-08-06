@@ -1,4 +1,4 @@
-# app/services/cipherdir_mount.py
+# app/services/gocryptfs_mount.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
@@ -30,15 +30,16 @@ async def gocryptfs_mount(master_password: str) -> None:
     """
     Mount the encrypted storage by decrypting the stored passphrase
     with the master password, mounting the gocryptfs filesystem,
-    ensuring the SQLite directory exists, and initializing the
-    database. If a post-mount step fails, the mount is rolled back.
+    ensuring mountpoint directories exist (db, buckets, versions, tmp),
+    and initializing the database. If a post-mount step fails, the
+    mount is rolled back.
     """
     log.info("msg=%s", "gocryptfs_mount:started")
     config = get_config()
 
     async with locks.lock_directory(
-        config.INSTALL_CIPHERDIR,
-        LockType.READ,
+        config.INSTALL_SECRETS,
+        LockType.WRITE,
     ):
 
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
