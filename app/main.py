@@ -1,9 +1,12 @@
 # app/main.py
 # SPDX-License-Identifier: GPL-3.0-only
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from app.config import get_config
+from app.log import init_logging
 
 from app.errors import (
     InternalServerError,
@@ -21,7 +24,15 @@ from app.routers.gocryptfs_initialize import router as initialize_gocryptfs
 
 config = get_config()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_logging()
+    yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     swagger_ui_parameters={
         "persistAuthorization": True,
         "displayRequestDuration": True,
