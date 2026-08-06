@@ -6,6 +6,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from fastapi import FastAPI
 
 from app.version import __version__
+from app.constants import HIDDEN_TITLE
 from app.config import get_config
 from app.hooks import hooks
 from app.log import init_logging
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
+    title=HIDDEN_TITLE,
     version=__version__,
     lifespan=lifespan,
     swagger_ui_parameters={
