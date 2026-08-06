@@ -19,6 +19,7 @@ from app.handlers import (
 )
 
 from app.middleware.request_context import request_context_middleware
+from app.middleware.request_logging import request_logging_middleware
 
 from app.routers.gocryptfs_init import router as gocryptfs_init
 
@@ -40,6 +41,7 @@ app = FastAPI(
     }
 )
 
+app.middleware("http")(request_logging_middleware)
 app.middleware("http")(request_context_middleware)
 
 app.include_router(gocryptfs_init, prefix=config.API_PREFIX)
