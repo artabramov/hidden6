@@ -21,11 +21,6 @@ class Events:
     GOCRYPTFS_INIT_COMPLETED = "gocryptfs_init:completed"
 
 
-ALLOWED_HOOK_EVENTS = {
-    Events.GOCRYPTFS_INIT_COMPLETED,
-}
-
-
 class HookManager:
     """
     Registers and emits hooks for named events. Loads hook registrations
@@ -43,8 +38,6 @@ class HookManager:
         Register a hook for the specified event.
         Hooks are executed in registration order.
         """
-        if event not in ALLOWED_HOOK_EVENTS:
-            raise ValueError(f"unknown hook event: {event}")
         self._hooks[event].append(hook)
 
     async def emit(self, event: str, obj: Any = None) -> None:
@@ -52,8 +45,6 @@ class HookManager:
         Emit an event and execute all registered hooks.
         Exceptions are logged and do not interrupt execution.
         """
-        if event not in ALLOWED_HOOK_EVENTS:
-            raise ValueError(f"unknown hook event: {event}")
         for hook in self._hooks.get(event, []):
             try:
                 await hook(obj)
