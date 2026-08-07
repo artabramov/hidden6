@@ -21,7 +21,7 @@ router = APIRouter(tags=["gocryptfs"])
     },
     response_model=GocryptfsHealthResponse,
     status_code=status.HTTP_200_OK,
-    summary="gocryptfs runtime health snapshot.",
+    summary="Retrieve gocryptfs runtime state.",
 )
 async def gocryptfs_health_router() -> GocryptfsHealthResponse:
     """
