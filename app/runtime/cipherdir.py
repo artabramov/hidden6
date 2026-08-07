@@ -11,7 +11,7 @@ from functools import lru_cache
 from app.errors import InternalServerError
 from app.repositories.file import isdir, isfile, read
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # NOTE (ADR-08): Passphrase is passed to gocryptfs through tmpfs.
 # The temporary file is created in /dev/shm to prevent the passphrase
@@ -71,12 +71,12 @@ async def cipherdir_create(
         _, stderr = await process.communicate()
 
         if process.returncode != 0:
-            message = stderr.decode(
+            error = stderr.decode(
                 encoding="utf-8",
                 errors="replace",
             ).strip() or "unknown error"
 
-            logger.error("gocryptfs init failed: %s", message)
+            log.error("msg=cipherdir_init_failed error=%s", error)
             raise InternalServerError
 
     finally:
@@ -111,12 +111,12 @@ async def cipherdir_mount(
 
         if process.returncode != 0:
             stderr = await process.stderr.read()
-            message = stderr.decode(
+            error = stderr.decode(
                 encoding="utf-8",
                 errors="replace",
             ).strip() or "unknown error"
 
-            logger.error("gocryptfs mount failed: %s", message)
+            log.error("msg=cipherdir_mount_failed error=%s", error)
             raise InternalServerError
 
     finally:
@@ -142,12 +142,12 @@ async def cipherdir_unmount(mountpoint: str) -> None:
     _, stderr = await process.communicate()
 
     if process.returncode != 0:
-        message = stderr.decode(
+        error = stderr.decode(
             encoding="utf-8",
             errors="replace",
         ).strip() or "unknown error"
 
-        logger.error("gocryptfs unmount failed: %s", message)
+        log.error("msg=cipherdir_unmount_failed error=%s", error)
         raise InternalServerError
 
 
@@ -185,6 +185,6 @@ def _get_unmount_command() -> str:
     """
     command = shutil.which("fusermount3") or shutil.which("fusermount")
     if command is None:
-        logger.error("gocryptfs unmount failed: command not found")
+        log.error("msg=cipherdir_unmount_command_missing")
         raise InternalServerError
     return command

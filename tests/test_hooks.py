@@ -59,11 +59,16 @@ class TestHookManagerEmit(unittest.IsolatedAsyncioTestCase):
         manager.on(Events.GOCRYPTFS_INITED, failing)
         manager.on(Events.GOCRYPTFS_INITED, succeeding)
 
-        with patch("app.hooks.logger") as mock_logger:
+        with patch("app.hooks.log") as mock_log:
             await manager.emit(Events.GOCRYPTFS_INITED)
 
         self.assertEqual(calls, ["ok"])
-        mock_logger.exception.assert_called_once()
+        mock_log.exception.assert_called_once()
+        fmt, event_arg, exc_arg = mock_log.exception.call_args.args
+        self.assertEqual(fmt, "msg=hook_failed event=%s error=%s")
+        self.assertEqual(event_arg, Events.GOCRYPTFS_INITED)
+        self.assertIsInstance(exc_arg, RuntimeError)
+        self.assertEqual(str(exc_arg), "boom")
 
 
 class TestHookManagerLoadExtensions(unittest.TestCase):
@@ -162,11 +167,14 @@ class TestHookManagerLoadExtensions(unittest.TestCase):
                 "app.hooks.importlib.import_module",
                 side_effect=fake_import_module,
             ),
-            patch("app.hooks.logger") as mock_logger,
+            patch("app.hooks.log") as mock_log,
         ):
             self.manager.load_extensions()
 
-        mock_logger.warning.assert_called_once()
+        mock_log.warning.assert_called_once_with(
+            "msg=extension_skipped module=%s",
+            "extensions.broken_extension",
+        )
         self.assertEqual(
             self.manager._hooks[Events.GOCRYPTFS_INITED],
             [],

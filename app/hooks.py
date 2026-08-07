@@ -8,7 +8,7 @@ from typing import Any, Awaitable, Callable
 
 from app.config import get_config
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 Hook = Callable[[Any], Awaitable[Any]]
 
@@ -52,9 +52,11 @@ class HookManager:
         for hook in self._hooks.get(event, []):
             try:
                 await hook(obj)
-            except Exception:
-                logger.exception(
-                    "hook execution failed event=%s", event
+            except Exception as exc:
+                log.exception(
+                    "msg=hook_failed event=%s error=%s",
+                    event,
+                    exc,
                 )
 
     def load_extensions(self) -> None:
@@ -78,13 +80,14 @@ class HookManager:
 
             register = getattr(module, "register", None)
             if not callable(register):
-                logger.warning(
-                    "extension skipped module=%s", module_name
+                log.warning(
+                    "msg=extension_skipped module=%s",
+                    module_name,
                 )
                 continue
 
             register(self)
-            logger.info("extension loaded module=%s", module_name)
+            log.info("msg=extension_loaded module=%s", module_name)
 
         self._loaded = True
 

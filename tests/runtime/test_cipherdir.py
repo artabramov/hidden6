@@ -170,7 +170,7 @@ class TestCipherdirCreate(unittest.IsolatedAsyncioTestCase):
 
         mock_rm.assert_called_once_with("/shm/p")
 
-    async def test_failure_with_empty_stderr_uses_unknown_error(self):
+    async def test_failure_logs_msg_style_error(self):
         mock_proc = MagicMock()
         mock_proc.returncode = 1
         mock_proc.communicate = AsyncMock(return_value=(b"", b""))
@@ -181,7 +181,7 @@ class TestCipherdirCreate(unittest.IsolatedAsyncioTestCase):
                 return_value="/shm/p",
             ),
             patch("app.runtime.cipherdir.os.remove") as mock_rm,
-            patch("app.runtime.cipherdir.logger") as mock_logger,
+            patch("app.runtime.cipherdir.log") as mock_log,
             patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
                 new_callable=AsyncMock,
@@ -191,8 +191,8 @@ class TestCipherdirCreate(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(InternalServerError):
                 await cd.cipherdir_create("pw", "/cipher")
 
-        mock_logger.error.assert_called_once_with(
-            "gocryptfs init failed: %s",
+        mock_log.error.assert_called_once_with(
+            "msg=cipherdir_init_failed error=%s",
             "unknown error",
         )
         mock_rm.assert_called_once_with("/shm/p")
@@ -299,7 +299,7 @@ class TestCipherdirMount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(InternalServerError):
                 await cd.cipherdir_mount("pw", "/c", "/m")
 
-    async def test_failure_with_empty_stderr_uses_unknown_error(self):
+    async def test_failure_logs_msg_style_error(self):
         mock_stderr = MagicMock()
         mock_stderr.read = AsyncMock(return_value=b"")
         mock_proc = MagicMock()
@@ -313,7 +313,7 @@ class TestCipherdirMount(unittest.IsolatedAsyncioTestCase):
                 return_value="/shm/p",
             ),
             patch("app.runtime.cipherdir.os.remove"),
-            patch("app.runtime.cipherdir.logger") as mock_logger,
+            patch("app.runtime.cipherdir.log") as mock_log,
             patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
                 new_callable=AsyncMock,
@@ -323,8 +323,8 @@ class TestCipherdirMount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(InternalServerError):
                 await cd.cipherdir_mount("pw", "/c", "/m")
 
-        mock_logger.error.assert_called_once_with(
-            "gocryptfs mount failed: %s",
+        mock_log.error.assert_called_once_with(
+            "msg=cipherdir_mount_failed error=%s",
             "unknown error",
         )
 
@@ -426,7 +426,7 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(InternalServerError):
                 await cd.cipherdir_unmount("/mnt")
 
-    async def test_failure_with_empty_stderr_uses_unknown_error(self):
+    async def test_failure_logs_msg_style_error(self):
         mock_proc = MagicMock()
         mock_proc.returncode = 1
         mock_proc.communicate = AsyncMock(return_value=(b"", b""))
@@ -436,7 +436,7 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
                 "app.runtime.cipherdir._get_unmount_command",
                 return_value="fusermount3",
             ),
-            patch("app.runtime.cipherdir.logger") as mock_logger,
+            patch("app.runtime.cipherdir.log") as mock_log,
             patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
                 new_callable=AsyncMock,
@@ -446,8 +446,8 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(InternalServerError):
                 await cd.cipherdir_unmount("/mnt")
 
-        mock_logger.error.assert_called_once_with(
-            "gocryptfs unmount failed: %s",
+        mock_log.error.assert_called_once_with(
+            "msg=cipherdir_unmount_failed error=%s",
             "unknown error",
         )
 
