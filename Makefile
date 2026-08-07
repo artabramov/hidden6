@@ -4,32 +4,28 @@
 
 PORT ?= 80
 
-# NOTE (ADR-01): Connect the removable secrets volume before install.
+# NOTE (ADR-01): Removable media is preferred for the secrets volume.
 # Docker bind-mounts create a regular host directory if the path does
 # not exist. Secrets would then be stored on the local disk instead of
 # removable media, breaking extractable-key semantics. Therefore, make
 # install refuses to proceed unless VOLUME_SECRETS is an existing
 # volume. Use FORCE=1 only for non-production setups.
 
+VOLUME_SECRETS ?= /mnt/hidden-secrets
 FORCE ?= 0
 
-# NOTE (ADR-02): Cipherdir uses a Docker volume; secrets use a bind mount.
-# 1. The cipherdir volume keeps encrypted data portable, enabling
-#    backup, migration between instances, and emergency recovery using
-#    gocryptfs without the application.
-# 2. Secrets are bind-mounted from VOLUME_SECRETS so the path can point
-#    at removable media. When the media is removed, the passphrase
-#    disappears and the watchdog unmounts the gocryptfs mountpoint.
+# NOTE (ADR-02): Cipherdir data remains portable in a Docker volume.
+# The cipherdir volume keeps encrypted data portable, enabling backup,
+# migration between instances, and emergency recovery using gocryptfs
+# without the application.
 
-# NOTE (ADR-03): Application runs inside a Docker container.
+# NOTE (ADR-03): Application runs in an isolated Docker container.
 # 1. Packages all dependencies and runtime environment, ensuring
 #    consistent behavior across different hosts.
 # 2. Isolates encryption runtime and secret handling from the host,
 #    reducing the risk of accidental exposure or interference.
 # 3. Keeps the decrypted filesystem mountpoint internal to
 #    the container by default, limiting direct host access.
-
-VOLUME_SECRETS ?= /mnt/hidden-secrets
 
 install:
 	@if [ "$(FORCE)" != "1" ]; then \

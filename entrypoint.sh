@@ -29,7 +29,7 @@ mkdir -p \
   done
 ) >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
-# NOTE (ADR-05): Application uses a single Uvicorn worker.
+# NOTE (ADR-04): Application is designed for a single Uvicorn worker.
 # This is not a tuning choice but a consequence of the encryption stack:
 # gocryptfs is hostile to server-class DBs on FUSE, which forces SQLite,
 # which is itself single-writer. Multiple workers therefore provide

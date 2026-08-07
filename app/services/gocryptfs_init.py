@@ -16,18 +16,16 @@ from app.runtime.cipherdir import is_cipherdir_created, cipherdir_create
 
 log = logging.getLogger(__name__)
 
-# NOTE (ADR-08): Cipherdir initialization uses best-effort rollback.
-# The service creates the gocryptfs filesystem and all related secrets
-# together. The operation is not transactional, so on failure the
-# service performs best-effort cleanup of artifacts created during
-# the current attempt.
-
 
 async def gocryptfs_init(master_password: str) -> None:
     """
     Initialize encrypted storage by generating and encrypting a random
     gocryptfs passphrase, initializing the cipherdir, creating the
     internal application keys, and persisting all created secrets.
+
+    Initialization is not transactional. If any step fails, the
+    function performs best-effort cleanup of artifacts created during
+    the current attempt.
     """
     log.info("msg=gocryptfs_init_started")
     config = get_config()
