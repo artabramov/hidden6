@@ -6,66 +6,53 @@ import logging
 from pathlib import Path
 
 from app.config import get_config
-from app.constants import (
-    WATCHDOG_GRACEFUL_UNMOUNT_SECONDS,
-    WATCHDOG_HEARTBEAT_PATH,
-)
+from app.constants import GOCRYPTFS_WATCHDOG_HEARTBEAT_PATH
 from app.log import init_logging
 from app.repositories.file import isdir, isfile, ismount
 from app.runtime.cipherdir import cipherdir_unmount
 
 log = logging.getLogger(__name__)
 
-# NOTE (ADR-11): Watchdog performs cipherdir unmount with a grace period.
-# The mountpoint is detached using the -z flag, preventing new access
-# while existing file descriptors may continue to operate. Requests
-# exceeding the grace period may fail with HTTP 500. Full handling of
-# storage failures within request execution is intentionally avoided
-# to keep runtime logic simple and predictable.
+# NOTE (ADR-11): Watchdog performs an immediate emergency unmount.
+# The mountpoint is detached using the -z flag. In-flight requests may
+# fail with HTTP 500. Full handling of storage failures within request
+# execution is intentionally avoided to keep runtime logic simple and
+# predictable.
 
 
 async def run_watchdog() -> None:
     """
     If the mountpoint is mounted, the watchdog triggers an emergency
     unmount when critical conditions are violated (missing secrets,
-    missing passphrase, or application not running). Before unmount,
-    lockdown mode is enabled and a short grace period may be applied
-    to allow in-flight requests to complete.
+    missing passphrase, or application not running).
     """
     config = get_config()
-    Path(WATCHDOG_HEARTBEAT_PATH).touch()
+    Path(GOCRYPTFS_WATCHDOG_HEARTBEAT_PATH).touch()
 
     if not await ismount(config.INSTALL_MOUNTPOINT):
         return
 
     if not await isdir(config.INSTALL_SECRETS):
         log.warning("msg=watchdog_secrets_missing")
-        await _lockdown_and_unmount(soft_drain=True)
+        await _emergency_unmount()
         log.info("msg=watchdog_unmount_completed")
         return
 
     if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
         log.warning("msg=watchdog_passphrase_missing")
-        await _lockdown_and_unmount(soft_drain=True)
+        await _emergency_unmount()
         log.info("msg=watchdog_unmount_completed")
         return
 
     if not _is_application_running():
         log.warning("msg=watchdog_application_stopped")
-        await _lockdown_and_unmount(soft_drain=False)
+        await _emergency_unmount()
         log.info("msg=watchdog_unmount_completed")
 
 
-async def _lockdown_and_unmount(soft_drain: bool = True) -> None:
-    """
-    Perform a lazy unmount of the mountpoint. Optionally waits for a
-    short grace period to allow in-flight requests to complete.
-    """
+async def _emergency_unmount() -> None:
+    """Perform a lazy unmount of the mountpoint."""
     config = get_config()
-
-    if soft_drain:
-        await asyncio.sleep(WATCHDOG_GRACEFUL_UNMOUNT_SECONDS)
-
     await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
 
 

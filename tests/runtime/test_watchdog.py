@@ -5,7 +5,6 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.constants import WATCHDOG_GRACEFUL_UNMOUNT_SECONDS
 from app.runtime import watchdog as wd
 
 
@@ -20,7 +19,7 @@ def _cfg() -> MagicMock:
 class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
 
     async def test_not_mounted_returns_after_touch(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -31,17 +30,17 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
         mock_path.return_value.touch.assert_called_once_with()
-        mock_ld.assert_not_awaited()
+        mock_unmount.assert_not_awaited()
 
     async def test_secrets_dir_missing_triggers_unmount(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -57,16 +56,16 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_awaited_once_with(soft_drain=True)
+        mock_unmount.assert_awaited_once_with()
 
     async def test_passphrase_missing_triggers_unmount(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -87,16 +86,16 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_awaited_once_with(soft_drain=True)
+        mock_unmount.assert_awaited_once_with()
 
-    async def test_app_not_running_triggers_hard_unmount(self):
-        mock_ld = AsyncMock()
+    async def test_app_not_running_triggers_unmount(self):
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -121,16 +120,16 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_awaited_once_with(soft_drain=False)
+        mock_unmount.assert_awaited_once_with()
 
     async def test_all_ok_no_unmount(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -155,16 +154,16 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=True,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_not_awaited()
+        mock_unmount.assert_not_awaited()
 
     async def test_touches_heartbeat_with_expected_path(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
         mock_heartbeat = MagicMock()
 
         with (
@@ -179,18 +178,18 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
         mock_path.assert_called_once_with(wd.WATCHDOG_HEARTBEAT_PATH)
         mock_heartbeat.touch.assert_called_once_with()
-        mock_ld.assert_not_awaited()
+        mock_unmount.assert_not_awaited()
 
     async def test_missing_secrets_logs_warning_before_unmount(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -213,21 +212,25 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 "app.runtime.watchdog._is_application_running",
             ) as mock_running,
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_awaited_once_with(soft_drain=True)
+        mock_unmount.assert_awaited_once_with()
         mock_isfile.assert_not_awaited()
         mock_running.assert_not_called()
-        mock_log.warning.assert_called_once_with("msg=watchdog_secrets_missing")
-        mock_log.info.assert_called_once_with("msg=watchdog_unmount_completed")
+        mock_log.warning.assert_called_once_with(
+            "msg=watchdog_secrets_missing",
+        )
+        mock_log.info.assert_called_once_with(
+            "msg=watchdog_unmount_completed",
+        )
 
     async def test_missing_passphrase_logs_warning_before_unmount(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -251,22 +254,24 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 "app.runtime.watchdog._is_application_running",
             ) as mock_running,
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_awaited_once_with(soft_drain=True)
+        mock_unmount.assert_awaited_once_with()
         mock_running.assert_not_called()
         mock_log.warning.assert_called_once_with(
             "msg=watchdog_passphrase_missing",
         )
-        mock_log.info.assert_called_once_with("msg=watchdog_unmount_completed")
+        mock_log.info.assert_called_once_with(
+            "msg=watchdog_unmount_completed",
+        )
 
-    async def test_app_not_running_logs_warning_and_hard_unmount(self):
-        mock_ld = AsyncMock()
+    async def test_app_not_running_logs_warning_before_unmount(self):
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -291,21 +296,23 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
             await wd.run_watchdog()
 
-        mock_ld.assert_awaited_once_with(soft_drain=False)
+        mock_unmount.assert_awaited_once_with()
         mock_log.warning.assert_called_once_with(
             "msg=watchdog_application_stopped",
         )
-        mock_log.info.assert_called_once_with("msg=watchdog_unmount_completed")
+        mock_log.info.assert_called_once_with(
+            "msg=watchdog_unmount_completed",
+        )
 
     async def test_all_ok_checks_everything_and_does_not_log(self):
-        mock_ld = AsyncMock()
+        mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
@@ -330,8 +337,8 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=True,
             ) as mock_running,
             patch(
-                "app.runtime.watchdog._lockdown_and_unmount",
-                mock_ld,
+                "app.runtime.watchdog._emergency_unmount",
+                mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
@@ -343,61 +350,24 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
             "/sec/gocryptfs_passphrase.enc",
         )
         mock_running.assert_called_once_with()
-        mock_ld.assert_not_awaited()
+        mock_unmount.assert_not_awaited()
         mock_log.warning.assert_not_called()
         mock_log.info.assert_not_called()
 
 
-class TestLockdownAndUnmount(unittest.IsolatedAsyncioTestCase):
-
-    async def test_soft_drain_sleeps_before_unmount(self):
-        mock_sleep = AsyncMock()
-        mock_unmount = AsyncMock()
-
-        with (
-            patch("app.runtime.watchdog.get_config", return_value=_cfg()),
-            patch("app.runtime.watchdog.asyncio.sleep", mock_sleep),
-            patch(
-                "app.runtime.watchdog.cipherdir_unmount",
-                mock_unmount,
-            ),
-        ):
-            await wd._lockdown_and_unmount(soft_drain=True)
-
-        mock_sleep.assert_awaited_once_with(
-            WATCHDOG_GRACEFUL_UNMOUNT_SECONDS,
-        )
-        mock_unmount.assert_awaited_once_with("/mnt/h")
-
-    async def test_no_sleep_when_hard_unmount(self):
-        mock_sleep = AsyncMock()
-        mock_unmount = AsyncMock()
-
-        with (
-            patch("app.runtime.watchdog.get_config", return_value=_cfg()),
-            patch("app.runtime.watchdog.asyncio.sleep", mock_sleep),
-            patch(
-                "app.runtime.watchdog.cipherdir_unmount",
-                mock_unmount,
-            ),
-        ):
-            await wd._lockdown_and_unmount(soft_drain=False)
-
-        mock_sleep.assert_not_awaited()
-        mock_unmount.assert_awaited_once_with("/mnt/h")
+class TestEmergencyUnmount(unittest.IsolatedAsyncioTestCase):
 
     async def test_unmount_called_with_mountpoint(self):
         mock_unmount = AsyncMock()
 
         with (
             patch("app.runtime.watchdog.get_config", return_value=_cfg()),
-            patch("app.runtime.watchdog.asyncio.sleep", AsyncMock()),
             patch(
                 "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
-            await wd._lockdown_and_unmount(soft_drain=True)
+            await wd._emergency_unmount()
 
         mock_unmount.assert_awaited_once_with("/mnt/h")
 
