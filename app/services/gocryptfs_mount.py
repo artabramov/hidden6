@@ -34,6 +34,7 @@ async def gocryptfs_mount(master_password: str) -> None:
     and initializing the database. If a post-mount step fails, the
     mount is rolled back.
     """
+    log.info("msg=gocryptfs_mount_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -50,7 +51,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             raise ServiceUnavailableError
 
         if await ismount(config.INSTALL_MOUNTPOINT):
-            log.warning("msg=already_mounted")
+            log.warning("msg=cipherdir_already_mounted")
             raise ResourceConflictError
 
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
@@ -91,7 +92,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             await check_db_integrity(config.SQLITE_PATH)
 
         except Exception:
-            log.exception("msg=error_raised")
+            log.exception("msg=gocryptfs_mount_failed")
 
             try:
                 await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
@@ -102,5 +103,5 @@ async def gocryptfs_mount(master_password: str) -> None:
 
             raise
 
-        log.info("msg=%s", "gocryptfs_mount:completed")
+        log.info("msg=%s", "gocryptfs_mount_completed")
         await hooks.emit(Events.GOCRYPTFS_MOUNTED)

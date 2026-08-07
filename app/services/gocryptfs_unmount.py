@@ -26,7 +26,7 @@ async def gocryptfs_unmount(
     against the stored passphrase and unmounting the gocryptfs
     filesystem.
     """
-    log.info("msg=%s", "gocryptfs_unmount:started")
+    log.info("msg=gocryptfs_unmount_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -34,15 +34,15 @@ async def gocryptfs_unmount(
         LockType.WRITE,
     ):
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=%s", "gocryptfs_unmount:cipherdir_not_created")
+            log.warning("msg=cipherdir_not_created")
             raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=%s", "gocryptfs_unmount:passphrase_not_found")
+            log.warning("msg=passphrase_not_found")
             raise ServiceUnavailableError
 
         if not await ismount(config.INSTALL_MOUNTPOINT):
-            log.warning("msg=%s", "gocryptfs_unmount:already_unmounted")
+            log.warning("msg=cipherdir_already_unmounted")
             raise ResourceConflictError
 
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
@@ -54,7 +54,7 @@ async def gocryptfs_unmount(
             )
 
         except ValueError:
-            log.warning("msg=%s", "gocryptfs_unmount:passphrase_invalid")
+            log.warning("msg=passphrase_invalid")
             raise UnauthorizedError
 
         # NOTE (ADR-XX): Dispose connections before gocryptfs unmount.
@@ -70,5 +70,5 @@ async def gocryptfs_unmount(
 
         await cipherdir_unmount(mountpoint=config.INSTALL_MOUNTPOINT)
 
-        log.info("msg=%s", "gocryptfs_unmount:completed")
+        log.info("msg=gocryptfs_unmount_completed")
         await hooks.emit(Events.GOCRYPTFS_UNMOUNTED)

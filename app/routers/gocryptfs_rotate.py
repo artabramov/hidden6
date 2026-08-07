@@ -9,8 +9,8 @@ from app.services.gocryptfs_rotate import gocryptfs_rotate
 router = APIRouter(tags=["gocryptfs"])
 
 
-@router.patch(
-    "/gocryptgs/rotate",
+@router.post(
+    "/gocryptfs/rotate",
     responses={
         401: {
             "description": (
@@ -42,7 +42,7 @@ router = APIRouter(tags=["gocryptfs"])
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Rotate master password.",
 )
-async def change_cipherdir_password_router(
+async def gocryptfs_rotate_router(
     data: GocryptfsRotateRequest,
 ) -> Response:
     """
@@ -50,8 +50,8 @@ async def change_cipherdir_password_router(
     passphrase. It decrypts the passphrase with the current password
     and encrypts it again with the new password.
 
-    `GOCRYPTFS_ROTATED` — hook executed after the master password "
-    "is successfully rotated.
+    `GOCRYPTFS_ROTATED` — hook executed after the master password
+    is successfully rotated.
     """
     await gocryptfs_rotate(
         current_master_password=data.current_master_password,

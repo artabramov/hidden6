@@ -29,7 +29,7 @@ async def gocryptfs_init(master_password: str) -> None:
     gocryptfs passphrase, initializing the cipherdir, creating the
     internal application keys, and persisting all created secrets.
     """
-    log.info("msg=%s", "gocryptfs_init:started")
+    log.info("msg=gocryptfs_init_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -38,15 +38,15 @@ async def gocryptfs_init(master_password: str) -> None:
     ):
 
         if await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=%s", "gocryptfs_init:cihperdir_created")
+            log.warning("msg=cihperdir_already_created")
             raise ResourceConflictError
 
         if await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=%s", "gocryptfs_init:passphrase_exists")
+            log.warning("msg=passphrase_already_exists")
             raise ResourceConflictError
 
         if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):
-            log.warning("msg=%s", "gocryptfs_init:fernet_key_exists")
+            log.warning("msg=fernet_key_already_exists")
             raise ResourceConflictError
 
         passphrase = generate_random_string(GOCRYPTFS_PASSPHRASE_LENGTH)
@@ -74,19 +74,23 @@ async def gocryptfs_init(master_password: str) -> None:
             )
 
         except Exception:
+            log.exception("msg=gocryptfs_init_failed")
+
             await delete(config.GOCRYPTFS_PASSPHRASE_PATH)
+
             await delete(os.path.join(
                 config.INSTALL_CIPHERDIR,
                 "gocryptfs.conf"
             ))
+
             await delete(os.path.join(
                 config.INSTALL_CIPHERDIR,
                 "gocryptfs.diriv"
             ))
+
             await delete(config.FERNET_ENCRYPTION_KEY_PATH)
 
-            log.exception("msg=%s", "gocryptfs_init:failed")
             raise
 
-        log.info("msg=%s", "gocryptfs_init:completed")
+        log.info("msg=gocryptfs_init_completed")
         await hooks.emit(Events.GOCRYPTFS_INITED)
