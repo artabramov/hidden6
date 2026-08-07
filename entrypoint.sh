@@ -16,6 +16,18 @@ mkdir -p \
   "$INSTALL_CIPHERDIR" \
   "$INSTALL_MOUNTPOINT"
 
+# NOTE (ADR-10): Watchdog runs as a background sleep-loop.
+# It periodically validates runtime state and triggers an emergency
+# unmount when secrets, passphrase, or the application process are
+# missing. Output is redirected to PID 1 so it appears in container
+# logs alongside the application.
+(
+  while true; do
+    sleep "$GOCRYPTFS_WATCHDOG_INTERVAL_SECONDS"
+    cd "$INSTALL_SOURCE_CODE" && python3 -m app.runtime.watchdog
+  done
+) >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+
 # NOTE (ADR-05): Application uses a single Uvicorn worker.
 # This is not a tuning choice but a consequence of the encryption stack:
 # gocryptfs is hostile to server-class DBs on FUSE, which forces SQLite,

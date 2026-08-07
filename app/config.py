@@ -30,6 +30,7 @@ class Config(BaseSettings):
     INSTALL_SECRETS: str
     UVICORN_HOST: str
     UVICORN_PORT: int
+    GOCRYPTFS_WATCHDOG_INTERVAL_SECONDS: int
     API_PREFIX: str
     LOG_LEVEL: str
     LOG_FORMAT: str
