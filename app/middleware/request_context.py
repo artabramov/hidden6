@@ -9,7 +9,7 @@ from fastapi import Request
 
 from app.context import reset_context, set_context_var
 
-# NOTE (ADR-XX): X-Request-ID is accepted for request correlation.
+# NOTE (ADR-11): X-Request-ID is accepted for request correlation.
 # If not provided, a value is generated and returned in the response.
 # It is included in all log records associated with the request.
 
@@ -36,10 +36,6 @@ def resolve_request_uuid(header_value: str | None) -> str:
 
     return value
 
-
-# NOTE (ADR-XX): Request context is reset before and after request.
-# This guarantees isolation between concurrent requests and prevents
-# leakage of context data across execution boundaries.
 
 async def request_context_middleware(request: Request, call_next):
     """

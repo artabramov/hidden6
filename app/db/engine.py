@@ -13,7 +13,7 @@ from app.config import get_config
 config = get_config()
 
 
-# NOTE (ADR-XX): SQLite is used as the database backend.
+# NOTE (ADR-13): SQLite is required for the gocryptfs-based stack.
 # The database file resides inside the gocryptfs-encrypted storage.
 # Client-server databases are not used because they cannot operate on
 # the encrypted filesystem in this design. Critical points:

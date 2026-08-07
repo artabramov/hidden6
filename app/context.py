@@ -4,7 +4,7 @@
 from contextvars import ContextVar
 from typing import Any
 
-# NOTE (ADR-XX): Request context is a per-task key-value store.
+# NOTE (ADR-12): Request context is a per-task key-value store.
 # It uses ContextVar to isolate state between concurrent execution
 # contexts. A shallow copy is created on each write to avoid mutating
 # shared state. By default, the context is expected to contain:

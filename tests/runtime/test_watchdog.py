@@ -185,7 +185,7 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
             await wd.run_watchdog()
 
         mock_path.assert_called_once_with(
-            wd.GOCRYPTFS_WATCHDOG_HEARTBEAT_PATH,
+            wd.WATCHDOG_HEARTBEAT_PATH,
         )
         mock_heartbeat.touch.assert_called_once_with()
         mock_unmount.assert_not_awaited()

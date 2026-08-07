@@ -57,13 +57,10 @@ async def gocryptfs_unmount(
             log.warning("msg=passphrase_invalid")
             raise UnauthorizedError
 
-        # NOTE (ADR-XX): Dispose connections before gocryptfs unmount.
-        # SQLite writes may still be buffered through the FUSE layer
-        # even after transactions are committed. Unmounting with active
-        # SQLAlchemy connections can leave partially flushed SQLite
-        # pages and corrupt the database on the next mount. dispose()
-        # prevents new writes from being issued through the old mount
-        # before the encrypted filesystem is torn down.
+        # dispose() closes pooled connections before unmounting so the
+        # running process does not retain file descriptors referencing
+        # the gocryptfs mountpoint. This is process hygiene, not a
+        # durability guarantee.
 
         from app.db.engine import engine  # noqa: PLC0415
         engine.sync_engine.dispose()

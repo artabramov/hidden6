@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 WORKDIR /opt/hidden
 
-# NOTE (ADR-06): Filesystem-level encryption uses gocryptfs.
+# NOTE (ADR-07): Filesystem-level encryption uses gocryptfs.
 # The choice is driven by a constrained design space:
 # 1. Encryption must cover all sensitive data including the metadata DB;
 #    doing it at the application or DB layer was rejected because:
