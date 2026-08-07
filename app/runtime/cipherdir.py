@@ -4,9 +4,7 @@
 import asyncio
 import logging
 import os
-import shutil
 import tempfile
-from functools import lru_cache
 
 from app.errors import InternalServerError
 from app.repositories.file import isdir, isfile, read
@@ -128,12 +126,12 @@ async def cipherdir_mount(
 
 async def cipherdir_unmount(mountpoint: str) -> None:
     """
-    Unmount a gocryptfs mountpoint using fusermount3 or
-    fusermount. Raises error if the unmount operation fails.
+    Unmount a gocryptfs mountpoint using fusermount3. The command is
+    provided by fuse3, which is installed in the application image.
+    Raises error if the unmount operation fails.
     """
-    unmount_command = _get_unmount_command()
     process = await asyncio.create_subprocess_exec(
-        unmount_command,
+        "fusermount3",
         "-uz",
         mountpoint,
         stdout=asyncio.subprocess.DEVNULL,
@@ -174,17 +172,3 @@ def _write_passfile(passphrase: str) -> str:
         except OSError:
             pass
         raise
-
-
-@lru_cache
-def _get_unmount_command() -> str:
-    """
-    Resolve the available unmount command for FUSE (fusermount3 or
-    fusermount). Returns the executable path or raises error if none
-    is found.
-    """
-    command = shutil.which("fusermount3") or shutil.which("fusermount")
-    if command is None:
-        log.error("msg=cipherdir_unmount_command_missing")
-        raise InternalServerError
-    return command

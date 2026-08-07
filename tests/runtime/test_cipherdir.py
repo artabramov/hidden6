@@ -396,10 +396,6 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.runtime.cipherdir._get_unmount_command",
-                return_value="fusermount3",
-            ),
-            patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
                 new_callable=AsyncMock,
                 return_value=mock_proc,
@@ -413,10 +409,6 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
         mock_proc.communicate = AsyncMock(return_value=(b"", b"no"))
 
         with (
-            patch(
-                "app.runtime.cipherdir._get_unmount_command",
-                return_value="fusermount3",
-            ),
             patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
                 new_callable=AsyncMock,
@@ -432,10 +424,6 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
         mock_proc.communicate = AsyncMock(return_value=(b"", b""))
 
         with (
-            patch(
-                "app.runtime.cipherdir._get_unmount_command",
-                return_value="fusermount3",
-            ),
             patch("app.runtime.cipherdir.log") as mock_log,
             patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
@@ -458,10 +446,6 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.runtime.cipherdir._get_unmount_command",
-                return_value="/bin/fusermount3",
-            ),
-            patch(
                 "app.runtime.cipherdir.asyncio.create_subprocess_exec",
                 new_callable=AsyncMock,
                 return_value=mock_proc,
@@ -470,54 +454,12 @@ class TestCipherdirUnmount(unittest.IsolatedAsyncioTestCase):
             await cd.cipherdir_unmount("/mnt")
 
         mock_exec.assert_awaited_once_with(
-            "/bin/fusermount3",
+            "fusermount3",
             "-uz",
             "/mnt",
             stdout=cd.asyncio.subprocess.DEVNULL,
             stderr=cd.asyncio.subprocess.PIPE,
         )
-
-
-class TestGetUnmountCommand(unittest.TestCase):
-    def tearDown(self):
-        cd._get_unmount_command.cache_clear()
-
-    def test_returns_first_which(self):
-        cd._get_unmount_command.cache_clear()
-        with patch(
-            "app.runtime.cipherdir.shutil.which",
-            side_effect=["/bin/fusermount3", None],
-        ):
-            self.assertEqual(cd._get_unmount_command(), "/bin/fusermount3")
-        cd._get_unmount_command.cache_clear()
-
-    def test_raises_when_no_unmount_binary(self):
-        cd._get_unmount_command.cache_clear()
-        with patch("app.runtime.cipherdir.shutil.which", return_value=None):
-            with self.assertRaises(InternalServerError):
-                cd._get_unmount_command()
-        cd._get_unmount_command.cache_clear()
-
-    def test_returns_fusermount_when_fusermount3_missing(self):
-        cd._get_unmount_command.cache_clear()
-        with patch(
-            "app.runtime.cipherdir.shutil.which",
-            side_effect=[None, "/bin/fusermount"],
-        ):
-            self.assertEqual(cd._get_unmount_command(), "/bin/fusermount")
-
-    def test_uses_cache(self):
-        cd._get_unmount_command.cache_clear()
-        with patch(
-            "app.runtime.cipherdir.shutil.which",
-            side_effect=["/bin/fusermount3", None],
-        ) as mock_which:
-            first = cd._get_unmount_command()
-            second = cd._get_unmount_command()
-
-        self.assertEqual(first, "/bin/fusermount3")
-        self.assertEqual(second, "/bin/fusermount3")
-        self.assertEqual(mock_which.call_count, 1)
 
 
 class TestWritePassfile(unittest.TestCase):
