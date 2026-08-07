@@ -1,19 +1,19 @@
-# app/routers/gocryptfs_passphrase.py
+# app/routers/gocryptfs_reveal.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from fastapi import APIRouter, status
 
-from app.schemas.gocryptfs_passphrase import (
-    GocryptfsPassphraseRequest,
-    GocryptfsPassphraseResponse,
+from app.schemas.gocryptfs_reveal import (
+    GocryptfsRevealRequest,
+    GocryptfsRevealResponse,
 )
-from app.services.gocryptfs_passphrase import gocryptfs_passphrase
+from app.services.gocryptfs_reveal import gocryptfs_reveal
 
 router = APIRouter(tags=["gocryptfs"])
 
 
 @router.post(
-    "/gocryptfs/passphrase",
+    "/gocryptfs/reveal",
     responses={
         401: {
             "description": (
@@ -42,20 +42,23 @@ router = APIRouter(tags=["gocryptfs"])
             ),
         },
     },
-    response_model=GocryptfsPassphraseResponse,
+    response_model=GocryptfsRevealResponse,
     status_code=status.HTTP_200_OK,
     summary="Reveal gocryptfs passphrase.",
 )
-async def gocryptfs_passphrase_router(
-    data: GocryptfsPassphraseRequest,
-) -> GocryptfsPassphraseResponse:
+async def gocryptfs_reveal_router(
+    data: GocryptfsRevealRequest,
+) -> GocryptfsRevealResponse:
     """
     Decrypts the stored gocryptfs passphrase with the provided master
     password and returns it in the response body.
+
+    `GOCRYPTFS_REVEALED` — hook executed after the gocryptfs passphrase
+    is successfully revealed.
     """
-    passphrase = await gocryptfs_passphrase(
+    passphrase = await gocryptfs_reveal(
         master_password=data.master_password,
     )
-    return GocryptfsPassphraseResponse(
+    return GocryptfsRevealResponse(
         gocryptfs_passphrase=passphrase,
     )

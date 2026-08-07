@@ -1,17 +1,18 @@
-# tests/services/test_gocryptfs_passphrase.py
+# tests/services/test_gocryptfs_reveal.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.errors import ServiceUnavailableError, UnauthorizedError
+from app.hooks import Events
 from app.locks import LockType
-from app.services.gocryptfs_passphrase import gocryptfs_passphrase
+from app.services.gocryptfs_reveal import gocryptfs_reveal
 
 
-class TestGocryptfsPassphrase(unittest.IsolatedAsyncioTestCase):
+class TestGocryptfsReveal(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.log_patcher = patch("app.services.gocryptfs_passphrase.log")
+        self.log_patcher = patch("app.services.gocryptfs_reveal.log")
         self.log_patcher.start()
 
     def tearDown(self):
@@ -37,24 +38,28 @@ class TestGocryptfsPassphrase(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.gocryptfs_passphrase.get_config",
+                "app.services.gocryptfs_reveal.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.gocryptfs_passphrase.locks.lock_directory",
+                "app.services.gocryptfs_reveal.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ) as lock_mock,
             patch(
-                "app.services.gocryptfs_passphrase.is_cipherdir_created",
+                "app.services.gocryptfs_reveal.is_cipherdir_created",
                 new=AsyncMock(return_value=False),
             ) as created_mock,
             patch(
-                "app.services.gocryptfs_passphrase.isfile",
+                "app.services.gocryptfs_reveal.isfile",
                 new=AsyncMock(),
             ) as isfile_mock,
+            patch(
+                "app.services.gocryptfs_reveal.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
         ):
             with self.assertRaises(ServiceUnavailableError):
-                await gocryptfs_passphrase("master-password")
+                await gocryptfs_reveal("master-password")
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
@@ -62,105 +67,121 @@ class TestGocryptfsPassphrase(unittest.IsolatedAsyncioTestCase):
         )
         created_mock.assert_awaited_once_with(config.INSTALL_CIPHERDIR)
         isfile_mock.assert_not_awaited()
+        emit_mock.assert_not_awaited()
 
     async def test_raises_service_unavailable_when_passphrase_missing(self):
         config = self._build_config()
 
         with (
             patch(
-                "app.services.gocryptfs_passphrase.get_config",
+                "app.services.gocryptfs_reveal.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.gocryptfs_passphrase.locks.lock_directory",
+                "app.services.gocryptfs_reveal.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.is_cipherdir_created",
+                "app.services.gocryptfs_reveal.is_cipherdir_created",
                 new=AsyncMock(return_value=True),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.isfile",
+                "app.services.gocryptfs_reveal.isfile",
                 new=AsyncMock(return_value=False),
             ) as isfile_mock,
+            patch(
+                "app.services.gocryptfs_reveal.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
         ):
             with self.assertRaises(ServiceUnavailableError):
-                await gocryptfs_passphrase("master-password")
+                await gocryptfs_reveal("master-password")
 
         isfile_mock.assert_awaited_once_with(
             config.GOCRYPTFS_PASSPHRASE_PATH,
         )
+        emit_mock.assert_not_awaited()
 
     async def test_raises_unauthorized_when_master_password_incorrect(self):
         config = self._build_config()
 
         with (
             patch(
-                "app.services.gocryptfs_passphrase.get_config",
+                "app.services.gocryptfs_reveal.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.gocryptfs_passphrase.locks.lock_directory",
+                "app.services.gocryptfs_reveal.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.is_cipherdir_created",
+                "app.services.gocryptfs_reveal.is_cipherdir_created",
                 new=AsyncMock(return_value=True),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.isfile",
+                "app.services.gocryptfs_reveal.isfile",
                 new=AsyncMock(return_value=True),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.read",
+                "app.services.gocryptfs_reveal.read",
                 new=AsyncMock(return_value=b"encrypted"),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.decrypt_passphrase",
+                "app.services.gocryptfs_reveal.decrypt_passphrase",
                 side_effect=ValueError,
             ) as decrypt_mock,
+            patch(
+                "app.services.gocryptfs_reveal.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
         ):
             with self.assertRaises(UnauthorizedError):
-                await gocryptfs_passphrase("wrong-password")
+                await gocryptfs_reveal("wrong-password")
 
         decrypt_mock.assert_called_once_with(
             b"encrypted",
             b"wrong-password",
         )
+        emit_mock.assert_not_awaited()
 
-    async def test_returns_decrypted_passphrase(self):
+    async def test_returns_decrypted_passphrase_and_emits_hook(self):
         config = self._build_config()
 
         with (
             patch(
-                "app.services.gocryptfs_passphrase.get_config",
+                "app.services.gocryptfs_reveal.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.gocryptfs_passphrase.locks.lock_directory",
+                "app.services.gocryptfs_reveal.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.is_cipherdir_created",
+                "app.services.gocryptfs_reveal.is_cipherdir_created",
                 new=AsyncMock(return_value=True),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.isfile",
+                "app.services.gocryptfs_reveal.isfile",
                 new=AsyncMock(return_value=True),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.read",
+                "app.services.gocryptfs_reveal.read",
                 new=AsyncMock(return_value=b"encrypted"),
             ),
             patch(
-                "app.services.gocryptfs_passphrase.decrypt_passphrase",
+                "app.services.gocryptfs_reveal.decrypt_passphrase",
                 return_value=b"plain-passphrase",
             ) as decrypt_mock,
+            patch(
+                "app.services.gocryptfs_reveal.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
         ):
-            result = await gocryptfs_passphrase("master-password")
+            result = await gocryptfs_reveal("master-password")
 
         decrypt_mock.assert_called_once_with(
             b"encrypted",
             b"master-password",
         )
         self.assertEqual(result, "plain-passphrase")
+        emit_mock.assert_awaited_once_with(Events.GOCRYPTFS_REVEALED)

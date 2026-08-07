@@ -1,10 +1,10 @@
-# app/schemas/gocryptfs_passphrase.py
+# app/schemas/gocryptfs_reveal.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class GocryptfsPassphraseRequest(BaseModel):
+class GocryptfsRevealRequest(BaseModel):
     """
     Request schema for revealing the stored gocryptfs passphrase
     with the master password.
@@ -19,7 +19,7 @@ class GocryptfsPassphraseRequest(BaseModel):
     )
 
 
-class GocryptfsPassphraseResponse(BaseModel):
+class GocryptfsRevealResponse(BaseModel):
     """
     Response schema containing the decrypted gocryptfs passphrase.
     """
