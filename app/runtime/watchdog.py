@@ -34,26 +34,20 @@ async def run_watchdog() -> None:
 
     if not await isdir(config.INSTALL_SECRETS):
         log.warning("msg=watchdog_secrets_missing")
-        await _emergency_unmount()
+        await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
         log.info("msg=watchdog_unmount_completed")
         return
 
     if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
         log.warning("msg=watchdog_passphrase_missing")
-        await _emergency_unmount()
+        await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
         log.info("msg=watchdog_unmount_completed")
         return
 
     if not _is_application_running():
-        log.warning("msg=watchdog_application_stopped")
-        await _emergency_unmount()
+        log.warning("msg=watchdog_application_missing")
+        await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
         log.info("msg=watchdog_unmount_completed")
-
-
-async def _emergency_unmount() -> None:
-    """Perform a lazy unmount of the mountpoint."""
-    config = get_config()
-    await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
 
 
 def _is_application_running() -> bool:
