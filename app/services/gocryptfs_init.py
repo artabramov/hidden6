@@ -38,7 +38,7 @@ async def gocryptfs_init(master_password: str) -> None:
     ):
 
         if await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=%s", "gocryptfs_init:already_created")
+            log.warning("msg=%s", "gocryptfs_init:cihperdir_created")
             raise ResourceConflictError
 
         if await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):

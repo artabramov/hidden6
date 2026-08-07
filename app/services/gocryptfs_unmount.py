@@ -34,7 +34,7 @@ async def gocryptfs_unmount(
         LockType.WRITE,
     ):
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=%s", "gocryptfs_unmount:not_created")
+            log.warning("msg=%s", "gocryptfs_unmount:cipherdir_not_created")
             raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):

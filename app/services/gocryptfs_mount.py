@@ -43,7 +43,7 @@ async def gocryptfs_mount(master_password: str) -> None:
     ):
 
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=%s", "gocryptfs_mount:not_created")
+            log.warning("msg=%s", "gocryptfs_mount:cipherdir_not_created")
             raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
