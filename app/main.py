@@ -34,7 +34,7 @@ from app.routers.gocryptfs_init import router as gocryptfs_init_router
 from app.routers.gocryptfs_mount import router as gocryptfs_mount_router
 from app.routers.gocryptfs_unmount import router as gocryptfs_unmount_router
 from app.routers.gocryptfs_rotate import router as gocryptfs_rotate_router
-from app.routers.gocryptfs_passphrase import router as gocryptfs_passphrase_router
+from app.routers.gocryptfs_passphrase import router as gocryptfs_passphrase_router  # noqa: E501
 
 config = get_config()
 

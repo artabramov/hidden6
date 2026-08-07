@@ -9,6 +9,7 @@ from app.errors import (
     UnauthorizedError,
 )
 from app.locks import LockType, locks
+from app.hooks import Events, hooks
 from app.repositories.file import isfile, read
 from app.runtime.cipherdir import is_cipherdir_created
 from app.security.encryption import decrypt_passphrase
@@ -49,4 +50,6 @@ async def gocryptfs_passphrase(master_password: str) -> str:
             raise UnauthorizedError
 
         log.info("msg=gocryptfs_passphrase_completed")
+        await hooks.emit(Events.GOCRYPTFS_REVEALED)
+
         return passphrase.decode("utf-8")
