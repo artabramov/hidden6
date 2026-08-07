@@ -309,7 +309,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
         integrity_mock.assert_awaited_once_with(config.SQLITE_PATH)
         unmount_mock.assert_not_awaited()
         emit_mock.assert_awaited_once_with(
-            Events.GOCRYPTFS_MOUNT_COMPLETED,
+            Events.GOCRYPTFS_MOUNTED,
         )
 
     async def test_rolls_back_mount_when_integrity_check_fails(self):
@@ -449,10 +449,8 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
         unmount_mock.assert_awaited_once_with(config.INSTALL_MOUNTPOINT)
         emit_mock.assert_not_awaited()
         self.log_mock.exception.assert_any_call(
-            "msg=%s",
-            "gocryptfs_mount:failed",
+            "msg=gocryptfs_mount_failed",
         )
         self.log_mock.exception.assert_any_call(
-            "msg=%s",
-            "gocryptfs_mount:rollback_failed",
+            "msg=rollback_failed",
         )

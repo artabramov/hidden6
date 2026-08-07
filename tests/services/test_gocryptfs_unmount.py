@@ -292,7 +292,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
             mountpoint=config.INSTALL_MOUNTPOINT,
         )
         emit_mock.assert_awaited_once_with(
-            Events.GOCRYPTFS_UNMOUNT_COMPLETED,
+            Events.GOCRYPTFS_UNMOUNTED,
         )
 
     async def test_engine_dispose_called_before_cipherdir_unmount(self):

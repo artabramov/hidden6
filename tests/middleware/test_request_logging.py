@@ -38,13 +38,13 @@ class TestRequestLoggingMiddleware(unittest.IsolatedAsyncioTestCase):
         mock_log.exception.assert_not_called()
 
         start_call = mock_log.info.call_args_list[0]
-        self.assertIn("request:started", start_call[0][0])
+        self.assertIn("request_started", start_call[0][0])
         self.assertEqual(start_call[0][1], "GET")
         self.assertEqual(start_call[0][2], "http://x/y")
         self.assertEqual(start_call[0][3], "10.0.0.1")
 
         finish_call = mock_log.info.call_args_list[1]
-        self.assertIn("request:completed", finish_call[0][0])
+        self.assertIn("request_finished", finish_call[0][0])
         self.assertEqual(finish_call[0][1], 201)
         self.assertAlmostEqual(finish_call[0][2], 0.25)
 
@@ -85,4 +85,4 @@ class TestRequestLoggingMiddleware(unittest.IsolatedAsyncioTestCase):
                 await request_logging_middleware(req, inner)
 
         mock_log.exception.assert_called_once()
-        self.assertIn("request:failed", mock_log.exception.call_args[0][0])
+        self.assertIn("request_failed", mock_log.exception.call_args[0][0])
