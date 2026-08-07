@@ -18,7 +18,7 @@ async def request_logging_middleware(request: Request, call_next):
     """
     client = request.client.host if request.client else None
     logger.info(
-        "msg=request:started method=%s url=%s client=%s",
+        "msg=request_started method=%s url=%s client=%s",
         request.method,
         request.url,
         client,
@@ -30,13 +30,13 @@ async def request_logging_middleware(request: Request, call_next):
         start_time = get_context_var("request_start_time")
         elapsed_time = time.perf_counter() - start_time
         logger.info(
-            "msg=request:completed status_code=%s elapsed_time=%.6f",
+            "msg=request_finished status_code=%s elapsed_time=%.6f",
             response.status_code,
             elapsed_time,
         )
 
     except Exception:
-        logger.exception("msg=request:failed")
+        logger.exception("msg=request_failed")
         raise
 
     return response

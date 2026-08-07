@@ -34,7 +34,6 @@ async def gocryptfs_mount(master_password: str) -> None:
     and initializing the database. If a post-mount step fails, the
     mount is rolled back.
     """
-    log.info("msg=%s", "gocryptfs_mount:started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -43,15 +42,15 @@ async def gocryptfs_mount(master_password: str) -> None:
     ):
 
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=%s", "gocryptfs_mount:cipherdir_not_created")
+            log.warning("msg=cipherdir_not_created")
             raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=%s", "gocryptfs_mount:passphrase_not_found")
+            log.warning("msg=passphrase_not_found")
             raise ServiceUnavailableError
 
         if await ismount(config.INSTALL_MOUNTPOINT):
-            log.warning("msg=%s", "gocryptfs_mount:already_mounted")
+            log.warning("msg=already_mounted")
             raise ResourceConflictError
 
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
@@ -62,7 +61,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             )
 
         except ValueError:
-            log.warning("msg=%s", "gocryptfs_mount:passphrase_invalid")
+            log.warning("msg=passphrase_invalid")
             raise UnauthorizedError
 
         if not await isdir(config.INSTALL_MOUNTPOINT):
@@ -91,16 +90,15 @@ async def gocryptfs_mount(master_password: str) -> None:
             await check_db_integrity(config.SQLITE_PATH)
 
         except Exception:
-            log.exception("msg=%s", "gocryptfs_mount:failed")
+            log.exception("msg=error_raised")
 
             try:
                 await cipherdir_unmount(config.INSTALL_MOUNTPOINT)
-                log.warning("msg=%s", "gocryptfs_mount:rollback_completed")
+                log.warning("msg=rollback_completed")
 
             except Exception:
-                log.exception("msg=%s", "gocryptfs_mount:rollback_failed")
+                log.exception("msg=rollback_failed")
 
             raise
 
-        log.info("msg=%s", "gocryptfs_mount:completed")
         await hooks.emit(Events.GOCRYPTFS_MOUNT_COMPLETED)
