@@ -26,13 +26,18 @@ _PASSFILE_DIR = "/dev/shm"
 async def is_cipherdir_created(cipherdir: str) -> bool:
     """
     Checks whether the given directory appears to be a valid gocryptfs
-    cipherdir by verifying the presence and readability of its config.
+    cipherdir by verifying the presence and readability of its config
+    and directory IV.
     """
     if not await isdir(cipherdir):
         return False
 
     conf_path = os.path.join(cipherdir, "gocryptfs.conf")
     if not await isfile(conf_path):
+        return False
+
+    diriv_path = os.path.join(cipherdir, "gocryptfs.diriv")
+    if not await isfile(diriv_path):
         return False
 
     try:

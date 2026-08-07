@@ -36,6 +36,23 @@ class TestIsCipherdirCreated(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(out)
 
+    async def test_false_when_diriv_missing(self):
+        with (
+            patch(
+                "app.runtime.cipherdir.isdir",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "app.runtime.cipherdir.isfile",
+                new_callable=AsyncMock,
+                side_effect=[True, False],
+            ),
+        ):
+            out = await cd.is_cipherdir_created("/c")
+
+        self.assertFalse(out)
+
     async def test_false_when_read_fails(self):
         with (
             patch(
@@ -80,7 +97,7 @@ class TestIsCipherdirCreated(unittest.IsolatedAsyncioTestCase):
 
         self.assertFalse(out)
 
-    async def test_true_when_conf_readable(self):
+    async def test_true_when_conf_and_diriv_present(self):
         with (
             patch(
                 "app.runtime.cipherdir.isdir",
@@ -91,7 +108,7 @@ class TestIsCipherdirCreated(unittest.IsolatedAsyncioTestCase):
                 "app.runtime.cipherdir.isfile",
                 new_callable=AsyncMock,
                 return_value=True,
-            ),
+            ) as isfile_mock,
             patch(
                 "app.runtime.cipherdir.read",
                 new_callable=AsyncMock,
@@ -101,6 +118,10 @@ class TestIsCipherdirCreated(unittest.IsolatedAsyncioTestCase):
             out = await cd.is_cipherdir_created("/c")
 
         self.assertTrue(out)
+        self.assertEqual(
+            [call.args[0] for call in isfile_mock.await_args_list],
+            ["/c/gocryptfs.conf", "/c/gocryptfs.diriv"],
+        )
 
 
 class TestCipherdirCreate(unittest.IsolatedAsyncioTestCase):
