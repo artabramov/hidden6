@@ -1,0 +1,52 @@
+# app/services/gocryptfs_passphrase.py
+# SPDX-License-Identifier: GPL-3.0-only
+
+import logging
+
+from app.config import get_config
+from app.errors import (
+    ServiceUnavailableError,
+    UnauthorizedError,
+)
+from app.locks import LockType, locks
+from app.repositories.file import isfile, read
+from app.runtime.cipherdir import is_cipherdir_created
+from app.security.encryption import decrypt_passphrase
+
+log = logging.getLogger(__name__)
+
+
+async def gocryptfs_passphrase(master_password: str) -> str:
+    """
+    Decrypt and return the stored gocryptfs passphrase using the
+    provided master password.
+    """
+    log.info("msg=gocryptfs_passphrase_started")
+    config = get_config()
+
+    async with locks.lock_directory(
+        config.INSTALL_SECRETS,
+        LockType.WRITE,
+    ):
+        if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
+            log.warning("msg=cipherdir_not_created")
+            raise ServiceUnavailableError
+
+        if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
+            log.warning("msg=passphrase_not_found")
+            raise ServiceUnavailableError
+
+        passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
+
+        try:
+            passphrase = decrypt_passphrase(
+                passphrase_encrypted,
+                master_password.encode("utf-8"),
+            )
+
+        except ValueError:
+            log.warning("msg=passphrase_invalid")
+            raise UnauthorizedError
+
+        log.info("msg=gocryptfs_passphrase_completed")
+        return passphrase.decode("utf-8")
