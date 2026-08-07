@@ -89,4 +89,4 @@ async def gocryptfs_init(master_password: str) -> None:
             raise
 
         log.info("msg=%s", "gocryptfs_init:completed")
-        await hooks.emit(Events.GOCRYPTFS_INIT_COMPLETED)
+        await hooks.emit(Events.GOCRYPTFS_INITED)

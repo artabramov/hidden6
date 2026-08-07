@@ -18,9 +18,9 @@ class Events:
     Hook event identifiers. Used exclusively as keys for hook
     registration and emission, not for logging.
     """
-    GOCRYPTFS_INIT_COMPLETED = "gocryptfs_init:completed"
-    GOCRYPTFS_MOUNT_COMPLETED = "gocryptfs_mount:completed"
-    GOCRYPTFS_UNMOUNT_COMPLETED = "gocryptfs_unmount:completed"
+    GOCRYPTFS_INITED = "gocryptfs_inited"
+    GOCRYPTFS_MOUNTED = "gocryptfs_mounted"
+    GOCRYPTFS_UNMOUNTED = "gocryptfs_unmounted"
     GOCRYPTFS_ROTATED = "gocryptfs_rotated"
 
 

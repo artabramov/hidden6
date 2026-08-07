@@ -103,4 +103,4 @@ async def gocryptfs_mount(master_password: str) -> None:
             raise
 
         log.info("msg=%s", "gocryptfs_mount:completed")
-        await hooks.emit(Events.GOCRYPTFS_MOUNT_COMPLETED)
+        await hooks.emit(Events.GOCRYPTFS_MOUNTED)

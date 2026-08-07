@@ -6,24 +6,24 @@ from __future__ import annotations
 from app.hooks import Events, HookManager
 
 
-async def init_gocryptfs(_: None) -> None:
+async def gocryptfs_inited(_: None) -> None:
     ...
 
 
-async def mount_gocryptfs(_: None) -> None:
+async def gocryptfs_mounted(_: None) -> None:
     ...
 
 
-async def unmount_gocryptfs(_: None) -> None:
+async def gocryptfs_unmounted(_: None) -> None:
     ...
 
 
-async def rotate_gocryptfs(_: None) -> None:
+async def gocryptfs_rotated(_: None) -> None:
     ...
 
 
 def register(hook_manager: HookManager) -> None:
-    hook_manager.on(Events.GOCRYPTFS_INIT_COMPLETED, init_gocryptfs)
-    hook_manager.on(Events.GOCRYPTFS_MOUNT_COMPLETED, mount_gocryptfs)
-    hook_manager.on(Events.GOCRYPTFS_UNMOUNT_COMPLETED, unmount_gocryptfs)
-    hook_manager.on(Events.GOCRYPTFS_ROTATED, rotate_gocryptfs)
+    hook_manager.on(Events.GOCRYPTFS_INITED, gocryptfs_inited)
+    hook_manager.on(Events.GOCRYPTFS_MOUNTED, gocryptfs_mounted)
+    hook_manager.on(Events.GOCRYPTFS_UNMOUNTED, gocryptfs_unmounted)
+    hook_manager.on(Events.GOCRYPTFS_ROTATED, gocryptfs_rotated)
