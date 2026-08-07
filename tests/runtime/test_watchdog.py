@@ -30,7 +30,7 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
@@ -56,13 +56,13 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_unmount.assert_awaited_once_with()
+        mock_unmount.assert_awaited_once_with("/mnt/h")
 
     async def test_passphrase_missing_triggers_unmount(self):
         mock_unmount = AsyncMock()
@@ -86,13 +86,13 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_unmount.assert_awaited_once_with()
+        mock_unmount.assert_awaited_once_with("/mnt/h")
 
     async def test_app_not_running_triggers_unmount(self):
         mock_unmount = AsyncMock()
@@ -120,13 +120,13 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_unmount.assert_awaited_once_with()
+        mock_unmount.assert_awaited_once_with("/mnt/h")
 
     async def test_all_ok_no_unmount(self):
         mock_unmount = AsyncMock()
@@ -154,7 +154,7 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=True,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
@@ -178,13 +178,15 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
         ):
             await wd.run_watchdog()
 
-        mock_path.assert_called_once_with(wd.WATCHDOG_HEARTBEAT_PATH)
+        mock_path.assert_called_once_with(
+            wd.GOCRYPTFS_WATCHDOG_HEARTBEAT_PATH,
+        )
         mock_heartbeat.touch.assert_called_once_with()
         mock_unmount.assert_not_awaited()
 
@@ -212,14 +214,14 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 "app.runtime.watchdog._is_application_running",
             ) as mock_running,
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
             await wd.run_watchdog()
 
-        mock_unmount.assert_awaited_once_with()
+        mock_unmount.assert_awaited_once_with("/mnt/h")
         mock_isfile.assert_not_awaited()
         mock_running.assert_not_called()
         mock_log.warning.assert_called_once_with(
@@ -254,14 +256,14 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 "app.runtime.watchdog._is_application_running",
             ) as mock_running,
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
             await wd.run_watchdog()
 
-        mock_unmount.assert_awaited_once_with()
+        mock_unmount.assert_awaited_once_with("/mnt/h")
         mock_running.assert_not_called()
         mock_log.warning.assert_called_once_with(
             "msg=watchdog_passphrase_missing",
@@ -296,16 +298,16 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
         ):
             await wd.run_watchdog()
 
-        mock_unmount.assert_awaited_once_with()
+        mock_unmount.assert_awaited_once_with("/mnt/h")
         mock_log.warning.assert_called_once_with(
-            "msg=watchdog_application_stopped",
+            "msg=watchdog_application_missing",
         )
         mock_log.info.assert_called_once_with(
             "msg=watchdog_unmount_completed",
@@ -337,7 +339,7 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
                 return_value=True,
             ) as mock_running,
             patch(
-                "app.runtime.watchdog._emergency_unmount",
+                "app.runtime.watchdog.cipherdir_unmount",
                 mock_unmount,
             ),
             patch("app.runtime.watchdog.log") as mock_log,
@@ -353,23 +355,6 @@ class TestRunWatchdog(unittest.IsolatedAsyncioTestCase):
         mock_unmount.assert_not_awaited()
         mock_log.warning.assert_not_called()
         mock_log.info.assert_not_called()
-
-
-class TestEmergencyUnmount(unittest.IsolatedAsyncioTestCase):
-
-    async def test_unmount_called_with_mountpoint(self):
-        mock_unmount = AsyncMock()
-
-        with (
-            patch("app.runtime.watchdog.get_config", return_value=_cfg()),
-            patch(
-                "app.runtime.watchdog.cipherdir_unmount",
-                mock_unmount,
-            ),
-        ):
-            await wd._emergency_unmount()
-
-        mock_unmount.assert_awaited_once_with("/mnt/h")
 
 
 class _FakeCmdline:
