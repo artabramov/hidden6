@@ -6,9 +6,9 @@ from fastapi.responses import Response
 
 from app.errors import (
     InternalServerError,
-    BadRequestError,
-    ResourceNotFoundError,
+    UnauthorizedError,
     ResourceConflictError,
+    ServiceUnavailableError,
 )
 
 
@@ -19,18 +19,11 @@ async def internal_server_error_handler(
     return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-async def bad_request_handler(
+async def unauthorized_handler(
     request: Request,
-    exc: BadRequestError,
+    exc: UnauthorizedError,
 ) -> Response:
-    return Response(status_code=status.HTTP_400_BAD_REQUEST)
-
-
-async def resource_not_found_handler(
-    request: Request,
-    exc: ResourceNotFoundError,
-) -> Response:
-    return Response(status_code=status.HTTP_404_NOT_FOUND)
+    return Response(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 async def resource_conflict_handler(
@@ -38,3 +31,10 @@ async def resource_conflict_handler(
     exc: ResourceConflictError,
 ) -> Response:
     return Response(status_code=status.HTTP_409_CONFLICT)
+
+
+async def service_unavailable_handler(
+    request: Request,
+    exc: ServiceUnavailableError,
+) -> Response:
+    return Response(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)

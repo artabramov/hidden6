@@ -13,16 +13,16 @@ from app.log import init_logging
 
 from app.errors import (
     InternalServerError,
-    BadRequestError,
-    ResourceNotFoundError,
+    UnauthorizedError,
     ResourceConflictError,
+    ServiceUnavailableError,
 )
 
 from app.handlers import (
     internal_server_error_handler,
-    bad_request_handler,
-    resource_not_found_handler,
+    unauthorized_handler,
     resource_conflict_handler,
+    service_unavailable_handler,
 )
 
 from app.middleware.cors_setup import cors_setup_middleware
@@ -73,6 +73,6 @@ app.include_router(gocryptfs_mount_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_unmount_router, prefix=config.API_PREFIX)
 
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
-app.add_exception_handler(BadRequestError, bad_request_handler)
-app.add_exception_handler(ResourceNotFoundError, resource_not_found_handler)
+app.add_exception_handler(UnauthorizedError, unauthorized_handler)
 app.add_exception_handler(ResourceConflictError, resource_conflict_handler)
+app.add_exception_handler(ServiceUnavailableError, service_unavailable_handler)

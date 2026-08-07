@@ -12,26 +12,36 @@ router = APIRouter(tags=["gocryptfs"])
 @router.post(
     "/gocryptfs/unmount",
     responses={
-        400: {
+        401: {
             "description": (
-                "Master password is invalid or encrypted passphrase "
-                "cannot be decrypted."
-            ),
-        },
-        404: {
-            "description": (
-                "Cipherdir is not initialized or encrypted passphrase "
-                "file is missing."
+                "Master password is incorrect or the gocryptfs "
+                "passphrase cannot be decrypted with it."
             ),
         },
         409: {
             "description": (
-                "Cipherdir is not mounted."
+                "The gocryptfs cipherdir is not mounted. "
+                "The requested operation is unnecessary."
             ),
         },
         422: {
             "description": (
-                "Request body failed basic Pydantic validation."
+                "Request body failed basic Pydantic validation. "
+                "This includes type validation, field constraints, "
+                "and custom validators."
+            ),
+        },
+        500: {
+            "description": (
+                "An unexpected internal error occurred while handling "
+                "the request. The operation could not be completed."
+            ),
+        },
+        503: {
+            "description": (
+                "The gocryptfs cipherdir is not initialized or "
+                "unavailable, or the required gocryptfs passphrase "
+                "is missing."
             ),
         },
     },

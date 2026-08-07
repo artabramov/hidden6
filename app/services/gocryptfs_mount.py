@@ -6,9 +6,9 @@ import logging
 from app.config import get_config
 from app.db.integrity import check_db_integrity
 from app.errors import (
-    BadRequestError,
+    UnauthorizedError,
     ResourceConflictError,
-    ResourceNotFoundError,
+    ServiceUnavailableError,
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -44,11 +44,11 @@ async def gocryptfs_mount(master_password: str) -> None:
 
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
             log.warning("msg=%s", "gocryptfs_mount:not_created")
-            raise ResourceNotFoundError
+            raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
             log.warning("msg=%s", "gocryptfs_mount:passphrase_not_found")
-            raise ResourceNotFoundError
+            raise ServiceUnavailableError
 
         if await ismount(config.INSTALL_MOUNTPOINT):
             log.warning("msg=%s", "gocryptfs_mount:already_mounted")
@@ -63,7 +63,7 @@ async def gocryptfs_mount(master_password: str) -> None:
 
         except ValueError:
             log.warning("msg=%s", "gocryptfs_mount:passphrase_invalid")
-            raise BadRequestError
+            raise UnauthorizedError
 
         if not await isdir(config.INSTALL_MOUNTPOINT):
             await mkdir(config.INSTALL_MOUNTPOINT)

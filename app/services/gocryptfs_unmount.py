@@ -5,9 +5,9 @@ import logging
 
 from app.config import get_config
 from app.errors import (
-    BadRequestError,
+    UnauthorizedError,
     ResourceConflictError,
-    ResourceNotFoundError,
+    ServiceUnavailableError,
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -35,11 +35,11 @@ async def gocryptfs_unmount(
     ):
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
             log.warning("msg=%s", "gocryptfs_unmount:not_created")
-            raise ResourceNotFoundError
+            raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
             log.warning("msg=%s", "gocryptfs_unmount:passphrase_not_found")
-            raise ResourceNotFoundError
+            raise ServiceUnavailableError
 
         if not await ismount(config.INSTALL_MOUNTPOINT):
             log.warning("msg=%s", "gocryptfs_unmount:already_unmounted")
@@ -54,7 +54,7 @@ async def gocryptfs_unmount(
 
         except ValueError:
             log.warning("msg=%s", "gocryptfs_unmount:passphrase_invalid")
-            raise BadRequestError
+            raise UnauthorizedError
 
         # NOTE (ADR-XX): Dispose connections before gocryptfs unmount.
         # SQLite writes may still be buffered through the FUSE layer

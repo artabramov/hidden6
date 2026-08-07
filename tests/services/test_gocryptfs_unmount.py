@@ -7,9 +7,10 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.errors import (
-    BadRequestError,
+    UnauthorizedError,
+    PreconditionFailedError,
     ResourceConflictError,
-    ResourceNotFoundError,
+    ServiceUnavailableError,
 )
 from app.hooks import Events
 from app.locks import LockType
@@ -49,7 +50,9 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
         config.GOCRYPTFS_PASSPHRASE_PATH = "/fake/secrets/passphrase.enc"
         return config
 
-    async def test_raises_not_found_when_cipherdir_uninitialized(self):
+    async def test_raises_precondition_failed_when_cipherdir_uninitialized(
+        self,
+    ):
         config = self._build_config()
 
         with (
@@ -78,7 +81,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            with self.assertRaises(ResourceNotFoundError):
+            with self.assertRaises(PreconditionFailedError):
                 await gocryptfs_unmount("master-password")
 
         lock_mock.assert_called_once_with(
@@ -91,7 +94,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
         emit_mock.assert_not_awaited()
         self.engine_mock.sync_engine.dispose.assert_not_called()
 
-    async def test_raises_not_found_when_passphrase_missing(self):
+    async def test_raises_service_unavailable_when_passphrase_missing(self):
         config = self._build_config()
 
         with (
@@ -124,7 +127,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            with self.assertRaises(ResourceNotFoundError):
+            with self.assertRaises(ServiceUnavailableError):
                 await gocryptfs_unmount("master-password")
 
         isfile_mock.assert_awaited_once_with(
@@ -179,7 +182,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
         unmount_mock.assert_not_awaited()
         emit_mock.assert_not_awaited()
 
-    async def test_raises_bad_request_when_master_password_incorrect(self):
+    async def test_raises_unauthorized_when_master_password_incorrect(self):
         config = self._build_config()
 
         with (
@@ -220,7 +223,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            with self.assertRaises(BadRequestError):
+            with self.assertRaises(UnauthorizedError):
                 await gocryptfs_unmount("wrong-password")
 
         read_mock.assert_awaited_once_with(

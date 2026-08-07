@@ -14,15 +14,22 @@ router = APIRouter(tags=["gocryptfs"])
     responses={
         409: {
             "description": (
-                "Cipherdir is already initialized or required secret "
-                "files already exist (gocryptfs passphrase or internal "
-                "application keys)."
+                "The gocryptfs cipherdir is already initialized or "
+                "required secrets already exist (gocryptfs passphrase "
+                "or internal application keys)."
             ),
         },
         422: {
             "description": (
-                "Request body failed basic Pydantic validation. This "
-                "includes field validation and custom validators."
+                "Request body failed basic Pydantic validation. "
+                "This includes type validation, field constraints, "
+                "and custom validators."
+            ),
+        },
+        500: {
+            "description": (
+                "An unexpected internal error occurred while handling "
+                "the request. The operation could not be completed."
             ),
         },
     },

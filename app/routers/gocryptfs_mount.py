@@ -12,26 +12,36 @@ router = APIRouter(tags=["gocryptfs"])
 @router.post(
     "/gocryptfs/mount",
     responses={
-        400: {
+        401: {
             "description": (
-                "Master password is invalid or encrypted passphrase "
-                "cannot be decrypted."
-            ),
-        },
-        404: {
-            "description": (
-                "Cipherdir is not initialized or gocryptfs passphrase "
-                "is not found."
+                "Master password is incorrect or the gocryptfs "
+                "passphrase cannot be decrypted with it."
             ),
         },
         409: {
             "description": (
-                "Cipherdir is already mounted."
+                "The gocryptfs cipherdir is already mounted. "
+                "The requested operation is unnecessary."
             ),
         },
         422: {
             "description": (
-                "Request body failed basic Pydantic validation."
+                "Request body failed basic Pydantic validation. "
+                "This includes type validation, field constraints, "
+                "and custom validators."
+            ),
+        },
+        500: {
+            "description": (
+                "An unexpected internal error occurred while handling "
+                "the request. The operation could not be completed."
+            ),
+        },
+        503: {
+            "description": (
+                "The gocryptfs cipherdir is not initialized or "
+                "unavailable, or the required gocryptfs passphrase "
+                "is missing."
             ),
         },
     },
@@ -44,7 +54,7 @@ async def gocryptfs_mount_router(
     """
     Mounts encrypted application storage. It decrypts the stored
     gocryptfs passphrase with the provided master password and uses
-    it to mount the cipherdir.
+    that passphrase to mount the cipherdir.
 
     `GOCRYPTFS_MOUNT_COMPLETED` — hook executed after the gocryptfs
     cipherdir is successfully mounted.
