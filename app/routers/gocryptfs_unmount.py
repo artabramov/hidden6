@@ -56,8 +56,8 @@ async def gocryptfs_unmount_router(
     password by decrypting the stored gocryptfs passphrase, then
     unmounts the cipherdir.
 
-    `GOCRYPTFS_UNMOUNT_COMPLETED` — hook executed after the gocryptfs
-    cipherdir is successfully unmounted.
+    `GOCRYPTFS_UNMOUNTED` — hook executed after the gocryptfs cipherdir
+    is successfully unmounted.
     """
     await gocryptfs_unmount(master_password=data.master_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

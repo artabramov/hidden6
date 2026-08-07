@@ -56,8 +56,8 @@ async def gocryptfs_mount_router(
     gocryptfs passphrase with the provided master password and uses
     that passphrase to mount the cipherdir.
 
-    `GOCRYPTFS_MOUNT_COMPLETED` — hook executed after the gocryptfs
-    cipherdir is successfully mounted.
+    `GOCRYPTFS_MOUNTED` — hook executed after the gocryptfs cipherdir
+    is successfully mounted.
     """
     await gocryptfs_mount(master_password=data.master_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
