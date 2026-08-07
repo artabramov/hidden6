@@ -18,7 +18,12 @@ async def unmount_gocryptfs(_: None) -> None:
     ...
 
 
+async def rotate_gocryptfs(_: None) -> None:
+    ...
+
+
 def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_INIT_COMPLETED, init_gocryptfs)
     hook_manager.on(Events.GOCRYPTFS_MOUNT_COMPLETED, mount_gocryptfs)
     hook_manager.on(Events.GOCRYPTFS_UNMOUNT_COMPLETED, unmount_gocryptfs)
+    hook_manager.on(Events.GOCRYPTFS_ROTATED, rotate_gocryptfs)

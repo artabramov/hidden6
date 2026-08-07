@@ -21,6 +21,7 @@ class Events:
     GOCRYPTFS_INIT_COMPLETED = "gocryptfs_init:completed"
     GOCRYPTFS_MOUNT_COMPLETED = "gocryptfs_mount:completed"
     GOCRYPTFS_UNMOUNT_COMPLETED = "gocryptfs_unmount:completed"
+    GOCRYPTFS_ROTATED = "gocryptfs_rotated"
 
 
 class HookManager:

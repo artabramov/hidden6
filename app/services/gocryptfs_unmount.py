@@ -46,6 +46,7 @@ async def gocryptfs_unmount(
             raise ResourceConflictError
 
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
+
         try:
             decrypt_passphrase(
                 passphrase_encrypted,

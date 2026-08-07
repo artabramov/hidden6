@@ -1,14 +1,12 @@
-# app/services/gocryptfs_password_change.py
+# app/services/gocryptfs_rotate.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
 
 from app.config import get_config
-from app.constants import GOCRYPTFS_CIPHERDIR_LOCK_PATH, OBSCURED_VALUE
 from app.errors import (
-    ResourceNotFoundError,
-    TooManyRequestsError,
-    ValueInvalidError,
+    ServiceUnavailableError,
+    UnauthorizedError,
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -19,12 +17,12 @@ from app.security.encryption import decrypt_passphrase, encrypt_passphrase
 log = logging.getLogger(__name__)
 
 
-async def gocryptfs_password_change(
+async def gocryptfs_rotate(
     current_master_password: str,
     changed_master_password: str,
 ) -> None:
     """
-    Change the master password protecting the stored gocryptfs
+    Rotate the master password protecting the stored gocryptfs
     passphrase by decrypting it with the current password,
     re-encrypting it with the new password, and persisting it.
     """
@@ -36,27 +34,23 @@ async def gocryptfs_password_change(
     ):
         if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
             log.warning("msg=cipherdir_not_created")
-            raise ResourceNotFoundError
+            raise ServiceUnavailableError
 
         if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
             log.warning("msg=passphrase_not_found")
-            raise ResourceNotFoundError
+            raise ServiceUnavailableError
 
-        passphrase_encrypted = await read(
-            config.GOCRYPTFS_PASSPHRASE_ENCRYPTED_PATH,
-        )
+        passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
 
         try:
             passphrase = decrypt_passphrase(
                 passphrase_encrypted,
                 current_master_password.encode("utf-8"),
             )
+
         except ValueError:
-            log.warning("event=%s", E.CIPHERDIR_PASSWORD_CHANGE_PASSPHRASE_INVALID)  # noqa: E501
-            raise ValueInvalidError(
-                field="current_master_password",
-                input_value=OBSCURED_VALUE,
-            )
+            log.warning("msg=passphrase_invalid")
+            raise UnauthorizedError
 
         passphrase_encrypted_changed = encrypt_passphrase(
             passphrase,
@@ -64,9 +58,9 @@ async def gocryptfs_password_change(
         )
 
         await write(
-            config.GOCRYPTFS_PASSPHRASE_ENCRYPTED_PATH,
+            config.GOCRYPTFS_PASSPHRASE_PATH,
             passphrase_encrypted_changed,
         )
 
-        log.info("event=%s", E.CIPHERDIR_PASSWORD_CHANGE_COMPLETED)
-        await hooks.emit(E.CIPHERDIR_PASSWORD_CHANGE_COMPLETED)
+        log.info("msg=gocryptfs_password_changed")
+        await hooks.emit(Events.GOCRYPTFS_ROTATED)

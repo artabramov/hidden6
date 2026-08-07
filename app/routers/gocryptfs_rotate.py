@@ -1,27 +1,21 @@
-# app/routers/gocryptfs_unmount.py
+# app/routers/gocryptfs_rotate.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from fastapi import APIRouter, Response, status
 
-from app.schemas.gocryptfs_unmount import GocryptfsUnmountRequest
-from app.services.gocryptfs_unmount import gocryptfs_unmount
+from app.schemas.gocryptfs_rotate import GocryptfsRotateRequest
+from app.services.gocryptfs_rotate import gocryptfs_rotate
 
 router = APIRouter(tags=["gocryptfs"])
 
 
-@router.post(
-    "/gocryptfs/unmount",
+@router.patch(
+    "/gocryptgs/rotate",
     responses={
         401: {
             "description": (
                 "Master password is incorrect or the gocryptfs "
                 "passphrase cannot be decrypted with it."
-            ),
-        },
-        409: {
-            "description": (
-                "The gocryptfs cipherdir is not mounted. "
-                "The requested operation is unnecessary."
             ),
         },
         422: {
@@ -46,18 +40,21 @@ router = APIRouter(tags=["gocryptfs"])
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Unmount gocryptfs cipherdir.",
+    summary="Rotate master password.",
 )
-async def gocryptfs_unmount_router(
-    data: GocryptfsUnmountRequest,
+async def change_cipherdir_password_router(
+    data: GocryptfsRotateRequest,
 ) -> Response:
     """
-    Unmounts encrypted application storage. It verifies the master
-    password by decrypting the stored gocryptfs passphrase, then
-    unmounts the cipherdir.
+    Rotates the master password that protects the stored gocryptfs
+    passphrase. It decrypts the passphrase with the current password
+    and encrypts it again with the new password.
 
-    `GOCRYPTFS_UNMOUNT_COMPLETED` — hook executed after the gocryptfs
-    cipherdir is successfully unmounted.
+    `GOCRYPTFS_ROTATED` — hook executed after the master password "
+    "is successfully rotated.
     """
-    await gocryptfs_unmount(master_password=data.master_password)
+    await gocryptfs_rotate(
+        current_master_password=data.current_master_password,
+        changed_master_password=data.changed_master_password,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -46,7 +46,7 @@ router = APIRouter(tags=["gocryptfs"])
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Mount gocryptfs cipherdir",
+    summary="Mount gocryptfs cipherdir.",
 )
 async def gocryptfs_mount_router(
     data: GocryptfsMountRequest,

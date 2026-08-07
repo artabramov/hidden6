@@ -54,6 +54,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             raise ResourceConflictError
 
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
+
         try:
             passphrase_bytes = decrypt_passphrase(
                 passphrase_encrypted,
@@ -101,4 +102,5 @@ async def gocryptfs_mount(master_password: str) -> None:
 
             raise
 
+        log.info("msg=%s", "gocryptfs_mount:completed")
         await hooks.emit(Events.GOCRYPTFS_MOUNT_COMPLETED)
