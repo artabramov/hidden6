@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.errors import (
     UnauthorizedError,
-    PreconditionFailedError,
     ResourceConflictError,
     ServiceUnavailableError,
 )
@@ -50,7 +49,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
         config.GOCRYPTFS_PASSPHRASE_PATH = "/fake/secrets/passphrase.enc"
         return config
 
-    async def test_raises_precondition_failed_when_cipherdir_uninitialized(
+    async def test_raises_service_unavailable_when_cipherdir_uninitialized(
         self,
     ):
         config = self._build_config()
@@ -81,7 +80,7 @@ class TestGocryptfsUnmount(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            with self.assertRaises(PreconditionFailedError):
+            with self.assertRaises(ServiceUnavailableError):
                 await gocryptfs_unmount("master-password")
 
         lock_mock.assert_called_once_with(
