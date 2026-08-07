@@ -13,7 +13,8 @@ ADR-06: Filesystem-level encryption uses gocryptfs.
 ADR-07: Passphrase is provided using a temporary file in tmpfs.
 ADR-08: Cipherdir initialization uses best-effort rollback.
 ADR-09: API errors are status-only recovery classes.
-ADR-10: Watchdog performs cipherdir unmount with a grace period.
+ADR-10: Watchdog runs as a background sleep-loop.
+ADR-11: Watchdog performs cipherdir unmount with a grace period.
 
 ADR-XX: Request context is a per-task key-value store.
 ADR-XX: X-Request-ID is accepted for request correlation.

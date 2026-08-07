@@ -16,7 +16,7 @@ from app.runtime.cipherdir import cipherdir_unmount
 
 log = logging.getLogger(__name__)
 
-# NOTE (ADR-10): Watchdog performs cipherdir unmount with a grace period.
+# NOTE (ADR-11): Watchdog performs cipherdir unmount with a grace period.
 # The mountpoint is detached using the -z flag, preventing new access
 # while existing file descriptors may continue to operate. Requests
 # exceeding the grace period may fail with HTTP 500. Full handling of
