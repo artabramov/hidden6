@@ -31,6 +31,7 @@ class Config(BaseSettings):
     UVICORN_HOST: str
     UVICORN_PORT: int
     WATCHDOG_INTERVAL_SECONDS: int
+    WATCHDOG_LIVENESS_SECONDS: int
     API_PREFIX: str
     LOG_LEVEL: str
     LOG_FORMAT: str

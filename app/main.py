@@ -35,6 +35,7 @@ from app.routers.gocryptfs_mount import router as gocryptfs_mount_router
 from app.routers.gocryptfs_unmount import router as gocryptfs_unmount_router
 from app.routers.gocryptfs_rotate import router as gocryptfs_rotate_router
 from app.routers.gocryptfs_reveal import router as gocryptfs_reveal_router
+from app.routers.gocryptfs_health import router as gocryptfs_health_router
 
 config = get_config()
 
@@ -75,6 +76,7 @@ app.include_router(gocryptfs_mount_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_unmount_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_rotate_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_reveal_router, prefix=config.API_PREFIX)
+app.include_router(gocryptfs_health_router, prefix=config.API_PREFIX)
 
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)

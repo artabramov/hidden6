@@ -28,7 +28,8 @@ def build_default_config_values() -> dict[str, object]:
         "SQLITE_BUSY_TIMEOUT": 5000,
         "SQLITE_TEMP_STORE": "MEMORY",
         "SQLITE_FILENAME": "hidden.db",
-        "GOCRYPTFS_WATCHDOG_INTERVAL_SECONDS": 60,
+        "WATCHDOG_INTERVAL_SECONDS": 60,
+        "WATCHDOG_LIVENESS_SECONDS": 120,
     }
 
 
