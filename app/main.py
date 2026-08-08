@@ -36,6 +36,7 @@ from app.routers.gocryptfs_unmount import router as gocryptfs_unmount_router
 from app.routers.gocryptfs_rotate import router as gocryptfs_rotate_router
 from app.routers.gocryptfs_reveal import router as gocryptfs_reveal_router
 from app.routers.gocryptfs_health import router as gocryptfs_health_router
+from app.routers.user_root import router as user_root_router
 
 config = get_config()
 
@@ -43,6 +44,8 @@ config = get_config()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_logging()
+    from app.db.engine import load_all_models  # noqa: PLC0415
+    load_all_models()
     hooks.load_extensions()
     yield
 
@@ -77,6 +80,7 @@ app.include_router(gocryptfs_unmount_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_rotate_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_reveal_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_health_router, prefix=config.API_PREFIX)
+app.include_router(user_root_router, prefix=config.API_PREFIX)
 
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)

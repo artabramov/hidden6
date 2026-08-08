@@ -23,6 +23,7 @@ class Events:
     GOCRYPTFS_UNMOUNTED = "gocryptfs_unmounted"
     GOCRYPTFS_ROTATED = "gocryptfs_rotated"
     GOCRYPTFS_REVEALED = "gocryptfs_revealed"
+    USER_ROOT_CREATED = "user_root_created"
 
 
 class HookManager:
