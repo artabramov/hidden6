@@ -56,6 +56,13 @@ def set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
     cursor.close()
 
 
+# NOTE (ADR-15): SQLite ORM relationships do not use implicit loading.
+# SQLAlchemy relationships use lazy="raise" instead of selectin or
+# joined. Related rows are queried only when needed, avoiding extra
+# SQLite queries in the single-worker runtime. Accidental attribute
+# access fails fast instead of issuing a hidden query (or raising
+# MissingGreenlet under AsyncSession).
+
 def load_all_models() -> None:
     """
     Import all ORM models so SQLAlchemy can resolve relationships.

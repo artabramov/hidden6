@@ -4,8 +4,8 @@
 import unittest
 
 from sqlalchemy import create_engine, event, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from sqlalchemy.orm import Session, selectinload
 
 from tests.helpers import set_minimal_app_config_env
 
@@ -86,12 +86,35 @@ class TestUserModel(unittest.TestCase):
         )
         self.session.add_all([key, policy])
         self.session.commit()
-        self.session.refresh(user)
 
-        self.assertEqual(len(user.user_keys), 1)
-        self.assertEqual(len(user.user_policies), 1)
-        self.assertEqual(user.user_keys[0].access_key_id, "AKIAEXAMPLE000001")
-        self.assertEqual(user.user_policies[0].policy_name, "readonly")
+        loaded = self.session.scalar(
+            select(User)
+            .where(User.id == user.id)
+            .options(
+                selectinload(User.user_keys),
+                selectinload(User.user_policies),
+            ),
+        )
+
+        self.assertEqual(len(loaded.user_keys), 1)
+        self.assertEqual(len(loaded.user_policies), 1)
+        self.assertEqual(loaded.user_keys[0].access_key_id, "AKIAEXAMPLE000001")
+        self.assertEqual(loaded.user_policies[0].policy_name, "readonly")
+
+    def test_relationship_access_without_eager_load_raises(self):
+        user = User(username="alice")
+        self.session.add(user)
+        self.session.commit()
+
+        loaded = self.session.scalar(
+            select(User).where(User.username == "alice"),
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            _ = loaded.user_keys
+
+        with self.assertRaises(InvalidRequestError):
+            _ = loaded.user_policies
 
     def test_select_by_username(self):
         self.session.add(User(username="bob"))

@@ -62,11 +62,13 @@ class User(Base):
     user_keys: Mapped[list["UserKey"]] = relationship(  # noqa: F821
         back_populates="user_key_user",
         passive_deletes=True,
+        lazy="raise",
     )
 
     user_policies: Mapped[list["UserPolicy"]] = relationship(  # noqa: F821
         back_populates="user_policy_user",
         passive_deletes=True,
+        lazy="raise",
     )
 
     __table_args__ = (
