@@ -17,3 +17,4 @@ ADR-10: Watchdog performs an immediate emergency unmount.
 ADR-11: X-Request-ID is accepted for request correlation.
 ADR-12: Request context is a per-task key-value store.
 ADR-13: SQLite is required for the gocryptfs-based stack.
+ADR-14: SQLite database lives on the gocryptfs mountpoint.
