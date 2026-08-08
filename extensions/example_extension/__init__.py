@@ -2,15 +2,12 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 from app.db.engine import SessionLocal
 from app.hooks import Events, HookManager
 from app.repositories.orm import ORMRepository
-
-if TYPE_CHECKING:
-    from app.models.user import User
-    from app.models.user_key import UserKey
+from app.models.user import User
+from app.models.user_key import UserKey
 
 
 async def gocryptfs_inited(_: None) -> None:
