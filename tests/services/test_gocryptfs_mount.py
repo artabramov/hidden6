@@ -4,14 +4,19 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.errors import (
+from tests.helpers import set_minimal_app_config_env
+
+
+set_minimal_app_config_env()
+
+from app.errors import (  # noqa: E402
     UnauthorizedError,
     ResourceConflictError,
     ServiceUnavailableError,
 )
-from app.hooks import Events
-from app.locks import LockType
-from app.services.gocryptfs_mount import gocryptfs_mount
+from app.hooks import Events  # noqa: E402
+from app.locks import LockType  # noqa: E402
+from app.services.gocryptfs_mount import gocryptfs_mount  # noqa: E402
 
 
 class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
@@ -281,6 +286,10 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as unmount_mock,
             patch(
+                "app.services.gocryptfs_mount.create_all_tables",
+                new=AsyncMock(),
+            ) as create_all_mock,
+            patch(
                 "app.services.gocryptfs_mount.check_db_integrity",
                 new=AsyncMock(),
             ) as integrity_mock,
@@ -306,6 +315,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
         mkdir_mock.assert_any_await(config.MOUNTPOINT_VERSIONS_DIR)
         mkdir_mock.assert_any_await(config.MOUNTPOINT_TMP_DIR)
         self.assertEqual(mkdir_mock.await_count, 5)
+        create_all_mock.assert_awaited_once_with()
         integrity_mock.assert_awaited_once_with(config.SQLITE_PATH)
         unmount_mock.assert_not_awaited()
         emit_mock.assert_awaited_once_with(
@@ -362,6 +372,10 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as unmount_mock,
             patch(
+                "app.services.gocryptfs_mount.create_all_tables",
+                new=AsyncMock(),
+            ),
+            patch(
                 "app.services.gocryptfs_mount.check_db_integrity",
                 new=AsyncMock(
                     side_effect=RuntimeError(
@@ -379,6 +393,77 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("integrity check failed", str(cm.exception))
         mount_mock.assert_awaited_once()
+        unmount_mock.assert_awaited_once_with(config.INSTALL_MOUNTPOINT)
+        emit_mock.assert_not_awaited()
+
+    async def test_rolls_back_mount_when_create_all_tables_fails(self):
+        config = self._build_config()
+        isdir_mock = AsyncMock(return_value=True)
+
+        with (
+            patch(
+                "app.services.gocryptfs_mount.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.gocryptfs_mount.locks.lock_directory",
+                return_value=self._build_lock_context(),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.is_cipherdir_created",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.isfile",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.ismount",
+                new=AsyncMock(return_value=False),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.read",
+                new=AsyncMock(return_value=b"encrypted-passphrase"),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.isdir",
+                new=isdir_mock,
+            ),
+            patch(
+                "app.services.gocryptfs_mount.mkdir",
+                new=AsyncMock(),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.decrypt_passphrase",
+                return_value=b"decrypted-passphrase",
+            ),
+            patch(
+                "app.services.gocryptfs_mount.cipherdir_mount",
+                new=AsyncMock(),
+            ) as mount_mock,
+            patch(
+                "app.services.gocryptfs_mount.cipherdir_unmount",
+                new=AsyncMock(),
+            ) as unmount_mock,
+            patch(
+                "app.services.gocryptfs_mount.create_all_tables",
+                new=AsyncMock(side_effect=RuntimeError("create_all failed")),
+            ),
+            patch(
+                "app.services.gocryptfs_mount.check_db_integrity",
+                new=AsyncMock(),
+            ) as integrity_mock,
+            patch(
+                "app.services.gocryptfs_mount.hooks.emit",
+                new=AsyncMock(),
+            ) as emit_mock,
+        ):
+            with self.assertRaises(RuntimeError) as cm:
+                await gocryptfs_mount("master-password")
+
+        self.assertEqual(cm.exception.args[0], "create_all failed")
+        mount_mock.assert_awaited_once()
+        integrity_mock.assert_not_awaited()
         unmount_mock.assert_awaited_once_with(config.INSTALL_MOUNTPOINT)
         emit_mock.assert_not_awaited()
 
@@ -431,6 +516,10 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 "app.services.gocryptfs_mount.cipherdir_unmount",
                 new=AsyncMock(side_effect=OSError("unmount failed")),
             ) as unmount_mock,
+            patch(
+                "app.services.gocryptfs_mount.create_all_tables",
+                new=AsyncMock(),
+            ),
             patch(
                 "app.services.gocryptfs_mount.check_db_integrity",
                 new=AsyncMock(

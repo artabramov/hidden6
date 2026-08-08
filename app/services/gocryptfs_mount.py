@@ -5,6 +5,7 @@ import logging
 
 from app.config import get_config
 from app.db.integrity import check_db_integrity
+from app.db.schema import create_all_tables
 from app.errors import (
     UnauthorizedError,
     ResourceConflictError,
@@ -31,8 +32,8 @@ async def gocryptfs_mount(master_password: str) -> None:
     Mount the encrypted storage by decrypting the stored passphrase
     with the master password, mounting the gocryptfs filesystem,
     ensuring mountpoint directories exist (db, buckets, versions, tmp),
-    and initializing the database. If a post-mount step fails, the
-    mount is rolled back.
+    creating ORM tables if missing, and checking database integrity.
+    If a post-mount step fails, the mount is rolled back.
     """
     log.info("msg=gocryptfs_mount_started")
     config = get_config()
@@ -88,7 +89,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             if not await isdir(config.MOUNTPOINT_TMP_DIR):
                 await mkdir(config.MOUNTPOINT_TMP_DIR)
 
-            # await upgrade_db()
+            await create_all_tables()
             await check_db_integrity(config.SQLITE_PATH)
 
         except Exception:
