@@ -71,37 +71,43 @@ async def user_root(
             log.warning("msg=passphrase_invalid")
             raise UnauthorizedError
 
-    repo = ORMRepository(session)
+        repo = ORMRepository(session)
 
-    existing = await repo.select(User, is_root=True)
-    if existing is not None:
-        log.warning("msg=root_user_already_exists")
-        raise ResourceConflictError
+        existing = await repo.select(User, is_root=True)
+        if existing is not None:
+            log.warning("msg=root_user_already_exists")
+            raise ResourceConflictError
 
-    access_key_id = generate_random_string(USER_ACCESS_KEY_ID_LENGTH)
-    secret_access_key = generate_random_string(USER_SECRET_ACCESS_KEY_LENGTH)
+        access_key_id = generate_random_string(
+            USER_ACCESS_KEY_ID_LENGTH
+        )
+        secret_access_key = generate_random_string(
+            USER_SECRET_ACCESS_KEY_LENGTH,
+        )
 
-    user = User(
-        username=USER_ROOT_USERNAME,
-        is_root=True,
-        is_enabled=True,
-    )
-    await repo.insert(user)
+        user = User(
+            username=USER_ROOT_USERNAME,
+            is_root=True,
+            is_enabled=True,
+        )
+        await repo.insert(user)
 
-    key = UserKey(
-        user_id=user.id,
-        access_key_id=access_key_id,
-        secret_access_key_encrypted=encrypt_string(secret_access_key),
-        is_enabled=True,
-    )
-    await repo.insert(key, commit=True)
+        key = UserKey(
+            user_id=user.id,
+            access_key_id=access_key_id,
+            secret_access_key_encrypted=encrypt_string(secret_access_key),
+            is_enabled=True,
+        )
+        await repo.insert(key, commit=True)
 
-    log.info("msg=user_root_completed")
-    await hooks.emit(Events.USER_ROOT_CREATED, user)
-
-    return {
+    result = {
         "user_id": user.id,
         "username": user.username,
         "access_key_id": access_key_id,
         "secret_access_key": secret_access_key,
     }
+
+    log.info("msg=user_root_completed")
+    await hooks.emit(Events.USER_ROOT_CREATED, user)
+
+    return result
