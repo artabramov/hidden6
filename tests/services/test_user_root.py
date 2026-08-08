@@ -23,12 +23,12 @@ from app.errors import (  # noqa: E402
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.user_root import create_root_user  # noqa: E402
+from app.services.user_root import user_root  # noqa: E402
 
 load_all_models()
 
 
-class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
+class TestUserRoot(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.log_patcher = patch("app.services.user_root.log")
         self.log_patcher.start()
@@ -60,6 +60,18 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
                 return_value=config,
             ),
             patch(
+                "app.services.user_root.locks.lock_directory",
+                return_value=self._build_lock_context(),
+            ) as lock_mock,
+            patch(
+                "app.services.user_root.is_cipherdir_created",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
+                "app.services.user_root.isfile",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
                 "app.services.user_root.ismount",
                 new=AsyncMock(return_value=False),
             ) as ismount_mock,
@@ -69,8 +81,12 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             with self.assertRaises(ServiceUnavailableError):
-                await create_root_user("master-password", session)
+                await user_root("master-password", session)
 
+        lock_mock.assert_called_once_with(
+            config.INSTALL_SECRETS,
+            LockType.WRITE,
+        )
         ismount_mock.assert_awaited_once_with(config.INSTALL_MOUNTPOINT)
         emit_mock.assert_not_awaited()
 
@@ -84,10 +100,6 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
                 return_value=config,
             ),
             patch(
-                "app.services.user_root.ismount",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
                 "app.services.user_root.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ),
@@ -96,13 +108,23 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(return_value=False),
             ),
             patch(
+                "app.services.user_root.isfile",
+                new=AsyncMock(),
+            ) as isfile_mock,
+            patch(
+                "app.services.user_root.ismount",
+                new=AsyncMock(),
+            ) as ismount_mock,
+            patch(
                 "app.services.user_root.hooks.emit",
                 new=AsyncMock(),
             ) as emit_mock,
         ):
             with self.assertRaises(ServiceUnavailableError):
-                await create_root_user("master-password", session)
+                await user_root("master-password", session)
 
+        isfile_mock.assert_not_awaited()
+        ismount_mock.assert_not_awaited()
         emit_mock.assert_not_awaited()
 
     async def test_raises_unauthorized_when_password_invalid(self):
@@ -144,7 +166,7 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             with self.assertRaises(UnauthorizedError):
-                await create_root_user("wrong-password", session)
+                await user_root("wrong-password", session)
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
@@ -156,7 +178,9 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
         config = self._build_config()
         session = MagicMock()
         repo = MagicMock()
-        repo.select = AsyncMock(return_value=User(username="root", is_root=True))
+        repo.select = AsyncMock(
+            return_value=User(username="root", is_root=True),
+        )
 
         with (
             patch(
@@ -197,7 +221,7 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             with self.assertRaises(ResourceConflictError):
-                await create_root_user("master-password", session)
+                await user_root("master-password", session)
 
         repo.select.assert_awaited_once_with(User, is_root=True)
         emit_mock.assert_not_awaited()
@@ -250,7 +274,10 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
             ),
             patch(
                 "app.services.user_root.generate_random_string",
-                side_effect=["access-key-id-20chars", "secret-access-key-40-characters-xxxxxx"],
+                side_effect=[
+                    "access-key-id-20chars",
+                    "secret-access-key-40-characters-xxxxxx",
+                ],
             ) as random_mock,
             patch(
                 "app.services.user_root.encrypt_string",
@@ -261,17 +288,18 @@ class TestCreateRootUser(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            credentials = await create_root_user(
-                "master-password",
-                session,
-            )
+            result = await user_root("master-password", session)
 
-        self.assertEqual(credentials.user_id, 1)
-        self.assertEqual(credentials.username, USER_ROOT_USERNAME)
-        self.assertEqual(credentials.access_key_id, "access-key-id-20chars")
         self.assertEqual(
-            credentials.secret_access_key,
-            "secret-access-key-40-characters-xxxxxx",
+            result,
+            {
+                "user_id": 1,
+                "username": USER_ROOT_USERNAME,
+                "access_key_id": "access-key-id-20chars",
+                "secret_access_key": (
+                    "secret-access-key-40-characters-xxxxxx"
+                ),
+            },
         )
         random_mock.assert_any_call(USER_ACCESS_KEY_ID_LENGTH)
         random_mock.assert_any_call(USER_SECRET_ACCESS_KEY_LENGTH)

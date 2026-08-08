@@ -11,7 +11,6 @@ set_minimal_app_config_env()
 
 from app.routers.user_root import user_root_router  # noqa: E402
 from app.schemas.user_root import UserRootRequest  # noqa: E402
-from app.services.user_root import RootCredentials  # noqa: E402
 
 
 class TestUserRootRouter(unittest.IsolatedAsyncioTestCase):
@@ -19,17 +18,17 @@ class TestUserRootRouter(unittest.IsolatedAsyncioTestCase):
     async def test_returns_201_with_credentials(self):
         data = UserRootRequest(master_password="Master-passphrase1")
         session = MagicMock()
-        credentials = RootCredentials(
-            user_id=1,
-            username="root",
-            access_key_id="access-key-id-value",
-            secret_access_key="secret-access-key-value",
-        )
+        result = {
+            "user_id": 1,
+            "username": "root",
+            "access_key_id": "access-key-id-value",
+            "secret_access_key": "secret-access-key-value",
+        }
 
         with patch(
-            "app.routers.user_root.create_root_user",
+            "app.routers.user_root.user_root",
             new_callable=AsyncMock,
-            return_value=credentials,
+            return_value=result,
         ) as mock_service:
             response = await user_root_router(data=data, session=session)
 

@@ -2,14 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.constants import (
-    USER_ACCESS_KEY_ID_LENGTH,
     USER_ROOT_USERNAME,
+    USER_ACCESS_KEY_ID_LENGTH,
     USER_SECRET_ACCESS_KEY_LENGTH,
 )
 from app.errors import (
@@ -30,18 +29,18 @@ from app.security.randoms import generate_random_string
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
-class RootCredentials:
-    user_id: int
-    username: str
-    access_key_id: str
-    secret_access_key: str
-
-
-async def _assert_master_password(master_password: str) -> None:
+async def user_root(
+    master_password: str,
+    session: AsyncSession,
+) -> dict:
     """
-    Prove storage ownership by decrypting the stored gocryptfs passphrase.
+    Create the bootstrap root user and its first access key pair.
+
+    Requires a mounted store and a valid master password. Fails with
+    conflict if a root user already exists. Returns plaintext credentials
+    once; the secret is stored only as Fernet ciphertext.
     """
+    log.info("msg=user_root_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -56,6 +55,10 @@ async def _assert_master_password(master_password: str) -> None:
             log.warning("msg=passphrase_not_found")
             raise ServiceUnavailableError
 
+        if not await ismount(config.INSTALL_MOUNTPOINT):
+            log.warning("msg=cipherdir_not_mounted")
+            raise ServiceUnavailableError
+
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
 
         try:
@@ -63,30 +66,10 @@ async def _assert_master_password(master_password: str) -> None:
                 passphrase_encrypted,
                 master_password.encode("utf-8"),
             )
+
         except ValueError:
             log.warning("msg=passphrase_invalid")
             raise UnauthorizedError
-
-
-async def create_root_user(
-    master_password: str,
-    session: AsyncSession,
-) -> RootCredentials:
-    """
-    Create the bootstrap root user and its first access key pair.
-
-    Requires a mounted store and a valid master password. Fails with
-    conflict if a root user already exists. Returns plaintext credentials
-    once; the secret is stored only as Fernet ciphertext.
-    """
-    log.info("msg=user_root_create_started")
-    config = get_config()
-
-    if not await ismount(config.INSTALL_MOUNTPOINT):
-        log.warning("msg=cipherdir_not_mounted")
-        raise ServiceUnavailableError
-
-    await _assert_master_password(master_password)
 
     repo = ORMRepository(session)
 
@@ -103,7 +86,7 @@ async def create_root_user(
         is_root=True,
         is_enabled=True,
     )
-    await repo.insert(user, flush=True, commit=False)
+    await repo.insert(user)
 
     key = UserKey(
         user_id=user.id,
@@ -111,16 +94,14 @@ async def create_root_user(
         secret_access_key_encrypted=encrypt_string(secret_access_key),
         is_enabled=True,
     )
-    await repo.insert(key, flush=True, commit=True)
+    await repo.insert(key, commit=True)
 
-    credentials = RootCredentials(
-        user_id=user.id,
-        username=user.username,
-        access_key_id=access_key_id,
-        secret_access_key=secret_access_key,
-    )
-
-    log.info("msg=user_root_create_completed")
+    log.info("msg=user_root_completed")
     await hooks.emit(Events.USER_ROOT_CREATED, user)
 
-    return credentials
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "access_key_id": access_key_id,
+        "secret_access_key": secret_access_key,
+    }

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.session import get_session
 from app.schemas.user_root import UserRootRequest, UserRootResponse
-from app.services.user_root import create_root_user
+from app.services.user_root import user_root
 
 router = APIRouter(tags=["users"])
 
@@ -60,13 +60,8 @@ async def user_root_router(
 
     `USER_ROOT_CREATED` — hook executed after the root user is created.
     """
-    credentials = await create_root_user(
+    result = await user_root(
         master_password=data.master_password,
         session=session,
     )
-    return UserRootResponse(
-        user_id=credentials.user_id,
-        username=credentials.username,
-        access_key_id=credentials.access_key_id,
-        secret_access_key=credentials.secret_access_key,
-    )
+    return UserRootResponse(**result)
