@@ -3,9 +3,8 @@
 
 from typing import Any
 
-from sqlalchemy import Select, asc, desc, func, literal, select
+from sqlalchemy import Select, asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import aliased
 from sqlalchemy.sql import ColumnElement
 
 from app.db.base import Base
@@ -129,54 +128,6 @@ class ORMRepository:
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
-
-    async def select_parent_chain(
-        self,
-        obj: Base,
-        parent_id_attr: str = "parent_id",
-    ) -> tuple[Base, ...]:
-        """
-        Return parent chain for a self-referential ORM object using a
-        recursive CTE. Parents are returned as an ordered tuple:
-        (direct parent, ..., root). Returns empty tuple if no parent.
-        Performs a single query and does not rely on ORM relationships.
-        """
-        cls = type(obj)
-        parent_id = getattr(obj, parent_id_attr)
-
-        if parent_id is None:
-            return ()
-
-        id_column = getattr(cls, "id")
-
-        chain = (
-            select(
-                cls,
-                literal(1).label("depth"),
-            )
-            .where(id_column == parent_id)
-            .cte(name="parent_chain", recursive=True)
-        )
-
-        parent_alias = aliased(cls)
-
-        chain = chain.union_all(
-            select(
-                parent_alias,
-                (chain.c.depth + 1).label("depth"),
-            )
-            .where(getattr(parent_alias, "id") == getattr(
-                chain.c, parent_id_attr
-            ))
-        )
-
-        result = await self.session.execute(
-            select(cls)
-            .join(chain, id_column == chain.c.id)
-            .order_by(chain.c.depth)
-        )
-
-        return tuple(result.scalars().all())
 
     async def count_all(
         self,
