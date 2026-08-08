@@ -16,8 +16,7 @@ from app.db.base import Base
 
 class User(Base):
     """
-    S3 principal. Credentials live in users_keys; authorization
-    documents live in users_policies. Root is the bootstrap owner.
+    S3 user account with unique username, enabled state, and root flag.
     """
 
     __tablename__ = "users"
@@ -62,10 +61,12 @@ class User(Base):
 
     user_keys: Mapped[list["UserKey"]] = relationship(  # noqa: F821
         back_populates="user_key_user",
+        passive_deletes=True,
     )
 
     user_policies: Mapped[list["UserPolicy"]] = relationship(  # noqa: F821
         back_populates="user_policy_user",
+        passive_deletes=True,
     )
 
     __table_args__ = (

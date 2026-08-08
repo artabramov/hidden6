@@ -17,6 +17,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
+# TODO: Reserved for a later authZ stage. The initial identity
+# implementation does not create, attach, or enforce user policies.
+
 class UserPolicy(Base):
     """
     Identity policy attached to a user. policy_document stores an
