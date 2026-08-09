@@ -11,7 +11,9 @@ from app.context import reset_context, set_context_var
 
 # NOTE (ADR-14): X-Request-ID is accepted for request correlation.
 # If not provided, a value is generated and returned in the response.
-# It is included in all log records associated with the request.
+# This value is used as the request UUID and attached to all log entries
+# produced while processing the request, making the complete request
+# flow traceable.
 
 _REQUEST_UUID_MAX_LENGTH = 64
 _REQUEST_UUID_RE = re.compile(
