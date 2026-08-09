@@ -18,12 +18,12 @@ class Events:
     Hook event identifiers. Used exclusively as keys for hook
     registration and emission, not for logging.
     """
-    GOCRYPTFS_INITED = "gocryptfs_inited"
+    GOCRYPTFS_INITIALIZED = "gocryptfs_initialized"
     GOCRYPTFS_MOUNTED = "gocryptfs_mounted"
     GOCRYPTFS_UNMOUNTED = "gocryptfs_unmounted"
     GOCRYPTFS_ROTATED = "gocryptfs_rotated"
     GOCRYPTFS_REVEALED = "gocryptfs_revealed"
-    USERS_INITED = "users_inited"
+    USERS_INITIALIZED = "users_initialized"
 
 
 class HookManager:

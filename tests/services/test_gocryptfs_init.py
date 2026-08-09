@@ -267,7 +267,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
         )
         delete_mock.assert_not_awaited()
         emit_mock.assert_awaited_once_with(
-            Events.GOCRYPTFS_INITED,
+            Events.GOCRYPTFS_INITIALIZED,
         )
 
     async def test_cleans_up_when_first_write_fails(self):

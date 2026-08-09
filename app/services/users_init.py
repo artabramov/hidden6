@@ -109,6 +109,6 @@ async def users_init(
     }
 
     log.info("msg=users_init_completed")
-    await hooks.emit(Events.USERS_INITED, user)
+    await hooks.emit(Events.USERS_INITIALIZED, user)
 
     return result

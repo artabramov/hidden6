@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.user_key import UserKey
 
 
-async def gocryptfs_inited(_: None) -> None:
+async def gocryptfs_initialized(_: None) -> None:
     ...
 
 
@@ -30,7 +30,7 @@ async def gocryptfs_revealed(_: None) -> None:
     ...
 
 
-async def users_inited(user: User) -> None:
+async def users_initialized(user: User) -> None:
     async with SessionLocal() as session:
         repo = ORMRepository(session)
         keys = await repo.select_all(UserKey, user_id=user.id)
@@ -39,9 +39,9 @@ async def users_inited(user: User) -> None:
 
 
 def register(hook_manager: HookManager) -> None:
-    hook_manager.on(Events.GOCRYPTFS_INITED, gocryptfs_inited)
+    hook_manager.on(Events.GOCRYPTFS_INITIALIZED, gocryptfs_initialized)
     hook_manager.on(Events.GOCRYPTFS_MOUNTED, gocryptfs_mounted)
     hook_manager.on(Events.GOCRYPTFS_UNMOUNTED, gocryptfs_unmounted)
     hook_manager.on(Events.GOCRYPTFS_ROTATED, gocryptfs_rotated)
     hook_manager.on(Events.GOCRYPTFS_REVEALED, gocryptfs_revealed)
-    hook_manager.on(Events.USERS_INITED, users_inited)
+    hook_manager.on(Events.USERS_INITIALIZED, users_initialized)

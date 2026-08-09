@@ -20,10 +20,10 @@ class TestHookManagerEmit(unittest.IsolatedAsyncioTestCase):
         async def second(_obj):
             calls.append("second")
 
-        manager.on(Events.GOCRYPTFS_INITED, first)
-        manager.on(Events.GOCRYPTFS_INITED, second)
+        manager.on(Events.GOCRYPTFS_INITIALIZED, first)
+        manager.on(Events.GOCRYPTFS_INITIALIZED, second)
 
-        await manager.emit(Events.GOCRYPTFS_INITED)
+        await manager.emit(Events.GOCRYPTFS_INITIALIZED)
 
         self.assertEqual(calls, ["first", "second"])
 
@@ -34,17 +34,17 @@ class TestHookManagerEmit(unittest.IsolatedAsyncioTestCase):
         async def capture(obj):
             received.append(obj)
 
-        manager.on(Events.GOCRYPTFS_INITED, capture)
+        manager.on(Events.GOCRYPTFS_INITIALIZED, capture)
 
         payload = {"id": 1}
-        await manager.emit(Events.GOCRYPTFS_INITED, payload)
+        await manager.emit(Events.GOCRYPTFS_INITIALIZED, payload)
 
         self.assertEqual(received, [payload])
 
     async def test_no_hooks_is_noop(self):
         manager = HookManager()
 
-        await manager.emit(Events.GOCRYPTFS_INITED)
+        await manager.emit(Events.GOCRYPTFS_INITIALIZED)
 
     async def test_hook_failure_is_logged_and_does_not_stop_others(self):
         manager = HookManager()
@@ -56,17 +56,17 @@ class TestHookManagerEmit(unittest.IsolatedAsyncioTestCase):
         async def succeeding(_obj):
             calls.append("ok")
 
-        manager.on(Events.GOCRYPTFS_INITED, failing)
-        manager.on(Events.GOCRYPTFS_INITED, succeeding)
+        manager.on(Events.GOCRYPTFS_INITIALIZED, failing)
+        manager.on(Events.GOCRYPTFS_INITIALIZED, succeeding)
 
         with patch("app.hooks.log") as mock_log:
-            await manager.emit(Events.GOCRYPTFS_INITED)
+            await manager.emit(Events.GOCRYPTFS_INITIALIZED)
 
         self.assertEqual(calls, ["ok"])
         mock_log.exception.assert_called_once()
         fmt, event_arg, exc_arg = mock_log.exception.call_args.args
         self.assertEqual(fmt, "msg=hook_failed event=%s error=%s")
-        self.assertEqual(event_arg, Events.GOCRYPTFS_INITED)
+        self.assertEqual(event_arg, Events.GOCRYPTFS_INITIALIZED)
         self.assertIsInstance(exc_arg, RuntimeError)
         self.assertEqual(str(exc_arg), "boom")
 
@@ -87,7 +87,7 @@ class TestHookManagerLoadExtensions(unittest.TestCase):
 
         self.assertTrue(self.manager._loaded)
         self.assertEqual(
-            len(self.manager._hooks[Events.GOCRYPTFS_INITED]),
+            len(self.manager._hooks[Events.GOCRYPTFS_INITIALIZED]),
             1,
         )
 
@@ -176,6 +176,6 @@ class TestHookManagerLoadExtensions(unittest.TestCase):
             "extensions.broken_extension",
         )
         self.assertEqual(
-            self.manager._hooks[Events.GOCRYPTFS_INITED],
+            self.manager._hooks[Events.GOCRYPTFS_INITIALIZED],
             [],
         )

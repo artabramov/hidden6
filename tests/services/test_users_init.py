@@ -314,4 +314,4 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(key_obj.user_id, 1)
         self.assertEqual(key_obj.access_key_id, "access-key-id-20chars")
         self.assertEqual(key_obj.secret_access_key_encrypted, "enc-secret")
-        emit_mock.assert_awaited_once_with(Events.USERS_INITED, user_obj)
+        emit_mock.assert_awaited_once_with(Events.USERS_INITIALIZED, user_obj)

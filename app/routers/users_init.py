@@ -61,7 +61,7 @@ async def users_init_router(
     access key pair. Requires the master password and a mounted store.
     Returns plaintext credentials once; subsequent calls conflict.
 
-    `USERS_INITED` — hook executed after users initialization.
+    `USERS_INITIALIZED` — hook executed after users initialization.
     """
     result = await users_init(
         master_password=data.master_password,
