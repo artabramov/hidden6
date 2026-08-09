@@ -13,16 +13,14 @@ from app.constants import (
 )
 from app.errors import (
     ResourceConflictError,
-    ServiceUnavailableError,
     UnauthorizedError,
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.user import User
 from app.models.user_key import UserKey
-from app.repositories.file import isfile, ismount, read
+from app.repositories.file import read
 from app.repositories.orm import ORMRepository
-from app.runtime.cipherdir import is_cipherdir_created
 from app.security.encryption import decrypt_passphrase, encrypt_string
 from app.security.randoms import generate_random_string
 
@@ -34,12 +32,9 @@ async def users_init(
     session: AsyncSession,
 ) -> dict:
     """
-    Initialize the users subsystem: create the root user and its
-    first access key pair.
-
-    Requires a mounted store and a valid master password. Fails with
-    conflict if a root user already exists. Returns plaintext credentials
-    once; the secret is stored only as Fernet ciphertext.
+    Initialize the users subsystem: create the root user and its first
+    access key pair. Returns plaintext credentials once; the secret is
+    stored only as Fernet ciphertext.
     """
     log.info("msg=users_init_started")
     config = get_config()
@@ -48,18 +43,6 @@ async def users_init(
         config.INSTALL_SECRETS,
         LockType.WRITE,
     ):
-        if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=cipherdir_not_created")
-            raise ServiceUnavailableError
-
-        if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=passphrase_not_found")
-            raise ServiceUnavailableError
-
-        if not await ismount(config.INSTALL_MOUNTPOINT):
-            log.warning("msg=cipherdir_not_mounted")
-            raise ServiceUnavailableError
-
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
 
         try:

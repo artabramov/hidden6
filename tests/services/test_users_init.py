@@ -17,7 +17,6 @@ from app.constants import (  # noqa: E402
 )
 from app.errors import (  # noqa: E402
     ResourceConflictError,
-    ServiceUnavailableError,
     UnauthorizedError,
 )
 from app.hooks import Events  # noqa: E402
@@ -45,87 +44,8 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
     def _build_config(self):
         config = MagicMock()
         config.INSTALL_SECRETS = "/fake/secrets"
-        config.INSTALL_CIPHERDIR = "/fake/cipherdir"
-        config.INSTALL_MOUNTPOINT = "/fake/mountpoint"
         config.GOCRYPTFS_PASSPHRASE_PATH = "/fake/secrets/passphrase.enc"
         return config
-
-    async def test_raises_service_unavailable_when_not_mounted(self):
-        config = self._build_config()
-        session = MagicMock()
-
-        with (
-            patch(
-                "app.services.users_init.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.users_init.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ) as lock_mock,
-            patch(
-                "app.services.users_init.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.users_init.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.users_init.ismount",
-                new=AsyncMock(return_value=False),
-            ) as ismount_mock,
-            patch(
-                "app.services.users_init.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ServiceUnavailableError):
-                await users_init("master-password", session)
-
-        lock_mock.assert_called_once_with(
-            config.INSTALL_SECRETS,
-            LockType.WRITE,
-        )
-        ismount_mock.assert_awaited_once_with(config.INSTALL_MOUNTPOINT)
-        emit_mock.assert_not_awaited()
-
-    async def test_raises_service_unavailable_when_cipherdir_missing(self):
-        config = self._build_config()
-        session = MagicMock()
-
-        with (
-            patch(
-                "app.services.users_init.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.users_init.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.users_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
-                "app.services.users_init.isfile",
-                new=AsyncMock(),
-            ) as isfile_mock,
-            patch(
-                "app.services.users_init.ismount",
-                new=AsyncMock(),
-            ) as ismount_mock,
-            patch(
-                "app.services.users_init.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ServiceUnavailableError):
-                await users_init("master-password", session)
-
-        isfile_mock.assert_not_awaited()
-        ismount_mock.assert_not_awaited()
-        emit_mock.assert_not_awaited()
 
     async def test_raises_unauthorized_when_password_invalid(self):
         config = self._build_config()
@@ -137,21 +57,9 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
                 return_value=config,
             ),
             patch(
-                "app.services.users_init.ismount",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
                 "app.services.users_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ) as lock_mock,
-            patch(
-                "app.services.users_init.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.users_init.isfile",
-                new=AsyncMock(return_value=True),
-            ),
             patch(
                 "app.services.users_init.read",
                 new=AsyncMock(return_value=b"encrypted"),
@@ -188,20 +96,8 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
                 return_value=config,
             ),
             patch(
-                "app.services.users_init.ismount",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
                 "app.services.users_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.users_init.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.users_init.isfile",
-                new=AsyncMock(return_value=True),
             ),
             patch(
                 "app.services.users_init.read",
@@ -245,20 +141,8 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
                 return_value=config,
             ),
             patch(
-                "app.services.users_init.ismount",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
                 "app.services.users_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.users_init.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.users_init.isfile",
-                new=AsyncMock(return_value=True),
             ),
             patch(
                 "app.services.users_init.read",
