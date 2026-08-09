@@ -1,12 +1,12 @@
-# app/schemas/user_root.py
+# app/schemas/users_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class UserRootRequest(BaseModel):
+class UsersInitRequest(BaseModel):
     """
-    Request schema for one-time root user bootstrap.
+    Request schema for one-time users subsystem initialization.
     """
 
     model_config = ConfigDict(
@@ -20,9 +20,10 @@ class UserRootRequest(BaseModel):
     )
 
 
-class UserRootResponse(BaseModel):
+class UsersInitResponse(BaseModel):
     """
-    One-time root credentials. secret_access_key is returned only here.
+    Credentials from users initialization. secret_access_key is
+    returned only here.
     """
 
     model_config = ConfigDict(

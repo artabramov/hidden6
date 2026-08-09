@@ -1,4 +1,4 @@
-# app/services/user_root.py
+# app/services/users_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
@@ -29,18 +29,19 @@ from app.security.randoms import generate_random_string
 log = logging.getLogger(__name__)
 
 
-async def user_root(
+async def users_init(
     master_password: str,
     session: AsyncSession,
 ) -> dict:
     """
-    Create the bootstrap root user and its first access key pair.
+    Initialize the users subsystem: create the root user and its
+    first access key pair.
 
     Requires a mounted store and a valid master password. Fails with
     conflict if a root user already exists. Returns plaintext credentials
     once; the secret is stored only as Fernet ciphertext.
     """
-    log.info("msg=user_root_started")
+    log.info("msg=users_init_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -107,7 +108,7 @@ async def user_root(
         "secret_access_key": secret_access_key,
     }
 
-    log.info("msg=user_root_completed")
-    await hooks.emit(Events.USER_ROOT_CREATED, user)
+    log.info("msg=users_init_completed")
+    await hooks.emit(Events.USERS_INITED, user)
 
     return result
