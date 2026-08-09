@@ -50,7 +50,7 @@ router = APIRouter(tags=["users"])
     response_model=UsersInitResponse,
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_gocryptfs())],
-    summary="Initialize the users subsystem (bootstrap root).",
+    summary="Initialize root user (one-time).",
 )
 async def users_init_router(
     data: UsersInitRequest,
