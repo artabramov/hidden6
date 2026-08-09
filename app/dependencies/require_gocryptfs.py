@@ -4,7 +4,7 @@
 import logging
 
 from app.config import get_config
-from app.errors import ServiceUnavailableError, ResourceConflictError
+from app.errors import ServiceUnavailableError, BadGatewayError
 from app.runtime.cipherdir import is_cipherdir_created
 from app.repositories.file import isfile, ismount
 
@@ -38,8 +38,8 @@ def require_gocryptfs(
         and the passphrase file based on the factory configuration.
 
         Raises:
-            ServiceUnavailableError: Required resource is missing.
-            ResourceConflictError: Resource exists when it should not.
+            ServiceUnavailableError: Required resource is missing (503).
+            BadGatewayError: Resource exists when it should not (502).
         """
         config = get_config()
 
@@ -57,7 +57,7 @@ def require_gocryptfs(
             and await is_cipherdir_created(config.INSTALL_CIPHERDIR)
         ):
             log.warning("msg=cipherdir_exists")
-            raise ResourceConflictError
+            raise BadGatewayError
 
         # Scenario 2: validate mountpoint existence or absence
 
@@ -73,7 +73,7 @@ def require_gocryptfs(
             and await ismount(config.INSTALL_MOUNTPOINT)
         ):
             log.warning("msg=mountpoint_exists")
-            raise ResourceConflictError
+            raise BadGatewayError
 
         # Scenario 3: validate passphrase existence or absence
 
@@ -89,6 +89,6 @@ def require_gocryptfs(
             and await isfile(config.GOCRYPTFS_PASSPHRASE_PATH)
         ):
             log.warning("msg=passphrase_exists")
-            raise ResourceConflictError
+            raise BadGatewayError
 
     return check_gocryptfs

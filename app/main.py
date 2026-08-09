@@ -12,9 +12,10 @@ from app.hooks import hooks
 from app.log import init_logging
 
 from app.errors import (
-    InternalServerError,
     UnauthorizedError,
     ResourceConflictError,
+    InternalServerError,
+    BadGatewayError,
     ServiceUnavailableError,
 )
 
@@ -23,6 +24,7 @@ from app.handlers import (
     unauthorized_handler,
     resource_conflict_handler,
     service_unavailable_handler,
+    bad_gateway_handler,
 )
 
 from app.middleware.cors_setup import cors_setup_middleware
@@ -82,7 +84,8 @@ app.include_router(gocryptfs_reveal_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_health_router, prefix=config.API_PREFIX)
 app.include_router(user_root_router, prefix=config.API_PREFIX)
 
-app.add_exception_handler(InternalServerError, internal_server_error_handler)
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)
 app.add_exception_handler(ResourceConflictError, resource_conflict_handler)
+app.add_exception_handler(InternalServerError, internal_server_error_handler)
+app.add_exception_handler(BadGatewayError, bad_gateway_handler)
 app.add_exception_handler(ServiceUnavailableError, service_unavailable_handler)

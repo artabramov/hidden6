@@ -5,18 +5,12 @@ from fastapi import Request, status
 from fastapi.responses import Response
 
 from app.errors import (
-    InternalServerError,
     UnauthorizedError,
     ResourceConflictError,
+    InternalServerError,
     ServiceUnavailableError,
+    BadGatewayError,
 )
-
-
-async def internal_server_error_handler(
-    request: Request,
-    exc: InternalServerError,
-) -> Response:
-    return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 async def unauthorized_handler(
@@ -31,6 +25,20 @@ async def resource_conflict_handler(
     exc: ResourceConflictError,
 ) -> Response:
     return Response(status_code=status.HTTP_409_CONFLICT)
+
+
+async def internal_server_error_handler(
+    request: Request,
+    exc: InternalServerError,
+) -> Response:
+    return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+async def bad_gateway_handler(
+    request: Request,
+    exc: BadGatewayError,
+) -> Response:
+    return Response(status_code=status.HTTP_502_BAD_GATEWAY)
 
 
 async def service_unavailable_handler(

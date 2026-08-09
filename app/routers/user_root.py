@@ -48,7 +48,7 @@ router = APIRouter(tags=["users"])
     },
     response_model=UserRootResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_gocryptfs(require_cipherdir=False))],
+    dependencies=[Depends(require_gocryptfs())],
     summary="Create the bootstrap root user (one-time).",
 )
 async def user_root_router(
