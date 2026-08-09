@@ -7,6 +7,12 @@ import sys
 from app.config import get_config
 from app.context import get_context_var
 
+# NOTE (ADR-16): Sensitive application and request data is not logged.
+# Additional identifiers are included only when diagnostically useful.
+# Request and response payloads, secrets, and other sensitive values are
+# never written to logs. Logs contain only the technical context needed
+# for diagnostics.
+
 
 class RequestContextFilter(logging.Filter):
     """

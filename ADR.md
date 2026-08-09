@@ -19,6 +19,7 @@ ADR-12: Watchdog runs as a periodic background sleep-loop.
 ADR-13: Watchdog performs an immediate emergency unmount.
 ADR-14: X-Request-ID is accepted for request correlation.
 ADR-15: Request context is isolated between requests.
-ADR-16: SQLite is configured for the gocryptfs-backed stack.
-ADR-17: SQLite database integrity is enforced on every mount.
-ADR-18: SQLite ORM relationships do not use implicit loading.
+ADR-16: Sensitive application and request data is not logged.
+ADR-17: SQLite is configured for the gocryptfs-backed stack.
+ADR-18: SQLite database integrity is enforced on every mount.
+ADR-19: SQLite ORM relationships do not use implicit loading.
