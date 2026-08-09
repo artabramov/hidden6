@@ -1,8 +1,9 @@
 # app/routers/gocryptfs_unmount.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 
+from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.schemas.gocryptfs_unmount import GocryptfsUnmountRequest
 from app.services.gocryptfs_unmount import gocryptfs_unmount
 
@@ -16,12 +17,6 @@ router = APIRouter(tags=["gocryptfs"])
             "description": (
                 "Master password is incorrect or the gocryptfs "
                 "passphrase cannot be decrypted with it."
-            ),
-        },
-        409: {
-            "description": (
-                "The gocryptfs cipherdir is not mounted. "
-                "The requested operation is unnecessary."
             ),
         },
         422: {
@@ -46,6 +41,7 @@ router = APIRouter(tags=["gocryptfs"])
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_gocryptfs())],
     summary="Unmount gocryptfs cipherdir.",
 )
 async def gocryptfs_unmount_router(
