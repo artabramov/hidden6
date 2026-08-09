@@ -39,8 +39,8 @@ router = APIRouter(tags=["gocryptfs"])
         },
         503: {
             "description": (
-                "The gocryptfs cipherdir is not initialized or "
-                "unavailable, or the required gocryptfs passphrase "
+                "Gocryptfs infrastructure is not ready: cipherdir "
+                "is not initialized, or the required passphrase "
                 "is missing."
             ),
         },
