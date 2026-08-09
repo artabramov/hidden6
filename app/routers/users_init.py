@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.require_gocryptfs import require_gocryptfs
-from app.dependencies.session import get_session
+from app.dependencies.require_session import require_session
 from app.schemas.users_init import UsersInitRequest, UsersInitResponse
 from app.services.users_init import users_init
 
@@ -54,7 +54,7 @@ router = APIRouter(tags=["users"])
 )
 async def users_init_router(
     data: UsersInitRequest,
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = Depends(require_session),
 ) -> UsersInitResponse:
     """
     Initializes identity by creating the root user and its first

@@ -1,4 +1,4 @@
-# tests/dependencies/test_session.py
+# tests/dependencies/test_require_session.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -9,10 +9,10 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-import app.dependencies.session as session_dep  # noqa: E402
+import app.dependencies.require_session as session_dep  # noqa: E402
 
 
-class TestGetSession(unittest.IsolatedAsyncioTestCase):
+class TestRequireSession(unittest.IsolatedAsyncioTestCase):
     async def test_yields_session_and_closes_context(self):
         mock_sess = MagicMock()
         mock_cm = MagicMock()
@@ -20,9 +20,12 @@ class TestGetSession(unittest.IsolatedAsyncioTestCase):
         mock_cm.__aexit__ = AsyncMock(return_value=None)
         factory = MagicMock(return_value=mock_cm)
 
-        with patch("app.dependencies.session.SessionLocal", factory):
+        with patch(
+            "app.dependencies.require_session.SessionLocal",
+            factory,
+        ):
             items: list[MagicMock] = []
-            async for s in session_dep.get_session():
+            async for s in session_dep.require_session():
                 items.append(s)
 
         self.assertEqual(items, [mock_sess])
@@ -37,8 +40,11 @@ class TestGetSession(unittest.IsolatedAsyncioTestCase):
         mock_cm.__aexit__ = AsyncMock(return_value=None)
         factory = MagicMock(return_value=mock_cm)
 
-        with patch("app.dependencies.session.SessionLocal", factory):
-            gen = session_dep.get_session()
+        with patch(
+            "app.dependencies.require_session.SessionLocal",
+            factory,
+        ):
+            gen = session_dep.require_session()
             first = await anext(gen)
             self.assertIs(first, mock_sess)
             with self.assertRaises(StopAsyncIteration):

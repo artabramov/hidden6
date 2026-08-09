@@ -11,10 +11,10 @@ from app.repositories.file import isfile, ismount
 log = logging.getLogger(__name__)
 
 # NOTE (ADR-08): Gocryptfs dependency executes before all others.
-# FastAPI prepends decorator dependencies= to the endpoint dependency
-# list and solves them sequentially with await. Registering the check
-# there guarantees it runs before signature Depends (e.g. get_session)
-# and aborts the request before any database session is opened.
+# FastAPI resolves dependencies listed in the decorator's dependencies=
+# argument before signature Depends() dependencies. Registering the
+# gocryptfs check there guarantees it runs before require_session and
+# aborts the request before any database session is opened.
 
 
 def require_gocryptfs(
