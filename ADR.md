@@ -1,4 +1,4 @@
-# ADR Registry
+# Architecture Decision Registry
 
 This file indexes architecture decisions referenced in code through
 `NOTE (ADR-XX)` comments. The source of truth is the code. Use global
