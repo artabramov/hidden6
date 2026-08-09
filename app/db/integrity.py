@@ -19,7 +19,7 @@ def _check_db_integrity_sync(db_path: str) -> None:
         )
 
 
-# NOTE (ADR-16): SQLite database integrity is enforced on every mount.
+# NOTE (ADR-17): SQLite database integrity is enforced on every mount.
 # Database integrity is checked on every mount. The configured SQLite
 # settings are expected to prevent corruption, but integrity_check is
 # still required before the mount succeeds. Otherwise, the mount is

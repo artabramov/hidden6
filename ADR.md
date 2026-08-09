@@ -12,12 +12,13 @@ ADR-05: Application is designed for a single Uvicorn worker.
 ADR-06: Application middleware execution order is fixed.
 ADR-07: Filesystem-level encryption uses gocryptfs.
 ADR-08: Gocryptfs dependency executes before all others.
-ADR-09: Passphrase is passed to gocryptfs through tmpfs.
-ADR-10: HTTP 401/502/503 are reserved for gocryptfs errors.
-ADR-11: Watchdog runs as a periodic background sleep-loop.
-ADR-12: Watchdog performs an immediate emergency unmount.
-ADR-13: X-Request-ID is accepted for request correlation.
-ADR-14: Request context is isolated between requests.
-ADR-15: SQLite is configured for the gocryptfs-backed stack.
-ADR-16: SQLite database integrity is enforced on every mount.
-ADR-17: SQLite ORM relationships do not use implicit loading.
+ADR-09: Gocryptfs passphrase is protected by master password.
+ADR-10: Passphrase is passed to gocryptfs through tmpfs.
+ADR-11: HTTP 401/502/503 are reserved for gocryptfs errors.
+ADR-12: Watchdog runs as a periodic background sleep-loop.
+ADR-13: Watchdog performs an immediate emergency unmount.
+ADR-14: X-Request-ID is accepted for request correlation.
+ADR-15: Request context is isolated between requests.
+ADR-16: SQLite is configured for the gocryptfs-backed stack.
+ADR-17: SQLite database integrity is enforced on every mount.
+ADR-18: SQLite ORM relationships do not use implicit loading.

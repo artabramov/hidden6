@@ -13,7 +13,7 @@ from app.config import get_config
 config = get_config()
 
 
-# NOTE (ADR-15): SQLite is configured for the gocryptfs-backed stack.
+# NOTE (ADR-16): SQLite is configured for the gocryptfs-backed stack.
 # The SQLite database resides inside the gocryptfs-encrypted storage.
 # Client-server databases are not used because they cannot operate on
 # the encrypted filesystem in this design. SQLite is configured with
@@ -56,7 +56,7 @@ def set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
     cursor.close()
 
 
-# NOTE (ADR-17): SQLite ORM relationships do not use implicit loading.
+# NOTE (ADR-18): SQLite ORM relationships do not use implicit loading.
 # SQLAlchemy relationships use lazy="raise" instead of selectin or
 # joined. Related rows are queried only when needed, avoiding extra
 # SQLite queries in the single-worker runtime. Accidental attribute

@@ -11,7 +11,7 @@ from app.repositories.file import isdir, isfile, read
 
 log = logging.getLogger(__name__)
 
-# NOTE (ADR-09): Passphrase is passed to gocryptfs through tmpfs.
+# NOTE (ADR-10): Passphrase is passed to gocryptfs through tmpfs.
 # The temporary file is created in /dev/shm to prevent the passphrase
 # from touching persistent storage. Command-line arguments and stdin
 # are avoided to prevent exposure in process listings (argv) and to

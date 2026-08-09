@@ -17,6 +17,13 @@ from app.runtime.cipherdir import is_cipherdir_created, cipherdir_create
 log = logging.getLogger(__name__)
 
 
+# NOTE (ADR-09): Gocryptfs passphrase is protected by master password.
+# It is encrypted with a master password and is never persisted in
+# plaintext on disk. The passphrase exists in plaintext only in memory
+# during mount and is discarded immediately afterwards. Access to the
+# encrypted data therefore requires both the passphrase and the master
+# password.
+
 async def gocryptfs_init(master_password: str) -> None:
     """
     Initialize encrypted storage by generating and encrypting a random

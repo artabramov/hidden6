@@ -4,7 +4,7 @@
 from contextvars import ContextVar
 from typing import Any
 
-# NOTE (ADR-14): Request context is isolated between requests.
+# NOTE (ADR-15): Request context is isolated between requests.
 # Request context provides a request-scoped key-value store. ContextVar
 # isolates state between concurrent execution contexts. A shallow copy
 # is created on each write to avoid mutating shared state. By default,
