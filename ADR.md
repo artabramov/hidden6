@@ -20,3 +20,4 @@ ADR-13: Request context is a per-task key-value store.
 ADR-14: SQLite is required for the gocryptfs-based stack.
 ADR-15: SQLite database lives on the gocryptfs mountpoint.
 ADR-16: SQLite ORM relationships do not use implicit loading.
+ADR-17: HTTP 401/502/503 are reserved for gocryptfs errors.

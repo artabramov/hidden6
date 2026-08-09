@@ -41,8 +41,9 @@ router = APIRouter(tags=["users"])
         },
         503: {
             "description": (
-                "Encrypted storage is not mounted, not initialized, "
-                "or the required gocryptfs passphrase is missing."
+                "Gocryptfs infrastructure is not ready: cipherdir "
+                "is not initialized, not mounted, or the required "
+                "passphrase is missing."
             ),
         },
     },

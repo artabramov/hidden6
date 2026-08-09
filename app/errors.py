@@ -1,6 +1,13 @@
 # app/errors.py
 # SPDX-License-Identifier: GPL-3.0-only
 
+# NOTE (ADR-17): HTTP 401/502/503 are reserved for gocryptfs errors.
+# 401 indicates master-password authentication failure. 502 indicates
+# an unexpected cipherdir, mount, or passphrase state. 503 indicates
+# missing required gocryptfs infrastructure. All other application
+# errors, including SigV4 authentication failures, use different
+# status codes (for example, 403 Forbidden for SigV4).
+
 
 class UnauthorizedError(Exception):
     """Raised when credentials are invalid (401)."""
