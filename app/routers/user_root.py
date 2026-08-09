@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.session import get_session
 from app.schemas.user_root import UserRootRequest, UserRootResponse
 from app.services.user_root import user_root
@@ -47,6 +48,7 @@ router = APIRouter(tags=["users"])
     },
     response_model=UserRootResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_gocryptfs(require_cipherdir=False))],
     summary="Create the bootstrap root user (one-time).",
 )
 async def user_root_router(

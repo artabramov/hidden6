@@ -11,11 +11,12 @@ ADR-04: Application is designed for a single Uvicorn worker.
 ADR-05: Application middleware execution order is fixed.
 ADR-06: Environment variables are distributed in a dotenv file.
 ADR-07: Filesystem-level encryption uses gocryptfs.
-ADR-08: Passphrase is passed to gocryptfs through tmpfs.
-ADR-09: Watchdog runs as a periodic background sleep-loop.
-ADR-10: Watchdog performs an immediate emergency unmount.
-ADR-11: X-Request-ID is accepted for request correlation.
-ADR-12: Request context is a per-task key-value store.
-ADR-13: SQLite is required for the gocryptfs-based stack.
-ADR-14: SQLite database lives on the gocryptfs mountpoint.
-ADR-15: SQLite ORM relationships do not use implicit loading.
+ADR-08: Gocryptfs dependency executes before all others.
+ADR-09: Passphrase is passed to gocryptfs through tmpfs.
+ADR-10: Watchdog runs as a periodic background sleep-loop.
+ADR-11: Watchdog performs an immediate emergency unmount.
+ADR-12: X-Request-ID is accepted for request correlation.
+ADR-13: Request context is a per-task key-value store.
+ADR-14: SQLite is required for the gocryptfs-based stack.
+ADR-15: SQLite database lives on the gocryptfs mountpoint.
+ADR-16: SQLite ORM relationships do not use implicit loading.

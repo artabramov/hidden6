@@ -18,7 +18,7 @@ def _check_db_integrity_sync(db_path: str) -> None:
             "SQLite integrity check failed: " + "; ".join(messages)
         )
 
-# NOTE (ADR-14): SQLite database lives on the gocryptfs mountpoint.
+# NOTE (ADR-15): SQLite database lives on the gocryptfs mountpoint.
 # With journal_mode=DELETE and synchronous=FULL a corrupted database is
 # not expected. integrity_check still runs on every mount as a safety
 # net: if the file is somehow damaged, the mount is rolled back instead
