@@ -13,21 +13,21 @@ from app.config import get_config
 config = get_config()
 
 
-# NOTE (ADR-14): SQLite is required for the gocryptfs-based stack.
-# The database file resides inside the gocryptfs-encrypted storage.
+# NOTE (ADR-15): SQLite is configured for the gocryptfs-backed stack.
+# The SQLite database resides inside the gocryptfs-encrypted storage.
 # Client-server databases are not used because they cannot operate on
-# the encrypted filesystem in this design. Critical points:
+# the encrypted filesystem in this design. SQLite is configured with
+# journal_mode=DELETE and synchronous=FULL, so database corruption is
+# not expected. Critical points:
 # 1. Journal mode MUST be DELETE (rollback journal).
-#    WAL mode creates a shared-memory index file (.sqlite-shm) whose
+#    WAL mode creates a shared-memory index file (.sqlite-shm). Its
 #    read-decrypt-modify-encrypt-write cycle through gocryptfs is not
-#    atomic. aiosqlite executes SQLite in a background thread
-#    concurrently with the asyncio event loop. This concurrency window,
-#    combined with gocryptfs block-level encryption, causes deterministic
-#    database corruption.
+#    atomic. Combined with aiosqlite background-thread execution, this
+#    deterministically corrupts the database.
 # 2. Synchronous mode MUST be FULL.
-#    This ensures fsync() is issued on every commit. NORMAL allows writes
-#    to remain buffered by the FUSE layer, which can result in data loss
-#    if the container stops before buffered data is flushed.
+#    FULL issues fsync() on every commit. NORMAL allows writes to remain
+#    buffered by the FUSE layer, which can lose committed data if the
+#    container stops before the buffers are flushed.
 
 engine = create_async_engine(
     config.SQLITE_URL,
@@ -56,7 +56,7 @@ def set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
     cursor.close()
 
 
-# NOTE (ADR-16): SQLite ORM relationships do not use implicit loading.
+# NOTE (ADR-17): SQLite ORM relationships do not use implicit loading.
 # SQLAlchemy relationships use lazy="raise" instead of selectin or
 # joined. Related rows are queried only when needed, avoiding extra
 # SQLite queries in the single-worker runtime. Accidental attribute

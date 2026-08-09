@@ -13,7 +13,7 @@ from app.runtime.cipherdir import cipherdir_unmount
 
 log = logging.getLogger(__name__)
 
-# NOTE (ADR-11): Watchdog performs an immediate emergency unmount.
+# NOTE (ADR-12): Watchdog performs an immediate emergency unmount.
 # The mountpoint is detached using the -z flag. In-flight requests may
 # fail with HTTP 500. Full handling of storage failures within request
 # execution is intentionally avoided to keep runtime logic simple and

@@ -19,7 +19,7 @@ FORCE ?= 0
 # migration between instances, and emergency recovery using gocryptfs
 # without the application.
 
-# NOTE (ADR-03): Application runs in an isolated Docker container.
+# NOTE (ADR-04): Application runs in an isolated Docker container.
 # 1. Packages all dependencies and runtime environment, ensuring
 #    consistent behavior across different hosts.
 # 2. Isolates encryption runtime and secret handling from the host,

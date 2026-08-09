@@ -63,7 +63,7 @@ app = FastAPI(
     }
 )
 
-# NOTE (ADR-05): Application middleware execution order is fixed.
+# NOTE (ADR-06): Application middleware execution order is fixed.
 # The order is intentional and must not be changed. Request context
 # is initialized before other middleware and reset only after the full
 # request lifecycle completes. Downstream middleware (e.g. request
