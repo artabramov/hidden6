@@ -34,7 +34,7 @@ async def gocryptfs_init(master_password: str) -> None:
     function performs best-effort cleanup of artifacts created during
     the current attempt.
     """
-    log.info("msg=gocryptfs_init_started")
+    log.info("msg=gocryptfs_initialization_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -70,7 +70,7 @@ async def gocryptfs_init(master_password: str) -> None:
             )
 
         except Exception:
-            log.exception("msg=gocryptfs_init_failed")
+            log.exception("msg=gocryptfs_initialization_failed")
 
             await delete(config.GOCRYPTFS_PASSPHRASE_PATH)
 
@@ -88,5 +88,5 @@ async def gocryptfs_init(master_password: str) -> None:
 
             raise
 
-        log.info("msg=gocryptfs_init_completed")
-        await hooks.emit(Events.GOCRYPTFS_INITIALIZED)
+    log.info("msg=gocryptfs_initialized")
+    await hooks.emit(Events.GOCRYPTFS_INITIALIZED)

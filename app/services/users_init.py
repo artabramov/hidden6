@@ -36,7 +36,7 @@ async def users_init(
     access key pair. Returns plaintext credentials once; the secret is
     stored only as Fernet ciphertext.
     """
-    log.info("msg=users_init_started")
+    log.info("msg=users_initialization_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -91,7 +91,7 @@ async def users_init(
         "secret_access_key": secret_access_key,
     }
 
-    log.info("msg=users_init_completed")
+    log.info("msg=users_initialized")
     await hooks.emit(Events.USERS_INITIALIZED, user)
 
     return result

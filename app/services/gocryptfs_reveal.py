@@ -37,7 +37,9 @@ async def gocryptfs_reveal(master_password: str) -> str:
             log.warning("msg=passphrase_invalid")
             raise UnauthorizedError
 
-        log.info("msg=gocryptfs_reveal_completed")
-        await hooks.emit(Events.GOCRYPTFS_REVEALED)
+        passphrase_plain = passphrase.decode("utf-8")
 
-        return passphrase.decode("utf-8")
+    log.info("msg=gocryptfs_revealed")
+    await hooks.emit(Events.GOCRYPTFS_REVEALED)
+
+    return passphrase_plain
