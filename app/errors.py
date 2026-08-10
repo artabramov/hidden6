@@ -3,10 +3,11 @@
 
 # NOTE (ADR-11): HTTP 401/502/503 are reserved for gocryptfs errors.
 # 401 indicates master-password authentication failure. 502 indicates
-# an unexpected cipherdir, mount, or passphrase state. 503 indicates
-# missing required gocryptfs infrastructure. All other application
-# errors, including SigV4 authentication failures, use different
-# status codes (for example, 403 Forbidden for SigV4).
+# unexpected presence of cipherdir, mount, passphrase, or related
+# secrets such as the Fernet encryption key. 503 indicates missing
+# required gocryptfs infrastructure. All other application errors,
+# including SigV4 authentication failures, use different status codes
+# (for example, 403 Forbidden for SigV4).
 
 
 class UnauthorizedError(Exception):
