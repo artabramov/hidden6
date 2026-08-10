@@ -1,8 +1,9 @@
 # app/routers/gocryptfs_rotate.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 
+from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.schemas.gocryptfs_rotate import GocryptfsRotateRequest
 from app.services.gocryptfs_rotate import gocryptfs_rotate
 
@@ -34,12 +35,13 @@ router = APIRouter(tags=["gocryptfs"])
         503: {
             "description": (
                 "Gocryptfs infrastructure is not ready: cipherdir "
-                "is not initialized, not mounted, or the required "
-                "passphrase is missing."
+                "is not initialized or the required passphrase is "
+                "missing."
             ),
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_gocryptfs(require_mountpoint=None))],
     summary="Rotate master password.",
 )
 async def gocryptfs_rotate_router(

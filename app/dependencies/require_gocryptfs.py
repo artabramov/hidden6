@@ -18,24 +18,21 @@ log = logging.getLogger(__name__)
 
 
 def require_gocryptfs(
-    require_cipherdir: bool = True,
-    require_mountpoint: bool = True,
-    require_passphrase: bool = True,
+    require_cipherdir: bool | None = True,
+    require_mountpoint: bool | None = True,
+    require_passphrase: bool | None = True,
 ):
     """
     FastAPI dependency factory to check gocryptfs preconditions.
 
-    Returns a dynamic dependency wrapper tailored for either standard
-    operational checks (ensuring resources exist) or initialization
-    routines (ensuring resources do not conflict).
+    Each resource (cipherdir, mountpoint, and passphrase) can be
+    required, forbidden, or ignored by passing True, False, or
+    None respectively.
     """
 
     async def check_gocryptfs() -> None:
         """
         Execute fail-fast validation for gocryptfs paths and states.
-
-        Evaluates the status of the cipher directory, the mountpoint,
-        and the passphrase file based on the factory configuration.
 
         Raises:
             ServiceUnavailableError: Required resource is missing (503).
@@ -45,50 +42,38 @@ def require_gocryptfs(
 
         # Scenario 1: validate cipherdir existence or absence
 
-        if (
-            require_cipherdir
-            and not await is_cipherdir_created(config.INSTALL_CIPHERDIR)
-        ):
-            log.warning("msg=cipherdir_not_found")
-            raise ServiceUnavailableError
+        if require_cipherdir is True:
+            if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
+                log.warning("msg=cipherdir_not_found")
+                raise ServiceUnavailableError
 
-        elif (
-            not require_cipherdir
-            and await is_cipherdir_created(config.INSTALL_CIPHERDIR)
-        ):
-            log.warning("msg=cipherdir_exists")
-            raise BadGatewayError
+        elif require_cipherdir is False:
+            if await is_cipherdir_created(config.INSTALL_CIPHERDIR):
+                log.warning("msg=cipherdir_exists")
+                raise BadGatewayError
 
         # Scenario 2: validate mountpoint existence or absence
 
-        if (
-            require_mountpoint
-            and not await ismount(config.INSTALL_MOUNTPOINT)
-        ):
-            log.warning("msg=mountpoint_not_found")
-            raise ServiceUnavailableError
+        if require_mountpoint is True:
+            if not await ismount(config.INSTALL_MOUNTPOINT):
+                log.warning("msg=mountpoint_not_found")
+                raise ServiceUnavailableError
 
-        elif (
-            not require_mountpoint
-            and await ismount(config.INSTALL_MOUNTPOINT)
-        ):
-            log.warning("msg=mountpoint_exists")
-            raise BadGatewayError
+        elif require_mountpoint is False:
+            if await ismount(config.INSTALL_MOUNTPOINT):
+                log.warning("msg=mountpoint_exists")
+                raise BadGatewayError
 
         # Scenario 3: validate passphrase existence or absence
 
-        if (
-            require_passphrase
-            and not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH)
-        ):
-            log.warning("msg=passphrase_not_found")
-            raise ServiceUnavailableError
+        if require_passphrase is True:
+            if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
+                log.warning("msg=passphrase_not_found")
+                raise ServiceUnavailableError
 
-        elif (
-            not require_passphrase
-            and await isfile(config.GOCRYPTFS_PASSPHRASE_PATH)
-        ):
-            log.warning("msg=passphrase_exists")
-            raise BadGatewayError
+        elif require_passphrase is False:
+            if await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
+                log.warning("msg=passphrase_exists")
+                raise BadGatewayError
 
     return check_gocryptfs

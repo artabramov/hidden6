@@ -4,7 +4,7 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.errors import ServiceUnavailableError, UnauthorizedError
+from app.errors import UnauthorizedError
 from app.hooks import Events
 from app.locks import LockType
 from app.services.gocryptfs_rotate import gocryptfs_rotate
@@ -27,90 +27,8 @@ class TestGocryptfsRotate(unittest.IsolatedAsyncioTestCase):
     def _build_config(self):
         config = MagicMock()
         config.INSTALL_SECRETS = "/fake/secrets"
-        config.INSTALL_CIPHERDIR = "/fake/cipherdir"
         config.GOCRYPTFS_PASSPHRASE_PATH = "/fake/secrets/passphrase.enc"
         return config
-
-    async def test_raises_service_unavailable_when_cipherdir_uninitialized(
-        self,
-    ):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_rotate.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ) as lock_mock,
-            patch(
-                "app.services.gocryptfs_rotate.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ) as created_mock,
-            patch(
-                "app.services.gocryptfs_rotate.isfile",
-                new=AsyncMock(),
-            ) as isfile_mock,
-            patch(
-                "app.services.gocryptfs_rotate.write",
-                new=AsyncMock(),
-            ) as write_mock,
-            patch(
-                "app.services.gocryptfs_rotate.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ServiceUnavailableError):
-                await gocryptfs_rotate("old", "new")
-
-        lock_mock.assert_called_once_with(
-            config.INSTALL_SECRETS,
-            LockType.WRITE,
-        )
-        created_mock.assert_awaited_once_with(config.INSTALL_CIPHERDIR)
-        isfile_mock.assert_not_awaited()
-        write_mock.assert_not_awaited()
-        emit_mock.assert_not_awaited()
-
-    async def test_raises_service_unavailable_when_passphrase_missing(self):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_rotate.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.isfile",
-                new=AsyncMock(return_value=False),
-            ) as isfile_mock,
-            patch(
-                "app.services.gocryptfs_rotate.write",
-                new=AsyncMock(),
-            ) as write_mock,
-            patch(
-                "app.services.gocryptfs_rotate.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ServiceUnavailableError):
-                await gocryptfs_rotate("old", "new")
-
-        isfile_mock.assert_awaited_once_with(
-            config.GOCRYPTFS_PASSPHRASE_PATH,
-        )
-        write_mock.assert_not_awaited()
-        emit_mock.assert_not_awaited()
 
     async def test_raises_unauthorized_when_current_password_wrong(self):
         config = self._build_config()
@@ -123,14 +41,6 @@ class TestGocryptfsRotate(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.services.gocryptfs_rotate.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.isfile",
-                new=AsyncMock(return_value=True),
             ),
             patch(
                 "app.services.gocryptfs_rotate.read",
@@ -168,14 +78,6 @@ class TestGocryptfsRotate(unittest.IsolatedAsyncioTestCase):
                 "app.services.gocryptfs_rotate.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ) as lock_mock,
-            patch(
-                "app.services.gocryptfs_rotate.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_rotate.isfile",
-                new=AsyncMock(return_value=True),
-            ),
             patch(
                 "app.services.gocryptfs_rotate.read",
                 new=AsyncMock(return_value=b"encrypted"),

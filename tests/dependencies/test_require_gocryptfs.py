@@ -285,3 +285,33 @@ class TestRequireGocryptfs(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             await check()
+
+    async def test_skips_check_when_flag_is_none(self):
+        config = self._build_config()
+        check = require_gocryptfs(
+            require_cipherdir=True,
+            require_mountpoint=None,
+            require_passphrase=True,
+        )
+
+        with (
+            patch(
+                "app.dependencies.require_gocryptfs.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.dependencies.require_gocryptfs.is_cipherdir_created",
+                new=AsyncMock(return_value=True),
+            ),
+            patch(
+                "app.dependencies.require_gocryptfs.ismount",
+                new=AsyncMock(),
+            ) as ismount_mock,
+            patch(
+                "app.dependencies.require_gocryptfs.isfile",
+                new=AsyncMock(return_value=True),
+            ),
+        ):
+            await check()
+
+        ismount_mock.assert_not_awaited()
