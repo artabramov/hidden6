@@ -23,3 +23,4 @@ ADR-16: Sensitive application and request data is not logged.
 ADR-17: SQLite is configured for the gocryptfs-backed stack.
 ADR-18: SQLite database integrity is enforced on every mount.
 ADR-19: SQLite ORM relationships do not use implicit loading.
+ADR-20: S3 request authentication uses AWS Signature Version 4.

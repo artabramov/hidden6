@@ -42,6 +42,9 @@ class Config(BaseSettings):
     SQLITE_BUSY_TIMEOUT: int
     SQLITE_TEMP_STORE: str
     SQLITE_FILENAME: str
+    S3_REGION: str
+    S3_SERVICE: str
+    S3_SIGV4_MAX_SKEW_SECONDS: int
     EXTENSIONS_ENABLED: str = ""
 
     @cached_property

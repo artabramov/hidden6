@@ -28,6 +28,9 @@ def build_default_config_values() -> dict[str, object]:
         "SQLITE_BUSY_TIMEOUT": 5000,
         "SQLITE_TEMP_STORE": "MEMORY",
         "SQLITE_FILENAME": "hidden.db",
+        "S3_REGION": "us-east-1",
+        "S3_SERVICE": "s3",
+        "S3_SIGV4_MAX_SKEW_SECONDS": 900,
         "WATCHDOG_INTERVAL_SECONDS": 60,
         "WATCHDOG_LIVENESS_SECONDS": 120,
     }
