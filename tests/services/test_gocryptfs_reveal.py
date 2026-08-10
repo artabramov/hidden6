@@ -60,7 +60,7 @@ class TestGocryptfsReveal(unittest.IsolatedAsyncioTestCase):
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
-            LockType.WRITE,
+            LockType.READ,
         )
         decrypt_mock.assert_called_once_with(
             b"encrypted",

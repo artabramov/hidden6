@@ -23,7 +23,7 @@ async def gocryptfs_reveal(master_password: str) -> str:
 
     async with locks.lock_directory(
         config.INSTALL_SECRETS,
-        LockType.WRITE,
+        LockType.READ,
     ):
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
 
