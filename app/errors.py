@@ -15,6 +15,11 @@ class UnauthorizedError(Exception):
     pass
 
 
+class ForbiddenError(Exception):
+    """Raised when SigV4 authentication or authorization fails (403)."""
+    pass
+
+
 class ResourceConflictError(Exception):
     """Raised when the requested operation causes a conflict (409)."""
     pass
