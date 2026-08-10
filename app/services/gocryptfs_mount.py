@@ -6,19 +6,11 @@ import logging
 from app.config import get_config
 from app.db.integrity import check_db_integrity
 from app.db.schema import create_all_tables
-from app.errors import (
-    UnauthorizedError,
-    ResourceConflictError,
-    ServiceUnavailableError,
-)
+from app.errors import UnauthorizedError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.repositories.file import isdir, isfile, ismount, mkdir, read
-from app.runtime.cipherdir import (
-    is_cipherdir_created,
-    cipherdir_mount,
-    cipherdir_unmount,
-)
+from app.repositories.file import isdir, mkdir, read
+from app.runtime.cipherdir import cipherdir_mount, cipherdir_unmount
 from app.security.encryption import decrypt_passphrase
 
 log = logging.getLogger(__name__)
@@ -42,19 +34,6 @@ async def gocryptfs_mount(master_password: str) -> None:
         config.INSTALL_SECRETS,
         LockType.WRITE,
     ):
-
-        if not await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=cipherdir_not_created")
-            raise ServiceUnavailableError
-
-        if not await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=passphrase_not_found")
-            raise ServiceUnavailableError
-
-        if await ismount(config.INSTALL_MOUNTPOINT):
-            log.warning("msg=cipherdir_already_mounted")
-            raise ResourceConflictError
-
         passphrase_encrypted = await read(config.GOCRYPTFS_PASSPHRASE_PATH)
 
         try:

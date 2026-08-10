@@ -9,11 +9,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.errors import (  # noqa: E402
-    UnauthorizedError,
-    ResourceConflictError,
-    ServiceUnavailableError,
-)
+from app.errors import UnauthorizedError  # noqa: E402
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
 from app.services.gocryptfs_mount import gocryptfs_mount  # noqa: E402
@@ -46,137 +42,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
         config.SQLITE_PATH = "/fake/mountpoint/db/hidden.db"
         return config
 
-    async def test_raises_service_unavailable_when_cipherdir_uninitialized(
-        self,
-    ):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_mount.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_mount.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ) as lock_mock,
-            patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ) as created_mock,
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(),
-            ) as isfile_mock,
-            patch(
-                "app.services.gocryptfs_mount.cipherdir_mount",
-                new=AsyncMock(),
-            ) as mount_mock,
-            patch(
-                "app.services.gocryptfs_mount.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ServiceUnavailableError):
-                await gocryptfs_mount("master-password")
-
-        lock_mock.assert_called_once_with(
-            config.INSTALL_SECRETS,
-            LockType.WRITE,
-        )
-        created_mock.assert_awaited_once_with(config.INSTALL_CIPHERDIR)
-        isfile_mock.assert_not_awaited()
-        mount_mock.assert_not_awaited()
-        emit_mock.assert_not_awaited()
-
-    async def test_raises_service_unavailable_when_passphrase_missing(self):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_mount.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_mount.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=False),
-            ) as isfile_mock,
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(),
-            ) as ismount_mock,
-            patch(
-                "app.services.gocryptfs_mount.cipherdir_mount",
-                new=AsyncMock(),
-            ) as mount_mock,
-            patch(
-                "app.services.gocryptfs_mount.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ServiceUnavailableError):
-                await gocryptfs_mount("master-password")
-
-        isfile_mock.assert_awaited_once_with(
-            config.GOCRYPTFS_PASSPHRASE_PATH,
-        )
-        ismount_mock.assert_not_awaited()
-        mount_mock.assert_not_awaited()
-        emit_mock.assert_not_awaited()
-
-    async def test_raises_conflict_when_already_mounted(self):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_mount.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_mount.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(return_value=True),
-            ) as ismount_mock,
-            patch(
-                "app.services.gocryptfs_mount.read",
-                new=AsyncMock(),
-            ) as read_mock,
-            patch(
-                "app.services.gocryptfs_mount.cipherdir_mount",
-                new=AsyncMock(),
-            ) as mount_mock,
-            patch(
-                "app.services.gocryptfs_mount.hooks.emit",
-                new=AsyncMock(),
-            ) as emit_mock,
-        ):
-            with self.assertRaises(ResourceConflictError):
-                await gocryptfs_mount("master-password")
-
-        ismount_mock.assert_awaited_once_with(config.INSTALL_MOUNTPOINT)
-        read_mock.assert_not_awaited()
-        mount_mock.assert_not_awaited()
-        emit_mock.assert_not_awaited()
-
     async def test_raises_unauthorized_when_master_password_incorrect(self):
         config = self._build_config()
 
@@ -188,18 +53,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.services.gocryptfs_mount.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(return_value=False),
             ),
             patch(
                 "app.services.gocryptfs_mount.read",
@@ -249,18 +102,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 "app.services.gocryptfs_mount.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ) as lock_mock,
-            patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(return_value=False),
-            ),
             patch(
                 "app.services.gocryptfs_mount.read",
                 new=AsyncMock(return_value=b"encrypted-passphrase"),
@@ -336,18 +177,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
                 "app.services.gocryptfs_mount.read",
                 new=AsyncMock(return_value=b"encrypted-passphrase"),
             ),
@@ -410,18 +239,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
                 "app.services.gocryptfs_mount.read",
                 new=AsyncMock(return_value=b"encrypted-passphrase"),
             ),
@@ -479,18 +296,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.services.gocryptfs_mount.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.is_cipherdir_created",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.isfile",
-                new=AsyncMock(return_value=True),
-            ),
-            patch(
-                "app.services.gocryptfs_mount.ismount",
-                new=AsyncMock(return_value=False),
             ),
             patch(
                 "app.services.gocryptfs_mount.read",

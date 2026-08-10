@@ -1,8 +1,9 @@
 # app/routers/gocryptfs_mount.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 
+from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.schemas.gocryptfs_mount import GocryptfsMountRequest
 from app.services.gocryptfs_mount import gocryptfs_mount
 
@@ -18,12 +19,6 @@ router = APIRouter(tags=["gocryptfs"])
                 "passphrase cannot be decrypted with it."
             ),
         },
-        409: {
-            "description": (
-                "The gocryptfs cipherdir is already mounted. "
-                "The requested operation is unnecessary."
-            ),
-        },
         422: {
             "description": (
                 "Request body failed basic Pydantic validation. "
@@ -37,15 +32,22 @@ router = APIRouter(tags=["gocryptfs"])
                 "the request. The operation could not be completed."
             ),
         },
+        502: {
+            "description": (
+                "Gocryptfs infrastructure is in a conflicting state: "
+                "the cipherdir is already mounted."
+            ),
+        },
         503: {
             "description": (
                 "Gocryptfs infrastructure is not ready: cipherdir "
-                "is not initialized, or the required passphrase "
-                "is missing."
+                "is not initialized or the required passphrase is "
+                "missing."
             ),
         },
     },
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_gocryptfs(require_mountpoint=False))],
     summary="Mount gocryptfs cipherdir.",
 )
 async def gocryptfs_mount_router(
