@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import GOCRYPTFS_PASSPHRASE_LENGTH
-from app.errors import ResourceConflictError
+from app.errors import BadGatewayError
 from app.hooks import Events
 from app.locks import LockType
 from app.services.gocryptfs_init import gocryptfs_init
@@ -44,7 +44,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         self.log_patcher.stop()
 
-    async def test_raises_conflict_when_cipherdir_already_initialized(self):
+    async def test_raises_bad_gateway_when_fernet_key_already_exists(self):
         config = self._build_config()
 
         with (
@@ -55,14 +55,10 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.services.gocryptfs_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ) as lock_mock,
+            ),
             patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
+                "app.services.gocryptfs_init.isfile",
                 new=AsyncMock(return_value=True),
-            ) as created_mock,
-            patch(
-                "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(),
             ) as isfile_mock,
             patch(
                 "app.services.gocryptfs_init.write",
@@ -76,112 +72,13 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 "app.services.gocryptfs_init.cipherdir_create",
                 new=AsyncMock(),
             ) as create_mock,
-            patch(
-                "app.services.gocryptfs_init.generate_random_string",
-            ) as random_mock,
-            patch(
-                "app.services.gocryptfs_init.encrypt_passphrase",
-            ) as encrypt_mock,
-            patch(
-                "app.services.gocryptfs_init.generate_fernet_key",
-            ) as fernet_mock,
         ):
-            with self.assertRaises(ResourceConflictError):
+            with self.assertRaises(BadGatewayError):
                 await gocryptfs_init(self.VALID_PASSWORD)
 
-        lock_mock.assert_called_once_with(
-            config.INSTALL_SECRETS,
-            LockType.WRITE,
+        isfile_mock.assert_awaited_once_with(
+            config.FERNET_ENCRYPTION_KEY_PATH,
         )
-        created_mock.assert_awaited_once_with(config.INSTALL_CIPHERDIR)
-        isfile_mock.assert_not_awaited()
-        write_mock.assert_not_awaited()
-        delete_mock.assert_not_awaited()
-        create_mock.assert_not_awaited()
-        random_mock.assert_not_called()
-        encrypt_mock.assert_not_called()
-        fernet_mock.assert_not_called()
-
-    async def test_raises_conflict_when_passphrase_already_exists(self):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_init.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_init.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
-                "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[True]),
-            ) as isfile_mock,
-            patch(
-                "app.services.gocryptfs_init.write",
-                new=AsyncMock(),
-            ) as write_mock,
-            patch(
-                "app.services.gocryptfs_init.delete",
-                new=AsyncMock(),
-            ) as delete_mock,
-            patch(
-                "app.services.gocryptfs_init.cipherdir_create",
-                new=AsyncMock(),
-            ) as create_mock,
-        ):
-            with self.assertRaises(ResourceConflictError):
-                await gocryptfs_init(self.VALID_PASSWORD)
-
-        isfile_mock.assert_awaited_once_with(config.GOCRYPTFS_PASSPHRASE_PATH)
-        write_mock.assert_not_awaited()
-        delete_mock.assert_not_awaited()
-        create_mock.assert_not_awaited()
-
-    async def test_raises_conflict_when_fernet_key_already_exists(self):
-        config = self._build_config()
-
-        with (
-            patch(
-                "app.services.gocryptfs_init.get_config",
-                return_value=config,
-            ),
-            patch(
-                "app.services.gocryptfs_init.locks.lock_directory",
-                return_value=self._build_lock_context(),
-            ),
-            patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
-                "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[False, True]),
-            ) as isfile_mock,
-            patch(
-                "app.services.gocryptfs_init.write",
-                new=AsyncMock(),
-            ) as write_mock,
-            patch(
-                "app.services.gocryptfs_init.delete",
-                new=AsyncMock(),
-            ) as delete_mock,
-            patch(
-                "app.services.gocryptfs_init.cipherdir_create",
-                new=AsyncMock(),
-            ) as create_mock,
-        ):
-            with self.assertRaises(ResourceConflictError):
-                await gocryptfs_init(self.VALID_PASSWORD)
-
-        self.assertEqual(isfile_mock.await_count, 2)
-        isfile_mock.assert_any_await(config.GOCRYPTFS_PASSPHRASE_PATH)
-        isfile_mock.assert_any_await(config.FERNET_ENCRYPTION_KEY_PATH)
         write_mock.assert_not_awaited()
         delete_mock.assert_not_awaited()
         create_mock.assert_not_awaited()
@@ -200,12 +97,8 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ) as lock_mock,
             patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ) as created_mock,
-            patch(
                 "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[False, False]),
+                new=AsyncMock(return_value=False),
             ) as isfile_mock,
             patch(
                 "app.services.gocryptfs_init.generate_random_string",
@@ -242,8 +135,9 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             config.INSTALL_SECRETS,
             LockType.WRITE,
         )
-        created_mock.assert_awaited_once_with(config.INSTALL_CIPHERDIR)
-        self.assertEqual(isfile_mock.await_count, 2)
+        isfile_mock.assert_awaited_once_with(
+            config.FERNET_ENCRYPTION_KEY_PATH,
+        )
         random_mock.assert_called_once_with(GOCRYPTFS_PASSPHRASE_LENGTH)
         encrypt_mock.assert_called_once_with(
             b"generated-passphrase",
@@ -287,12 +181,8 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
                 "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[False, False]),
+                new=AsyncMock(return_value=False),
             ),
             patch(
                 "app.services.gocryptfs_init.generate_random_string",
@@ -341,12 +231,8 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
                 "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[False, False]),
+                new=AsyncMock(return_value=False),
             ),
             patch(
                 "app.services.gocryptfs_init.generate_random_string",
@@ -402,12 +288,8 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
                 "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[False, False]),
+                new=AsyncMock(return_value=False),
             ),
             patch(
                 "app.services.gocryptfs_init.generate_random_string",
@@ -455,12 +337,8 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.gocryptfs_init.is_cipherdir_created",
-                new=AsyncMock(return_value=False),
-            ),
-            patch(
                 "app.services.gocryptfs_init.isfile",
-                new=AsyncMock(side_effect=[False, False]),
+                new=AsyncMock(return_value=False),
             ),
             patch(
                 "app.services.gocryptfs_init.generate_random_string",

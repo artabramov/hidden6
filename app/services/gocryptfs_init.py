@@ -6,13 +6,13 @@ import os
 
 from app.config import get_config
 from app.constants import GOCRYPTFS_PASSPHRASE_LENGTH
-from app.errors import ResourceConflictError
+from app.errors import BadGatewayError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.repositories.file import delete, isfile, write
 from app.security.encryption import encrypt_passphrase, generate_fernet_key
 from app.security.randoms import generate_random_string
-from app.runtime.cipherdir import is_cipherdir_created, cipherdir_create
+from app.runtime.cipherdir import cipherdir_create
 
 log = logging.getLogger(__name__)
 
@@ -41,18 +41,9 @@ async def gocryptfs_init(master_password: str) -> None:
         config.INSTALL_SECRETS,
         LockType.WRITE
     ):
-
-        if await is_cipherdir_created(config.INSTALL_CIPHERDIR):
-            log.warning("msg=cipherdir_already_created")
-            raise ResourceConflictError
-
-        if await isfile(config.GOCRYPTFS_PASSPHRASE_PATH):
-            log.warning("msg=passphrase_already_exists")
-            raise ResourceConflictError
-
         if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):
             log.warning("msg=fernet_key_already_exists")
-            raise ResourceConflictError
+            raise BadGatewayError
 
         passphrase = generate_random_string(GOCRYPTFS_PASSPHRASE_LENGTH)
         passphrase_encrypted = encrypt_passphrase(
