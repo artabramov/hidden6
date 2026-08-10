@@ -55,7 +55,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.services.gocryptfs_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
-            ),
+            ) as lock_mock,
             patch(
                 "app.services.gocryptfs_init.isfile",
                 new=AsyncMock(return_value=True),
@@ -79,6 +79,7 @@ class TestGocryptfsInit(unittest.IsolatedAsyncioTestCase):
         isfile_mock.assert_awaited_once_with(
             config.FERNET_ENCRYPTION_KEY_PATH,
         )
+        lock_mock.assert_not_called()
         write_mock.assert_not_awaited()
         delete_mock.assert_not_awaited()
         create_mock.assert_not_awaited()

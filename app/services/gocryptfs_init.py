@@ -37,14 +37,14 @@ async def gocryptfs_init(master_password: str) -> None:
     log.info("msg=gocryptfs_initialization_started")
     config = get_config()
 
+    if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):
+        log.warning("msg=fernet_key_already_exists")
+        raise BadGatewayError
+
     async with locks.lock_directory(
         config.INSTALL_SECRETS,
         LockType.WRITE
     ):
-        if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):
-            log.warning("msg=fernet_key_already_exists")
-            raise BadGatewayError
-
         passphrase = generate_random_string(GOCRYPTFS_PASSPHRASE_LENGTH)
         passphrase_encrypted = encrypt_passphrase(
             passphrase.encode("utf-8"),
