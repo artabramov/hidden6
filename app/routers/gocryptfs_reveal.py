@@ -1,8 +1,9 @@
 # app/routers/gocryptfs_reveal.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
+from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.schemas.gocryptfs_reveal import (
     GocryptfsRevealRequest,
     GocryptfsRevealResponse,
@@ -37,13 +38,14 @@ router = APIRouter(tags=["gocryptfs"])
         503: {
             "description": (
                 "Gocryptfs infrastructure is not ready: cipherdir "
-                "is not initialized, not mounted, or the required "
-                "passphrase is missing."
+                "is not initialized or the required passphrase is "
+                "missing."
             ),
         },
     },
     response_model=GocryptfsRevealResponse,
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_gocryptfs(require_mountpoint=None))],
     summary="Reveal gocryptfs passphrase.",
 )
 async def gocryptfs_reveal_router(
