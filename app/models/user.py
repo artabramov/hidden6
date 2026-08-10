@@ -65,8 +65,8 @@ class User(Base):
         lazy="raise",
     )
 
-    user_policies: Mapped[list["UserPolicy"]] = relationship(  # noqa: F821
-        back_populates="user_policy_user",
+    buckets: Mapped[list["Bucket"]] = relationship(  # noqa: F821
+        back_populates="bucket_user",
         passive_deletes=True,
         lazy="raise",
     )

@@ -13,9 +13,9 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
+from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402
-from app.models.user_policy import UserPolicy  # noqa: E402
 
 
 class TestUserModel(unittest.TestCase):
@@ -66,7 +66,7 @@ class TestUserModel(unittest.TestCase):
 
         self.assertTrue(user.is_root)
 
-    def test_relationships_to_keys_and_policies(self):
+    def test_relationships_to_keys_and_buckets(self):
         user = User(username="alice")
         self.session.add(user)
         self.session.flush()
@@ -76,15 +76,8 @@ class TestUserModel(unittest.TestCase):
             access_key_id="AKIAEXAMPLE000001",
             secret_access_key_encrypted="enc-secret",
         )
-        policy = UserPolicy(
-            user_id=user.id,
-            policy_name="readonly",
-            policy_document={
-                "Version": "2012-10-17",
-                "Statement": [],
-            },
-        )
-        self.session.add_all([key, policy])
+        bucket = Bucket(user_id=user.id, bucket_name="photos")
+        self.session.add_all([key, bucket])
         self.session.commit()
 
         loaded = self.session.scalar(
@@ -92,14 +85,14 @@ class TestUserModel(unittest.TestCase):
             .where(User.id == user.id)
             .options(
                 selectinload(User.user_keys),
-                selectinload(User.user_policies),
+                selectinload(User.buckets),
             ),
         )
 
         self.assertEqual(len(loaded.user_keys), 1)
-        self.assertEqual(len(loaded.user_policies), 1)
+        self.assertEqual(len(loaded.buckets), 1)
         self.assertEqual(loaded.user_keys[0].access_key_id, "AKIAEXAMPLE000001")
-        self.assertEqual(loaded.user_policies[0].policy_name, "readonly")
+        self.assertEqual(loaded.buckets[0].bucket_name, "photos")
 
     def test_relationship_access_without_eager_load_raises(self):
         user = User(username="alice")
@@ -114,7 +107,7 @@ class TestUserModel(unittest.TestCase):
             _ = loaded.user_keys
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.user_policies
+            _ = loaded.buckets
 
     def test_select_by_username(self):
         self.session.add(User(username="bob"))

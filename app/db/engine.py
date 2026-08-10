@@ -69,4 +69,4 @@ def load_all_models() -> None:
     """
     import app.models.user  # noqa: F401, PLC0415
     import app.models.user_key  # noqa: F401, PLC0415
-    import app.models.user_policy  # noqa: F401, PLC0415
+    import app.models.bucket  # noqa: F401, PLC0415
