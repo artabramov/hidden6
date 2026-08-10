@@ -24,6 +24,11 @@ log = logging.getLogger(__name__)
 # encrypted data therefore requires both the passphrase and the master
 # password.
 
+# TODO: Re-check cipherdir/passphrase/fernet under the WRITE lock
+# before creating artifacts. Two concurrent init requests can both
+# pass the outer gates; the second may then overwrite secrets after
+# the first has already completed successfully.
+
 async def gocryptfs_init(master_password: str) -> None:
     """
     Initialize encrypted storage by generating and encrypting a random
