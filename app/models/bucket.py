@@ -61,6 +61,12 @@ class Bucket(Base):
         back_populates="buckets",
     )
 
+    objekts: Mapped[list["Objekt"]] = relationship(  # noqa: F821
+        back_populates="objekt_bucket",
+        passive_deletes=True,
+        lazy="raise",
+    )
+
     __table_args__ = (
         {"sqlite_autoincrement": True},
     )

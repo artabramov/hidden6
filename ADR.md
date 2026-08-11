@@ -26,3 +26,4 @@ ADR-19: SQLite ORM relationships do not use implicit loading.
 ADR-20: S3 request authentication uses AWS Signature Version 4.
 ADR-21: S3 authorization is owner-and-root (no IAM policies).
 ADR-22: S3 routes are excluded from the OpenAPI schema.
+ADR-23: S3 object names do not collide with Python builtins.

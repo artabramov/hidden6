@@ -14,6 +14,7 @@ set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
+from app.models.objekt import Objekt  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
