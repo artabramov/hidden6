@@ -38,3 +38,24 @@ class BadGatewayError(Exception):
 class ServiceUnavailableError(Exception):
     """Raised when the cipherdir or secrets are unavailable (503)."""
     pass
+
+
+class S3Error(Exception):
+    """
+    Raised for S3 API client errors returned as XML Error documents.
+    Carries an S3 Error Code, message, HTTP status, and optional
+    Resource path (for example AccessDenied, InvalidBucketName).
+    """
+
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status_code: int,
+        resource: str | None = None,
+    ) -> None:
+        self.code = code
+        self.message = message
+        self.status_code = status_code
+        self.resource = resource
+        super().__init__(code)

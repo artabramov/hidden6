@@ -18,6 +18,7 @@ from app.errors import (
     InternalServerError,
     BadGatewayError,
     ServiceUnavailableError,
+    S3Error,
 )
 
 from app.handlers import (
@@ -27,6 +28,7 @@ from app.handlers import (
     resource_conflict_handler,
     service_unavailable_handler,
     bad_gateway_handler,
+    s3_error_handler,
 )
 
 from app.middleware.cors_setup import cors_setup_middleware
@@ -92,3 +94,4 @@ app.add_exception_handler(ResourceConflictError, resource_conflict_handler)
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
 app.add_exception_handler(BadGatewayError, bad_gateway_handler)
 app.add_exception_handler(ServiceUnavailableError, service_unavailable_handler)
+app.add_exception_handler(S3Error, s3_error_handler)
