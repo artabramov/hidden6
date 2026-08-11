@@ -11,7 +11,6 @@ from app.constants import (
     FERNET_ENCRYPTION_KEY_FILENAME,
     MOUNTPOINT_DB_DIRNAME,
     MOUNTPOINT_BUCKETS_DIRNAME,
-    MOUNTPOINT_VERSIONS_DIRNAME,
     MOUNTPOINT_TMP_DIRNAME,
 )
 
@@ -73,13 +72,6 @@ class Config(BaseSettings):
         return os.path.join(
             self.INSTALL_MOUNTPOINT,
             MOUNTPOINT_BUCKETS_DIRNAME,
-        )
-
-    @cached_property
-    def MOUNTPOINT_VERSIONS_DIR(self) -> str:
-        return os.path.join(
-            self.INSTALL_MOUNTPOINT,
-            MOUNTPOINT_VERSIONS_DIRNAME,
         )
 
     @cached_property

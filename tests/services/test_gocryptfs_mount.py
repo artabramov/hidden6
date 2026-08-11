@@ -37,7 +37,6 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
         config.GOCRYPTFS_PASSPHRASE_PATH = "/fake/secrets/passphrase.enc"
         config.MOUNTPOINT_DB_DIR = "/fake/mountpoint/db"
         config.MOUNTPOINT_BUCKETS_DIR = "/fake/mountpoint/buckets"
-        config.MOUNTPOINT_VERSIONS_DIR = "/fake/mountpoint/versions"
         config.MOUNTPOINT_TMP_DIR = "/fake/mountpoint/tmp"
         config.SQLITE_PATH = "/fake/mountpoint/db/hidden.db"
         return config
@@ -89,7 +88,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
     ):
         config = self._build_config()
         isdir_mock = AsyncMock(
-            side_effect=[False, False, False, False, False],
+            side_effect=[False, False, False, False],
         )
         mkdir_mock = AsyncMock()
 
@@ -153,9 +152,8 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
         mkdir_mock.assert_any_await(config.INSTALL_MOUNTPOINT)
         mkdir_mock.assert_any_await(config.MOUNTPOINT_DB_DIR)
         mkdir_mock.assert_any_await(config.MOUNTPOINT_BUCKETS_DIR)
-        mkdir_mock.assert_any_await(config.MOUNTPOINT_VERSIONS_DIR)
         mkdir_mock.assert_any_await(config.MOUNTPOINT_TMP_DIR)
-        self.assertEqual(mkdir_mock.await_count, 5)
+        self.assertEqual(mkdir_mock.await_count, 4)
         create_all_mock.assert_awaited_once_with()
         integrity_mock.assert_awaited_once_with(config.SQLITE_PATH)
         unmount_mock.assert_not_awaited()

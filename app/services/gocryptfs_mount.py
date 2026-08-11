@@ -23,7 +23,7 @@ async def gocryptfs_mount(master_password: str) -> None:
     """
     Mount the encrypted storage by decrypting the stored passphrase
     with the master password, mounting the gocryptfs filesystem,
-    ensuring mountpoint directories exist (db, buckets, versions, tmp),
+    ensuring mountpoint directories exist (db, buckets, tmp),
     creating ORM tables if missing, and checking database integrity.
     If a post-mount step fails, the mount is rolled back.
     """
@@ -61,9 +61,6 @@ async def gocryptfs_mount(master_password: str) -> None:
 
             if not await isdir(config.MOUNTPOINT_BUCKETS_DIR):
                 await mkdir(config.MOUNTPOINT_BUCKETS_DIR)
-
-            if not await isdir(config.MOUNTPOINT_VERSIONS_DIR):
-                await mkdir(config.MOUNTPOINT_VERSIONS_DIR)
 
             if not await isdir(config.MOUNTPOINT_TMP_DIR):
                 await mkdir(config.MOUNTPOINT_TMP_DIR)
