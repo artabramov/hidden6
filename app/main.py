@@ -13,7 +13,6 @@ from app.log import init_logging
 
 from app.errors import (
     UnauthorizedError,
-    ResourceConflictError,
     InternalServerError,
     BadGatewayError,
     ServiceUnavailableError,
@@ -23,7 +22,6 @@ from app.errors import (
 from app.handlers import (
     internal_server_error_handler,
     unauthorized_handler,
-    resource_conflict_handler,
     service_unavailable_handler,
     bad_gateway_handler,
     s3_error_handler,
@@ -87,7 +85,6 @@ app.include_router(gocryptfs_health_router, prefix=config.API_PREFIX)
 app.include_router(users_init_router, prefix=config.API_PREFIX)
 
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)
-app.add_exception_handler(ResourceConflictError, resource_conflict_handler)
 app.add_exception_handler(InternalServerError, internal_server_error_handler)
 app.add_exception_handler(BadGatewayError, bad_gateway_handler)
 app.add_exception_handler(ServiceUnavailableError, service_unavailable_handler)

@@ -5,9 +5,10 @@ from fastapi import status
 
 # NOTE (ADR-11): HTTP 401/502/503 are reserved for gocryptfs errors.
 # 401 indicates master-password authentication failure. 502 indicates
-# unexpected presence of cipherdir, mount, passphrase, or related
-# secrets such as the Fernet encryption key. 503 indicates missing
-# required gocryptfs infrastructure. S3 client errors use S3Error.
+# unexpected presence of cipherdir, mount, passphrase, related secrets,
+# or other internal infrastructure conflicts. 503 indicates missing
+# required gocryptfs infrastructure. S3 client errors use S3-based
+# custom errors.
 
 
 class S3ErrorCode:
@@ -21,18 +22,13 @@ class UnauthorizedError(Exception):
     pass
 
 
-class ResourceConflictError(Exception):
-    """Raised when the requested operation causes a conflict (409)."""
-    pass
-
-
 class InternalServerError(Exception):
     """Raised when an unexpected internal error occurs (500)."""
     pass
 
 
 class BadGatewayError(Exception):
-    """Raised when gocryptfs infra is in a conflicting state (502)."""
+    """Raised when infrastructure is in a conflicting state (502)."""
     pass
 
 

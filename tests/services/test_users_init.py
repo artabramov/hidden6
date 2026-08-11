@@ -16,7 +16,7 @@ from app.constants import (  # noqa: E402
     USER_SECRET_ACCESS_KEY_LENGTH,
 )
 from app.errors import (  # noqa: E402
-    ResourceConflictError,
+    BadGatewayError,
     UnauthorizedError,
 )
 from app.hooks import Events  # noqa: E402
@@ -116,7 +116,7 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            with self.assertRaises(ResourceConflictError):
+            with self.assertRaises(BadGatewayError):
                 await users_init("master-password", session)
 
         repo.select.assert_awaited_once_with(User, is_root=True)

@@ -21,11 +21,6 @@ router = APIRouter(tags=["users"])
                 "passphrase cannot be decrypted with it."
             ),
         },
-        409: {
-            "description": (
-                "Root user already exists. Bootstrap is one-time only."
-            ),
-        },
         422: {
             "description": (
                 "Request body failed basic Pydantic validation. "
@@ -37,6 +32,11 @@ router = APIRouter(tags=["users"])
             "description": (
                 "An unexpected internal error occurred while handling "
                 "the request. The operation could not be completed."
+            ),
+        },
+        502: {
+            "description": (
+                "Root user already exists. Bootstrap is one-time only."
             ),
         },
         503: {

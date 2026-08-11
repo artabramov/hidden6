@@ -9,7 +9,6 @@ from fastapi.responses import Response
 from app.context import get_context_var
 from app.errors import (
     UnauthorizedError,
-    ResourceConflictError,
     InternalServerError,
     ServiceUnavailableError,
     BadGatewayError,
@@ -22,13 +21,6 @@ async def unauthorized_handler(
     exc: UnauthorizedError,
 ) -> Response:
     return Response(status_code=status.HTTP_401_UNAUTHORIZED)
-
-
-async def resource_conflict_handler(
-    request: Request,
-    exc: ResourceConflictError,
-) -> Response:
-    return Response(status_code=status.HTTP_409_CONFLICT)
 
 
 async def internal_server_error_handler(

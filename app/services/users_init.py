@@ -12,7 +12,7 @@ from app.constants import (
     USER_SECRET_ACCESS_KEY_LENGTH,
 )
 from app.errors import (
-    ResourceConflictError,
+    BadGatewayError,
     UnauthorizedError,
 )
 from app.hooks import Events, hooks
@@ -60,7 +60,7 @@ async def users_init(
         existing = await repo.select(User, is_root=True)
         if existing is not None:
             log.warning("msg=root_user_already_exists")
-            raise ResourceConflictError
+            raise BadGatewayError
 
         access_key_id = generate_random_string(
             USER_ACCESS_KEY_ID_LENGTH
