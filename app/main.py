@@ -39,6 +39,7 @@ from app.routers.gocryptfs_rotate import router as gocryptfs_rotate_router
 from app.routers.gocryptfs_reveal import router as gocryptfs_reveal_router
 from app.routers.gocryptfs_health import router as gocryptfs_health_router
 from app.routers.user_init import router as user_init_router
+from app.routers.bucket_create import router as bucket_create_router
 
 config = get_config()
 
@@ -76,6 +77,11 @@ app.middleware("http")(security_headers_middleware)
 cors_setup_middleware(app)
 app.add_middleware(GZipMiddleware)
 
+# NOTE (ADR-22): S3 routes cannot be used in Swagger UI due to SigV4.
+# S3 routes remain visible in Swagger for documentation purposes, but
+# SigV4 authentication prevents their use through Swagger UI. Requests
+# must instead be sent using AWS CLI or another S3-compatible client.
+
 app.include_router(gocryptfs_init_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_mount_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_unmount_router, prefix=config.API_PREFIX)
@@ -83,6 +89,7 @@ app.include_router(gocryptfs_rotate_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_reveal_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_health_router, prefix=config.API_PREFIX)
 app.include_router(user_init_router, prefix=config.API_PREFIX)
+app.include_router(bucket_create_router)
 
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)
 app.add_exception_handler(InternalServerError, internal_server_error_handler)

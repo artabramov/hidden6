@@ -38,6 +38,9 @@ class S3ErrorCode:
     INVALID_ACCESS_KEY_ID = "InvalidAccessKeyId"
     SIGNATURE_DOES_NOT_MATCH = "SignatureDoesNotMatch"
     REQUEST_TIME_TOO_SKEWED = "RequestTimeTooSkewed"
+    BUCKET_NAME_INVALID = "InvalidBucketName"
+    BUCKET_ALREADY_EXISTS = "BucketAlreadyExists"
+    BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
 
 
 class S3Error(Exception):
@@ -111,5 +114,47 @@ class S3RequestTimeTooSkewedError(S3Error):
                 "current time is too large."
             ),
             status_code=status.HTTP_403_FORBIDDEN,
+            resource=resource,
+        )
+
+
+class S3InvalidBucketNameError(S3Error):
+    """Raised when the bucket name is invalid (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.BUCKET_NAME_INVALID,
+            message="The specified bucket is not valid.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3BucketAlreadyExistsError(S3Error):
+    """Raised when the bucket name is taken by another owner (409)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.BUCKET_ALREADY_EXISTS,
+            message=(
+                "The requested bucket name is not available. The "
+                "bucket namespace is shared by all users of the system."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
+            resource=resource,
+        )
+
+
+class S3BucketAlreadyOwnedByYouError(S3Error):
+    """Raised when the caller already owns the bucket (409)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.BUCKET_ALREADY_OWNED_BY_YOU,
+            message=(
+                "The bucket already exists and is owned by the "
+                "current user."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
             resource=resource,
         )

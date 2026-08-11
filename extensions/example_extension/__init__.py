@@ -8,6 +8,7 @@ from app.hooks import Events, HookManager
 from app.repositories.orm import ORMRepository
 from app.models.user import User
 from app.models.user_key import UserKey
+from app.models.bucket import Bucket
 
 
 async def gocryptfs_initialized(_: None) -> None:
@@ -33,8 +34,14 @@ async def gocryptfs_revealed(_: None) -> None:
 async def user_initialized(user: User) -> None:
     async with SessionLocal() as session:
         repo = ORMRepository(session)
-        keys = await repo.select_all(UserKey, user_id=user.id)
-        a = 1
+        user_keys = await repo.select_all(  # noqa: F841
+            UserKey,
+            user_id=user.id
+        )
+    ...
+
+
+async def bucket_created(bucket: Bucket) -> None:
     ...
 
 
@@ -45,3 +52,4 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_ROTATED, gocryptfs_rotated)
     hook_manager.on(Events.GOCRYPTFS_REVEALED, gocryptfs_revealed)
     hook_manager.on(Events.USER_INITIALIZED, user_initialized)
+    hook_manager.on(Events.BUCKET_CREATED, bucket_created)

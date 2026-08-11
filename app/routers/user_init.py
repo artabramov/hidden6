@@ -9,7 +9,7 @@ from app.dependencies.require_session import require_session
 from app.schemas.user_init import UserInitRequest, UserInitResponse
 from app.services.user_init import user_init
 
-router = APIRouter(tags=["user"])
+router = APIRouter(tags=["users"])
 
 
 @router.post(
