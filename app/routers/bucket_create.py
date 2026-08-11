@@ -20,18 +20,27 @@ router = APIRouter(tags=["S3"])
     "/{bucket_name}",
     responses={
         400: {
-            "description": "Invalid bucket name (InvalidBucketName).",
+            "description": (
+                "The bucket name in the path does not satisfy S3 "
+                "DNS naming rules: length, allowed characters, "
+                "label format, and restrictions on consecutive "
+                "dots or dashes."
+            ),
         },
         403: {
             "description": (
-                "SigV4 failure: AccessDenied, InvalidAccessKeyId, "
-                "SignatureDoesNotMatch, or RequestTimeTooSkewed."
+                "The request could not be authenticated with AWS "
+                "Signature Version 4. This includes an unknown or "
+                "disabled access key, a disabled user, an invalid "
+                "signature, or a request timestamp outside the "
+                "allowed clock skew."
             ),
         },
         409: {
             "description": (
-                "Bucket name unavailable (BucketAlreadyExists) "
-                "or already owned (BucketAlreadyOwnedByYou)."
+                "The bucket name is unavailable: it is already "
+                "owned by another user, or the caller has already "
+                "created a bucket with this name."
             ),
         },
         503: {
