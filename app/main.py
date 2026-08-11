@@ -78,10 +78,10 @@ app.middleware("http")(security_headers_middleware)
 cors_setup_middleware(app)
 app.add_middleware(GZipMiddleware)
 
-# NOTE (ADR-22): S3 routes cannot be used in Swagger UI due to SigV4.
-# S3 routes remain visible in Swagger for documentation purposes, but
-# SigV4 authentication prevents their use through Swagger UI. Requests
-# must instead be sent using AWS CLI or another S3-compatible client.
+# NOTE (ADR-22): S3 routes are excluded from the OpenAPI schema.
+# S3 requests require AWS Signature Version 4, which Swagger UI does
+# not support. S3 operations are therefore performed through AWS CLI
+# or another S3-compatible client against the application root.
 
 app.include_router(gocryptfs_init_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_mount_router, prefix=config.API_PREFIX)

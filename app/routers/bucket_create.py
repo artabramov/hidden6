@@ -13,7 +13,7 @@ from app.models.user import User
 from app.schemas.bucket_create import BucketCreateRequest
 from app.services.bucket_create import bucket_create
 
-router = APIRouter(tags=["S3"])
+router = APIRouter(include_in_schema=False)
 
 
 @router.put(

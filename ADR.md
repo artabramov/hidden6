@@ -25,4 +25,4 @@ ADR-18: SQLite database integrity is enforced on every mount.
 ADR-19: SQLite ORM relationships do not use implicit loading.
 ADR-20: S3 request authentication uses AWS Signature Version 4.
 ADR-21: S3 authorization is owner-and-root (no IAM policies).
-ADR-22: S3 routes cannot be used in Swagger UI due to SigV4.
+ADR-22: S3 routes are excluded from the OpenAPI schema.

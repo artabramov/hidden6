@@ -11,7 +11,7 @@ from app.models.user import User
 from app.schemas.bucket_list import render_list_buckets_xml
 from app.services.bucket_list import bucket_list
 
-router = APIRouter(tags=["S3"])
+router = APIRouter(include_in_schema=False)
 
 
 @router.get(
