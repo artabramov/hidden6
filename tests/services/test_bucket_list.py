@@ -10,6 +10,7 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
+from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_list import bucket_list  # noqa: E402
@@ -32,9 +33,15 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=buckets)
 
-        with patch(
-            "app.services.bucket_list.ORMRepository",
-            return_value=repo,
+        with (
+            patch(
+                "app.services.bucket_list.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_list.hooks.emit",
+                new_callable=AsyncMock,
+            ) as emit_mock,
         ):
             result = await bucket_list(user=user, session=self.session)
 
@@ -45,6 +52,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
             user_id=1,
         )
         self.assertEqual(result, buckets)
+        emit_mock.assert_awaited_once_with(Events.BUCKET_LISTED, buckets)
 
     async def test_root_lists_all_buckets(self):
         user = User(id=1, username="root", is_root=True)
@@ -55,9 +63,15 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=buckets)
 
-        with patch(
-            "app.services.bucket_list.ORMRepository",
-            return_value=repo,
+        with (
+            patch(
+                "app.services.bucket_list.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_list.hooks.emit",
+                new_callable=AsyncMock,
+            ) as emit_mock,
         ):
             result = await bucket_list(user=user, session=self.session)
 
@@ -67,16 +81,24 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
             order="asc",
         )
         self.assertEqual(result, buckets)
+        emit_mock.assert_awaited_once_with(Events.BUCKET_LISTED, buckets)
 
     async def test_returns_empty_list(self):
         user = User(id=1, username="alice", is_root=False)
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=[])
 
-        with patch(
-            "app.services.bucket_list.ORMRepository",
-            return_value=repo,
+        with (
+            patch(
+                "app.services.bucket_list.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_list.hooks.emit",
+                new_callable=AsyncMock,
+            ) as emit_mock,
         ):
             result = await bucket_list(user=user, session=self.session)
 
         self.assertEqual(result, [])
+        emit_mock.assert_awaited_once_with(Events.BUCKET_LISTED, [])
