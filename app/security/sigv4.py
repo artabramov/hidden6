@@ -14,13 +14,18 @@ from urllib.parse import parse_qsl
 
 from fastapi import Request
 
-from app.errors import S3AccessDeniedError
+from app.errors import (
+    S3AccessDeniedError,
+    S3RequestTimeTooSkewedError,
+    S3SignatureDoesNotMatchError,
+)
 
 # NOTE (ADR-20): S3 request authentication uses AWS Signature Version 4.
 # Supports both Authorization-header and query-string (presigned URL)
-# authentication. Signature validation failures raise ForbiddenError
-# (403); HTTP 401 remains reserved for gocryptfs master-password
-# failures.
+# authentication. Failures raise specific S3 403 errors
+# (AccessDenied, SignatureDoesNotMatch, RequestTimeTooSkewed).
+# HTTP 401 remains reserved for gocryptfs master-password failures
+# (ADR-11).
 
 
 ALGORITHM = "AWS4-HMAC-SHA256"
@@ -154,7 +159,7 @@ def verify_sigv4(
     ).hexdigest()
 
     if not hmac.compare_digest(expected, auth.signature.lower()):
-        raise S3AccessDeniedError()
+        raise S3SignatureDoesNotMatchError(request.url.path)
 
 
 async def resolve_payload_hash(request: Request) -> str:
@@ -180,7 +185,7 @@ async def resolve_payload_hash(request: Request) -> str:
         body = await request.body()
         actual = _sha256_hex(body)
         if not hmac.compare_digest(actual, header_hash.lower()):
-            raise S3AccessDeniedError()
+            raise S3SignatureDoesNotMatchError(request.url.path)
         return header_hash.lower()
 
     raise S3AccessDeniedError()
@@ -305,7 +310,7 @@ def _assert_time_valid(
     now = datetime.now(timezone.utc)
     delta = abs((now - signed_at).total_seconds())
     if delta > max_skew_seconds:
-        raise S3AccessDeniedError()
+        raise S3RequestTimeTooSkewedError()
 
     if auth.expires is not None:
         age = (now - signed_at).total_seconds()

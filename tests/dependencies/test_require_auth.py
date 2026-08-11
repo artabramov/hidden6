@@ -14,7 +14,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.errors import S3AccessDeniedError  # noqa: E402
+from app.errors import S3InvalidAccessKeyIdError  # noqa: E402
 from app.security.sigv4 import ALGORITHM, UNSIGNED_PAYLOAD  # noqa: E402
 import app.dependencies.require_auth as require_auth_mod  # noqa: E402
 
@@ -155,5 +155,5 @@ class TestRequireAuth(unittest.IsolatedAsyncioTestCase):
             get_config.return_value.S3_SERVICE = SERVICE
             get_config.return_value.S3_SIGV4_MAX_SKEW_SECONDS = 900
 
-            with self.assertRaises(S3AccessDeniedError):
+            with self.assertRaises(S3InvalidAccessKeyIdError):
                 await require_auth_mod.require_auth(request, session)

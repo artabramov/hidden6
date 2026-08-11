@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.dependencies.require_session import require_session
-from app.errors import S3AccessDeniedError
+from app.errors import S3AccessDeniedError, S3InvalidAccessKeyIdError
 from app.models.user import User
 from app.models.user_key import UserKey
 from app.repositories.orm import ORMRepository
@@ -26,8 +26,9 @@ async def require_auth(
     Authenticate an S3 request using AWS Signature Version 4.
 
     Validates the access key, user state, and request signature,
-    then returns the authenticated User. Authentication failures
-    raise S3AccessDeniedError (403).
+    then returns the authenticated User. Failures raise specific
+    S3 403 errors (InvalidAccessKeyId, AccessDenied,
+    SignatureDoesNotMatch, RequestTimeTooSkewed).
     """
     config = get_config()
     resource = request.url.path
@@ -37,7 +38,9 @@ async def require_auth(
     repo = ORMRepository(session)
 
     key = await repo.select(UserKey, access_key_id=auth.access_key_id)
-    if key is None or not key.is_enabled:
+    if key is None:
+        raise S3InvalidAccessKeyIdError(resource)
+    if not key.is_enabled:
         raise S3AccessDeniedError(resource)
 
     user = await repo.select(User, id=key.user_id)
