@@ -1,4 +1,4 @@
-# app/services/users_init.py
+# app/services/user_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
@@ -27,16 +27,16 @@ from app.security.randoms import generate_random_string
 log = logging.getLogger(__name__)
 
 
-async def users_init(
+async def user_init(
     master_password: str,
     session: AsyncSession,
 ) -> dict:
     """
-    Initialize the users subsystem: create the root user and its first
-    access key pair. Returns plaintext credentials once; the secret is
-    stored only as Fernet ciphertext.
+    Initialize identity: create the root user and its first access key
+    pair. Returns plaintext credentials once; the secret is stored only
+    as Fernet ciphertext.
     """
-    log.info("msg=users_initialization_started")
+    log.info("msg=user_init_started")
     config = get_config()
 
     async with locks.lock_directory(
@@ -91,7 +91,7 @@ async def users_init(
         "secret_access_key": secret_access_key,
     }
 
-    log.info("msg=users_initialized")
-    await hooks.emit(Events.USERS_INITIALIZED, user)
+    log.info("msg=user_init_done")
+    await hooks.emit(Events.USER_INITIALIZED, user)
 
     return result

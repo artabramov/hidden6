@@ -1,4 +1,4 @@
-# tests/routers/test_users_init.py
+# tests/routers/test_user_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -9,14 +9,14 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.routers.users_init import users_init_router  # noqa: E402
-from app.schemas.users_init import UsersInitRequest  # noqa: E402
+from app.routers.user_init import user_init_router  # noqa: E402
+from app.schemas.user_init import UserInitRequest  # noqa: E402
 
 
-class TestUsersInitRouter(unittest.IsolatedAsyncioTestCase):
+class TestUserInitRouter(unittest.IsolatedAsyncioTestCase):
 
     async def test_returns_201_with_credentials(self):
-        data = UsersInitRequest(master_password="Master-passphrase1")
+        data = UserInitRequest(master_password="Master-passphrase1")
         session = MagicMock()
         result = {
             "user_id": 1,
@@ -26,11 +26,11 @@ class TestUsersInitRouter(unittest.IsolatedAsyncioTestCase):
         }
 
         with patch(
-            "app.routers.users_init.users_init",
+            "app.routers.user_init.user_init",
             new_callable=AsyncMock,
             return_value=result,
         ) as mock_service:
-            response = await users_init_router(data=data, session=session)
+            response = await user_init_router(data=data, session=session)
 
         mock_service.assert_awaited_once_with(
             master_password="Master-passphrase1",

@@ -30,7 +30,7 @@ async def gocryptfs_revealed(_: None) -> None:
     ...
 
 
-async def users_initialized(user: User) -> None:
+async def user_initialized(user: User) -> None:
     async with SessionLocal() as session:
         repo = ORMRepository(session)
         keys = await repo.select_all(UserKey, user_id=user.id)
@@ -44,4 +44,4 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_UNMOUNTED, gocryptfs_unmounted)
     hook_manager.on(Events.GOCRYPTFS_ROTATED, gocryptfs_rotated)
     hook_manager.on(Events.GOCRYPTFS_REVEALED, gocryptfs_revealed)
-    hook_manager.on(Events.USERS_INITIALIZED, users_initialized)
+    hook_manager.on(Events.USER_INITIALIZED, user_initialized)

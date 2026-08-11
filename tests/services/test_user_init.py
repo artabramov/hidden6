@@ -1,4 +1,4 @@
-# tests/services/test_users_init.py
+# tests/services/test_user_init.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -22,14 +22,14 @@ from app.errors import (  # noqa: E402
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.users_init import users_init  # noqa: E402
+from app.services.user_init import user_init  # noqa: E402
 
 load_all_models()
 
 
-class TestUsersInit(unittest.IsolatedAsyncioTestCase):
+class TestUserInit(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.log_patcher = patch("app.services.users_init.log")
+        self.log_patcher = patch("app.services.user_init.log")
         self.log_patcher.start()
 
     def tearDown(self):
@@ -53,28 +53,28 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.users_init.get_config",
+                "app.services.user_init.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.users_init.locks.lock_directory",
+                "app.services.user_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ) as lock_mock,
             patch(
-                "app.services.users_init.read",
+                "app.services.user_init.read",
                 new=AsyncMock(return_value=b"encrypted"),
             ),
             patch(
-                "app.services.users_init.decrypt_passphrase",
+                "app.services.user_init.decrypt_passphrase",
                 side_effect=ValueError("bad"),
             ),
             patch(
-                "app.services.users_init.hooks.emit",
+                "app.services.user_init.hooks.emit",
                 new=AsyncMock(),
             ) as emit_mock,
         ):
             with self.assertRaises(UnauthorizedError):
-                await users_init("wrong-password", session)
+                await user_init("wrong-password", session)
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
@@ -92,32 +92,32 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.users_init.get_config",
+                "app.services.user_init.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.users_init.locks.lock_directory",
+                "app.services.user_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.users_init.read",
+                "app.services.user_init.read",
                 new=AsyncMock(return_value=b"encrypted"),
             ),
             patch(
-                "app.services.users_init.decrypt_passphrase",
+                "app.services.user_init.decrypt_passphrase",
                 return_value=b"ok",
             ),
             patch(
-                "app.services.users_init.ORMRepository",
+                "app.services.user_init.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.users_init.hooks.emit",
+                "app.services.user_init.hooks.emit",
                 new=AsyncMock(),
             ) as emit_mock,
         ):
             with self.assertRaises(BadGatewayError):
-                await users_init("master-password", session)
+                await user_init("master-password", session)
 
         repo.select.assert_awaited_once_with(User, is_root=True)
         emit_mock.assert_not_awaited()
@@ -137,42 +137,42 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.users_init.get_config",
+                "app.services.user_init.get_config",
                 return_value=config,
             ),
             patch(
-                "app.services.users_init.locks.lock_directory",
+                "app.services.user_init.locks.lock_directory",
                 return_value=self._build_lock_context(),
             ),
             patch(
-                "app.services.users_init.read",
+                "app.services.user_init.read",
                 new=AsyncMock(return_value=b"encrypted"),
             ),
             patch(
-                "app.services.users_init.decrypt_passphrase",
+                "app.services.user_init.decrypt_passphrase",
                 return_value=b"ok",
             ),
             patch(
-                "app.services.users_init.ORMRepository",
+                "app.services.user_init.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.users_init.generate_random_string",
+                "app.services.user_init.generate_random_string",
                 side_effect=[
                     "access-key-id-20chars",
                     "secret-access-key-40-characters-xxxxxx",
                 ],
             ) as random_mock,
             patch(
-                "app.services.users_init.encrypt_string",
+                "app.services.user_init.encrypt_string",
                 return_value="enc-secret",
             ) as encrypt_mock,
             patch(
-                "app.services.users_init.hooks.emit",
+                "app.services.user_init.hooks.emit",
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            result = await users_init("master-password", session)
+            result = await user_init("master-password", session)
 
         self.assertEqual(
             result,
@@ -198,4 +198,4 @@ class TestUsersInit(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(key_obj.user_id, 1)
         self.assertEqual(key_obj.access_key_id, "access-key-id-20chars")
         self.assertEqual(key_obj.secret_access_key_encrypted, "enc-secret")
-        emit_mock.assert_awaited_once_with(Events.USERS_INITIALIZED, user_obj)
+        emit_mock.assert_awaited_once_with(Events.USER_INITIALIZED, user_obj)
