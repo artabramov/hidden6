@@ -1,22 +1,23 @@
 # app/errors.py
 # SPDX-License-Identifier: GPL-3.0-only
 
+from fastapi import status
+
 # NOTE (ADR-11): HTTP 401/502/503 are reserved for gocryptfs errors.
 # 401 indicates master-password authentication failure. 502 indicates
 # unexpected presence of cipherdir, mount, passphrase, or related
 # secrets such as the Fernet encryption key. 503 indicates missing
-# required gocryptfs infrastructure. All other application errors,
-# including SigV4 authentication failures, use different status codes
-# (for example, 403 Forbidden for SigV4).
+# required gocryptfs infrastructure. S3 client errors use S3Error.
+
+
+class S3ErrorCode:
+    """S3 error codes returned in XML Error responses."""
+
+    ACCESS_DENIED = "AccessDenied"
 
 
 class UnauthorizedError(Exception):
     """Raised when credentials are invalid (401)."""
-    pass
-
-
-class ForbiddenError(Exception):
-    """Raised when SigV4 authentication or authorization fails (403)."""
     pass
 
 
@@ -59,3 +60,15 @@ class S3Error(Exception):
         self.status_code = status_code
         self.resource = resource
         super().__init__(code)
+
+
+class S3AccessDeniedError(S3Error):
+    """Raised when S3 access is denied (403)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.ACCESS_DENIED,
+            message="Access Denied",
+            status_code=status.HTTP_403_FORBIDDEN,
+            resource=resource,
+        )

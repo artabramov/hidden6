@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.dependencies.require_session import require_session
-from app.errors import ForbiddenError
+from app.errors import S3AccessDeniedError
 from app.models.user import User
 from app.models.user_key import UserKey
 from app.repositories.orm import ORMRepository
@@ -27,9 +27,10 @@ async def require_auth(
 
     Validates the access key, user state, and request signature,
     then returns the authenticated User. Authentication failures
-    raise ForbiddenError (401).
+    raise S3AccessDeniedError (403).
     """
     config = get_config()
+    resource = request.url.path
     auth = extract_sigv4_auth(request)
     payload_hash = await resolve_payload_hash(request)
 
@@ -37,11 +38,11 @@ async def require_auth(
 
     key = await repo.select(UserKey, access_key_id=auth.access_key_id)
     if key is None or not key.is_enabled:
-        raise ForbiddenError
+        raise S3AccessDeniedError(resource)
 
     user = await repo.select(User, id=key.user_id)
     if user is None or not user.is_enabled:
-        raise ForbiddenError
+        raise S3AccessDeniedError(resource)
 
     secret_access_key = decrypt_string(key.secret_access_key_encrypted)
     verify_sigv4(

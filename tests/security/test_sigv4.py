@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 
 from starlette.requests import Request
 
-from app.errors import ForbiddenError
+from app.errors import S3AccessDeniedError
 from app.security import sigv4
 from app.security.sigv4 import (
     ALGORITHM,
@@ -228,7 +228,7 @@ class TestExtractAndVerify(unittest.IsolatedAsyncioTestCase):
         request = _make_request("GET", "/bucket", headers=headers)
 
         auth = extract_sigv4_auth(request)
-        with self.assertRaises(ForbiddenError):
+        with self.assertRaises(S3AccessDeniedError):
             verify_sigv4(
                 request,
                 auth,
@@ -245,7 +245,7 @@ class TestExtractAndVerify(unittest.IsolatedAsyncioTestCase):
             "/bucket",
             headers={"host": "localhost"},
         )
-        with self.assertRaises(ForbiddenError):
+        with self.assertRaises(S3AccessDeniedError):
             extract_sigv4_auth(request)
 
     async def test_rejects_clock_skew(self):
@@ -261,7 +261,7 @@ class TestExtractAndVerify(unittest.IsolatedAsyncioTestCase):
         request = _make_request("GET", "/bucket", headers=headers)
 
         auth = extract_sigv4_auth(request)
-        with self.assertRaises(ForbiddenError):
+        with self.assertRaises(S3AccessDeniedError):
             verify_sigv4(
                 request,
                 auth,
@@ -285,7 +285,7 @@ class TestExtractAndVerify(unittest.IsolatedAsyncioTestCase):
         request = _make_request("GET", "/bucket", headers=headers)
 
         auth = extract_sigv4_auth(request)
-        with self.assertRaises(ForbiddenError):
+        with self.assertRaises(S3AccessDeniedError):
             verify_sigv4(
                 request,
                 auth,
@@ -311,7 +311,7 @@ class TestExtractAndVerify(unittest.IsolatedAsyncioTestCase):
             headers=headers,
             body=b"tampered-body",
         )
-        with self.assertRaises(ForbiddenError):
+        with self.assertRaises(S3AccessDeniedError):
             await resolve_payload_hash(request)
 
     async def test_query_auth_roundtrip(self):
