@@ -14,7 +14,7 @@ ADR-07: Filesystem-level encryption uses gocryptfs.
 ADR-08: Gocryptfs dependency executes before all others.
 ADR-09: Gocryptfs passphrase is protected by master password.
 ADR-10: Passphrase is passed to gocryptfs through tmpfs.
-ADR-11: HTTP 401/502/503 are reserved for gocryptfs errors.
+ADR-11: HTTP 401/502/503 are reserved for internal errors.
 ADR-12: Watchdog runs as a periodic background sleep-loop.
 ADR-13: Watchdog performs an immediate emergency unmount.
 ADR-14: X-Request-ID is accepted for request correlation.

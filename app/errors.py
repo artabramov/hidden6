@@ -3,7 +3,7 @@
 
 from fastapi import status
 
-# NOTE (ADR-11): HTTP 401/502/503 are reserved for gocryptfs errors.
+# NOTE (ADR-11): HTTP 401/502/503 are reserved for internal errors.
 # 401 indicates master-password authentication failure. 502 indicates
 # unexpected presence of cipherdir, mount, passphrase, related secrets,
 # or other internal infrastructure conflicts. 503 indicates missing
