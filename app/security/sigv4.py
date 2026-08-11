@@ -91,6 +91,7 @@ def extract_sigv4_auth(request: Request) -> SigV4Auth:
     Raises:
         S3Error: Auth material is missing or malformed.
     """
+    resource = request.url.path
     authorization = request.headers.get("authorization")
     if authorization:
         return _parse_authorization_header(request, authorization)
@@ -99,7 +100,7 @@ def extract_sigv4_auth(request: Request) -> SigV4Auth:
     if algorithm:
         return _parse_query_auth(request)
 
-    raise S3AccessDeniedError()
+    raise S3AccessDeniedError(resource)
 
 
 def verify_sigv4(
@@ -118,16 +119,21 @@ def verify_sigv4(
     Raises:
         S3Error: Scope, skew, expiry, or signature is invalid.
     """
+    resource = request.url.path
     if auth.region != expected_region:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if auth.service != expected_service:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if auth.datestamp != auth.amz_date[:8]:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if "host" not in auth.signed_headers:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
 
-    _assert_time_valid(auth, max_skew_seconds=max_skew_seconds)
+    _assert_time_valid(
+        auth,
+        max_skew_seconds=max_skew_seconds,
+        resource=resource,
+    )
 
     canonical_request = _canonical_request(
         request,
@@ -159,7 +165,7 @@ def verify_sigv4(
     ).hexdigest()
 
     if not hmac.compare_digest(expected, auth.signature.lower()):
-        raise S3SignatureDoesNotMatchError(request.url.path)
+        raise S3SignatureDoesNotMatchError(resource)
 
 
 async def resolve_payload_hash(request: Request) -> str:
@@ -170,6 +176,7 @@ async def resolve_payload_hash(request: Request) -> str:
     against the request body; UNSIGNED-PAYLOAD and streaming markers are
     accepted as opaque signed values.
     """
+    resource = request.url.path
     header_hash = request.headers.get("x-amz-content-sha256")
     if header_hash is None:
         body = await request.body()
@@ -185,22 +192,29 @@ async def resolve_payload_hash(request: Request) -> str:
         body = await request.body()
         actual = _sha256_hex(body)
         if not hmac.compare_digest(actual, header_hash.lower()):
-            raise S3SignatureDoesNotMatchError(request.url.path)
+            raise S3SignatureDoesNotMatchError(resource)
         return header_hash.lower()
 
-    raise S3AccessDeniedError()
+    raise S3AccessDeniedError(resource)
 
 
 def _parse_authorization_header(
     request: Request,
     authorization: str,
 ) -> SigV4Auth:
+    resource = request.url.path
     match = _AUTHORIZATION_RE.match(authorization.strip())
     if match is None:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
 
-    credential = _parse_credential(match.group("credential"))
-    signed_headers = _parse_signed_headers(match.group("signed_headers"))
+    credential = _parse_credential(
+        match.group("credential"),
+        resource=resource,
+    )
+    signed_headers = _parse_signed_headers(
+        match.group("signed_headers"),
+        resource=resource,
+    )
     amz_date = _amz_date_from_headers(request)
 
     return SigV4Auth(
@@ -216,6 +230,7 @@ def _parse_authorization_header(
 
 
 def _parse_query_auth(request: Request) -> SigV4Auth:
+    resource = request.url.path
     params = request.query_params
     algorithm = params.get("X-Amz-Algorithm")
     credential_raw = params.get("X-Amz-Credential")
@@ -225,23 +240,26 @@ def _parse_query_auth(request: Request) -> SigV4Auth:
     expires_raw = params.get("X-Amz-Expires")
 
     if algorithm != ALGORITHM:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if not credential_raw or not amz_date or not signed_headers_raw:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if not signature or len(signature) != 64 or not _is_hex(signature):
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if expires_raw is None:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
 
     try:
         expires = int(expires_raw)
     except ValueError as exc:
-        raise S3AccessDeniedError() from exc
+        raise S3AccessDeniedError(resource) from exc
     if expires <= 0:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
 
-    credential = _parse_credential(credential_raw)
-    signed_headers = _parse_signed_headers(signed_headers_raw)
+    credential = _parse_credential(credential_raw, resource=resource)
+    signed_headers = _parse_signed_headers(
+        signed_headers_raw,
+        resource=resource,
+    )
 
     return SigV4Auth(
         access_key_id=credential["access_key_id"],
@@ -256,36 +274,45 @@ def _parse_query_auth(request: Request) -> SigV4Auth:
     )
 
 
-def _parse_credential(credential: str) -> dict[str, str]:
+def _parse_credential(
+    credential: str,
+    *,
+    resource: str,
+) -> dict[str, str]:
     match = _CREDENTIAL_RE.match(credential)
     if match is None:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     return match.groupdict()
 
 
-def _parse_signed_headers(raw: str) -> tuple[str, ...]:
+def _parse_signed_headers(
+    raw: str,
+    *,
+    resource: str,
+) -> tuple[str, ...]:
     headers = tuple(part.strip().lower() for part in raw.split(";") if part)
     if not headers:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     if headers != tuple(sorted(headers)):
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     return headers
 
 
 def _amz_date_from_headers(request: Request) -> str:
+    resource = request.url.path
     amz_date = request.headers.get("x-amz-date")
     if amz_date:
         if not _is_amz_date(amz_date):
-            raise S3AccessDeniedError()
+            raise S3AccessDeniedError(resource)
         return amz_date
 
     date_header = request.headers.get("date")
     if not date_header:
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
     try:
         parsed = parsedate_to_datetime(date_header)
     except (TypeError, ValueError, IndexError) as exc:
-        raise S3AccessDeniedError() from exc
+        raise S3AccessDeniedError(resource) from exc
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -295,9 +322,10 @@ def _assert_time_valid(
     auth: SigV4Auth,
     *,
     max_skew_seconds: int,
+    resource: str,
 ) -> None:
     if not _is_amz_date(auth.amz_date):
-        raise S3AccessDeniedError()
+        raise S3AccessDeniedError(resource)
 
     try:
         signed_at = datetime.strptime(
@@ -305,17 +333,17 @@ def _assert_time_valid(
             "%Y%m%dT%H%M%SZ",
         ).replace(tzinfo=timezone.utc)
     except ValueError as exc:
-        raise S3AccessDeniedError() from exc
+        raise S3AccessDeniedError(resource) from exc
 
     now = datetime.now(timezone.utc)
     delta = abs((now - signed_at).total_seconds())
     if delta > max_skew_seconds:
-        raise S3RequestTimeTooSkewedError()
+        raise S3RequestTimeTooSkewedError(resource)
 
     if auth.expires is not None:
         age = (now - signed_at).total_seconds()
         if age < 0 or age > auth.expires:
-            raise S3AccessDeniedError()
+            raise S3AccessDeniedError(resource)
 
 
 def _canonical_request(
@@ -361,11 +389,12 @@ def _canonical_headers(
     request: Request,
     signed_headers: tuple[str, ...],
 ) -> str:
+    resource = request.url.path
     lines: list[str] = []
     for name in signed_headers:
         value = request.headers.get(name)
         if value is None:
-            raise S3AccessDeniedError()
+            raise S3AccessDeniedError(resource)
         lines.append(f"{name}:{_canonicalize_header_value(value)}")
     return "\n".join(lines) + "\n"
 
