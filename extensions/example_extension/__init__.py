@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 from __future__ import annotations
+from typing import List
 
 from app.db.engine import SessionLocal
 from app.hooks import Events, HookManager
@@ -45,6 +46,10 @@ async def bucket_created(bucket: Bucket) -> None:
     ...
 
 
+async def bucket_listed(bucket: List[Bucket]) -> None:
+    ...
+
+
 def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_INITIALIZED, gocryptfs_initialized)
     hook_manager.on(Events.GOCRYPTFS_MOUNTED, gocryptfs_mounted)
@@ -53,3 +58,4 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_REVEALED, gocryptfs_revealed)
     hook_manager.on(Events.USER_INITIALIZED, user_initialized)
     hook_manager.on(Events.BUCKET_CREATED, bucket_created)
+    hook_manager.on(Events.BUCKET_LISTED, bucket_listed)

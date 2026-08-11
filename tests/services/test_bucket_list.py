@@ -1,0 +1,82 @@
+# tests/services/test_bucket_list.py
+# SPDX-License-Identifier: GPL-3.0-only
+
+import unittest
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from tests.helpers import set_minimal_app_config_env
+
+
+set_minimal_app_config_env()
+
+from app.db.engine import load_all_models  # noqa: E402
+from app.models.bucket import Bucket  # noqa: E402
+from app.models.user import User  # noqa: E402
+from app.services.bucket_list import bucket_list  # noqa: E402
+
+load_all_models()
+
+
+class TestBucketList(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.log_patcher = patch("app.services.bucket_list.log")
+        self.log_patcher.start()
+        self.session = MagicMock()
+
+    def tearDown(self):
+        self.log_patcher.stop()
+
+    async def test_non_root_lists_own_buckets_only(self):
+        user = User(id=1, username="alice", is_root=False)
+        buckets = [Bucket(user_id=1, bucket_name="photos")]
+        repo = MagicMock()
+        repo.select_all = AsyncMock(return_value=buckets)
+
+        with patch(
+            "app.services.bucket_list.ORMRepository",
+            return_value=repo,
+        ):
+            result = await bucket_list(user=user, session=self.session)
+
+        repo.select_all.assert_awaited_once_with(
+            Bucket,
+            order_by="bucket_name",
+            order="asc",
+            user_id=1,
+        )
+        self.assertEqual(result, buckets)
+
+    async def test_root_lists_all_buckets(self):
+        user = User(id=1, username="root", is_root=True)
+        buckets = [
+            Bucket(user_id=1, bucket_name="a"),
+            Bucket(user_id=2, bucket_name="b"),
+        ]
+        repo = MagicMock()
+        repo.select_all = AsyncMock(return_value=buckets)
+
+        with patch(
+            "app.services.bucket_list.ORMRepository",
+            return_value=repo,
+        ):
+            result = await bucket_list(user=user, session=self.session)
+
+        repo.select_all.assert_awaited_once_with(
+            Bucket,
+            order_by="bucket_name",
+            order="asc",
+        )
+        self.assertEqual(result, buckets)
+
+    async def test_returns_empty_list(self):
+        user = User(id=1, username="alice", is_root=False)
+        repo = MagicMock()
+        repo.select_all = AsyncMock(return_value=[])
+
+        with patch(
+            "app.services.bucket_list.ORMRepository",
+            return_value=repo,
+        ):
+            result = await bucket_list(user=user, session=self.session)
+
+        self.assertEqual(result, [])

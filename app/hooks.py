@@ -25,6 +25,7 @@ class Events:
     GOCRYPTFS_REVEALED = "gocryptfs_revealed"
     USER_INITIALIZED = "user_initialized"
     BUCKET_CREATED = "bucket_created"
+    BUCKET_LISTED = "bucket_listed"
 
 
 class HookManager:

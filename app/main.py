@@ -40,6 +40,7 @@ from app.routers.gocryptfs_reveal import router as gocryptfs_reveal_router
 from app.routers.gocryptfs_health import router as gocryptfs_health_router
 from app.routers.user_init import router as user_init_router
 from app.routers.bucket_create import router as bucket_create_router
+from app.routers.bucket_list import router as bucket_list_router
 
 config = get_config()
 
@@ -89,6 +90,7 @@ app.include_router(gocryptfs_rotate_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_reveal_router, prefix=config.API_PREFIX)
 app.include_router(gocryptfs_health_router, prefix=config.API_PREFIX)
 app.include_router(user_init_router, prefix=config.API_PREFIX)
+app.include_router(bucket_list_router)
 app.include_router(bucket_create_router)
 
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)
