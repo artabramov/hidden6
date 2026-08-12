@@ -27,17 +27,16 @@ async def bucket_create(
     session: AsyncSession,
 ) -> Bucket:
     """
-    Create an S3 bucket: mktree under the mountpoint buckets dir and
-    insert the Bucket row owned by the caller.
+    Create an S3 bucket for the specified user.
+
+    Checks for an existing bucket with the same name, creates its
+    directory, and stores the bucket metadata in the database.
+    The directory is removed if database creation fails.
     """
-    config = get_config()
+    cfg = get_config()
     resource = f"/{bucket_name}"
 
-    bucket_path = bucket_dir(
-        config.MOUNTPOINT_BUCKETS_DIR,
-        bucket_name,
-        resource,
-    )
+    bucket_path = bucket_dir(cfg.MOUNTPOINT_BUCKETS_DIR, bucket_name, resource)
 
     async with locks.lock_directory(bucket_path, LockType.WRITE):
         repo = ORMRepository(session)
