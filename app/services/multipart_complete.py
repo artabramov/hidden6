@@ -24,14 +24,12 @@ from app.repositories.file import (
     rmtree,
 )
 from app.repositories.orm import ORMRepository
-from app.s3.bucket_dir import bucket_dir
 from app.s3.bucket_load import bucket_load
 from app.s3.etag_construct import etag_construct
 from app.s3.multipart_load import multipart_load
 from app.s3.multipart_parts import multipart_parts
-from app.s3.objekt_key_validate import objekt_key_validate
+from app.s3.objekt_dir import objekt_dir
 from app.s3.objekt_mkdir import objekt_mkdir
-from app.s3.objekt_path import objekt_path
 from app.s3.objekt_upsert import objekt_upsert
 from app.schemas.multipart_complete import MultipartPart
 
@@ -56,10 +54,10 @@ async def multipart_complete(
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
-    objekt_key_validate(object_key, resource)
-    bucket_path = bucket_dir(
+    bucket_path, object_path = objekt_dir(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
+        object_key,
         resource,
     )
 
@@ -75,7 +73,6 @@ async def multipart_complete(
     )
 
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
-    object_path = objekt_path(bucket_path, object_key, resource)
     staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
 
     try:
