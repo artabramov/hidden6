@@ -49,8 +49,8 @@ async def objekt_upload(
     same key is overwritten and assigned to the current user.
     """
     config = get_config()
-
     resource = f"/{bucket_name}/{object_key}"
+
     bucket_path, object_path = objekt_dir(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,

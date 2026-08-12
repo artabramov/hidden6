@@ -35,8 +35,8 @@ async def bucket_create(
     and the directory is removed.
     """
     config = get_config()
-
     resource = f"/{bucket_name}"
+
     bucket_path = bucket_dir(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
