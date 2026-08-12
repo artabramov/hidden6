@@ -1,6 +1,7 @@
-# app/s3/bucket_name_validate.py
+# app/s3/bucket_dir.py
 # SPDX-License-Identifier: GPL-3.0-only
 
+import os
 import re
 
 from app.errors import S3InvalidBucketNameError
@@ -12,10 +13,11 @@ _BUCKET_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
 _IP_ADDRESS_RE = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
 
 
-def bucket_name_validate(bucket_name: str, resource: str) -> None:
+def bucket_dir(buckets_dir: str, bucket_name: str, resource: str) -> str:
     """
-    Reject a bucket name that violates S3 DNS naming rules before it
-    reaches storage, where the name becomes a directory.
+    Resolve a bucket name to the directory holding its objects. A name
+    that violates S3 DNS naming rules is rejected before it reaches
+    storage, where the name becomes a directory of its own.
 
     Raises:
         S3InvalidBucketNameError: Name is not a valid bucket name.
@@ -28,3 +30,5 @@ def bucket_name_validate(bucket_name: str, resource: str) -> None:
 
     if _IP_ADDRESS_RE.fullmatch(bucket_name):
         raise S3InvalidBucketNameError(resource)
+
+    return os.path.join(buckets_dir, bucket_name)

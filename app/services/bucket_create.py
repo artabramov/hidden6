@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-import os
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +16,7 @@ from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.file import isdir, mktree, rmdir
 from app.repositories.orm import ORMRepository
-from app.s3.bucket_name_validate import bucket_name_validate
+from app.s3.bucket_dir import bucket_dir
 
 log = logging.getLogger(__name__)
 
@@ -36,8 +35,11 @@ async def bucket_create(
     config = get_config()
     resource = f"/{bucket_name}"
 
-    bucket_name_validate(bucket_name, resource)
-    bucket_path = os.path.join(config.MOUNTPOINT_BUCKETS_DIR, bucket_name)
+    bucket_path = bucket_dir(
+        config.MOUNTPOINT_BUCKETS_DIR,
+        bucket_name,
+        resource,
+    )
 
     async with locks.lock_directory(bucket_path, LockType.WRITE):
         repo = ORMRepository(session)

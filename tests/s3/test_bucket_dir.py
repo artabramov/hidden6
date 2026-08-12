@@ -1,32 +1,39 @@
-# tests/s3/test_bucket_name_validate.py
+# tests/s3/test_bucket_dir.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
 from app.errors import S3InvalidBucketNameError
-from app.s3.bucket_name_validate import bucket_name_validate
+from app.s3.bucket_dir import bucket_dir
 
 
-class TestBucketNameValidate(unittest.TestCase):
+class TestBucketDir(unittest.TestCase):
     def _assert_rejects(self, bucket_name):
         resource = f"/{bucket_name}"
 
         with self.assertRaises(S3InvalidBucketNameError) as ctx:
-            bucket_name_validate(bucket_name, resource)
+            bucket_dir("/mnt/buckets", bucket_name, resource)
 
         self.assertEqual(ctx.exception.resource, resource)
 
-    def test_accepts_shortest_name(self):
-        self.assertIsNone(bucket_name_validate("abc", "/abc"))
-
-    def test_accepts_dashes_and_periods(self):
-        self.assertIsNone(
-            bucket_name_validate("my-bucket.1", "/my-bucket.1"),
+    def test_resolves_shortest_name(self):
+        self.assertEqual(
+            bucket_dir("/mnt/buckets", "abc", "/abc"),
+            "/mnt/buckets/abc",
         )
 
-    def test_accepts_longest_name(self):
+    def test_resolves_dashes_and_periods(self):
+        self.assertEqual(
+            bucket_dir("/mnt/buckets", "my-bucket.1", "/my-bucket.1"),
+            "/mnt/buckets/my-bucket.1",
+        )
+
+    def test_resolves_longest_name(self):
         name = "a" * 63
-        self.assertIsNone(bucket_name_validate(name, f"/{name}"))
+        self.assertEqual(
+            bucket_dir("/mnt/buckets", name, f"/{name}"),
+            f"/mnt/buckets/{name}",
+        )
 
     def test_rejects_empty_name(self):
         self._assert_rejects("")
