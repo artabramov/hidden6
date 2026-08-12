@@ -19,10 +19,8 @@ from app.models.user import User
 from app.schemas.objekt_upload import ObjektUploadRequest
 from app.services.multipart_complete import multipart_complete
 from app.services.multipart_create import multipart_create
-from app.xml.multipart_complete import (
-    parse_complete_multipart_xml,
-    render_complete_multipart_xml,
-)
+from app.xml.parse_multipart_complete import parse_multipart_complete
+from app.xml.render_multipart_complete import render_multipart_complete
 from app.xml.render_multipart_initiate import render_multipart_initiate
 
 # CreateMultipartUpload and CompleteMultipartUpload post the same
@@ -128,7 +126,7 @@ async def multipart_create_router(
         raise S3NotImplementedError(resource)
 
     try:
-        parts = parse_complete_multipart_xml(await request.body())
+        parts = parse_multipart_complete(await request.body())
     except ValueError as exc:
         raise S3ObjektXmlMalformedError(resource) from exc
 
@@ -141,7 +139,7 @@ async def multipart_create_router(
         parts=parts,
     )
     return _xml_response(
-        render_complete_multipart_xml(
+        render_multipart_complete(
             bucket_name=bucket_name,
             object_key=data.object_key,
             etag=objekt.etag,
