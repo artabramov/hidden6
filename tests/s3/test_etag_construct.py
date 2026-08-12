@@ -1,13 +1,13 @@
-# tests/s3/test_multipart_etag.py
+# tests/s3/test_etag_construct.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import hashlib
 import unittest
 
-from app.s3.multipart_etag import multipart_etag
+from app.s3.etag_construct import etag_construct
 
 
-class TestMultipartEtag(unittest.TestCase):
+class TestEtagConstruct(unittest.TestCase):
     def test_hashes_part_digests(self):
         hashes = [
             hashlib.md5(b"first").hexdigest(),
@@ -17,11 +17,11 @@ class TestMultipartEtag(unittest.TestCase):
         expected = hashlib.md5(digests).hexdigest()
 
         self.assertEqual(
-            multipart_etag(hashes),
+            etag_construct(hashes),
             f"{expected}-2",
         )
 
     def test_single_part_is_suffixed_too(self):
-        etag = multipart_etag([hashlib.md5(b"first").hexdigest()])
+        etag = etag_construct([hashlib.md5(b"first").hexdigest()])
 
         self.assertTrue(etag.endswith("-1"))

@@ -25,7 +25,7 @@ from app.repositories.file import (
 )
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
-from app.s3.multipart_etag import multipart_etag
+from app.s3.etag_construct import etag_construct
 from app.s3.multipart_load import multipart_load
 from app.s3.multipart_parts import multipart_parts
 from app.s3.objekt_mkdir import objekt_mkdir
@@ -103,7 +103,7 @@ async def multipart_complete(
                 user=user,
                 object_key=object_key,
                 size_bytes=size_bytes,
-                etag=multipart_etag(part_hashes),
+                etag=etag_construct(part_hashes),
                 content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
             )
             await repo.delete(multipart)

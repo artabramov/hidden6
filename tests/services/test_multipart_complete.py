@@ -102,7 +102,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 "/mnt/tmp/beef/2.part",
             ],
         )
-        self._patch("multipart_etag", return_value="joined-2")
+        self._patch("etag_construct", return_value="joined-2")
         self.lock = self._patch(
             "locks.lock_directory",
             return_value=lock_context,
