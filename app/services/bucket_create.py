@@ -34,10 +34,14 @@ async def bucket_create(
     after the directory is created, the transaction is rolled back
     and the directory is removed.
     """
-    cfg = get_config()
+    config = get_config()
 
     resource = f"/{bucket_name}"
-    bucket_path = bucket_dir(cfg.MOUNTPOINT_BUCKETS_DIR, bucket_name, resource)
+    bucket_path = bucket_dir(
+        config.MOUNTPOINT_BUCKETS_DIR,
+        bucket_name,
+        resource
+    )
 
     async with locks.lock_directory(bucket_path, LockType.WRITE):
         repo = ORMRepository(session)
