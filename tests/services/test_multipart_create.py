@@ -44,14 +44,14 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
         self._patch("uuid.uuid4", return_value=MagicMock(hex="beef"))
-        self.load_bucket = self._patch(
-            "load_bucket",
+        self.bucket_load = self._patch(
+            "bucket_load",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
         self.mkdir = self._patch("mkdir", new_callable=AsyncMock)
-        self.remove_upload_dir = self._patch(
-            "remove_upload_dir",
+        self.multipart_cleanup = self._patch(
+            "multipart_cleanup",
             new_callable=AsyncMock,
         )
 
@@ -78,7 +78,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_inaccessible_bucket_stops_before_staging(self):
-        self.load_bucket.side_effect = S3BucketNotFoundError("/photos")
+        self.bucket_load.side_effect = S3BucketNotFoundError("/photos")
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._create()
@@ -92,4 +92,4 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
             await self._create()
 
         self.repo.rollback.assert_awaited_once()
-        self.remove_upload_dir.assert_awaited_once_with("/mnt/tmp/beef")
+        self.multipart_cleanup.assert_awaited_once_with("/mnt/tmp/beef")

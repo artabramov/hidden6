@@ -69,21 +69,21 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "locks.lock_directory",
             return_value=self._build_lock_context(),
         )
-        self.load_bucket = self._patch(
-            "load_bucket",
+        self.bucket_load = self._patch(
+            "bucket_load",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.assert_bucket_dir = self._patch(
-            "assert_bucket_dir",
+        self.bucket_assert = self._patch(
+            "bucket_assert",
             new_callable=AsyncMock,
         )
-        self.mkdir_object_parent = self._patch(
-            "mkdir_object_parent",
+        self.objekt_mkdir = self._patch(
+            "objekt_mkdir",
             new_callable=AsyncMock,
         )
-        self.upsert_objekt = self._patch(
-            "upsert_objekt",
+        self.objekt_upsert = self._patch(
+            "objekt_upsert",
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
@@ -126,11 +126,11 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "/mnt/buckets/photos",
             LockType.WRITE,
         )
-        self.assert_bucket_dir.assert_awaited_once_with(
+        self.bucket_assert.assert_awaited_once_with(
             "/mnt/buckets/photos",
             "/photos/2024/cat.png",
         )
-        self.mkdir_object_parent.assert_awaited_once_with(
+        self.objekt_mkdir.assert_awaited_once_with(
             "/mnt/buckets/photos/2024/cat.png",
             "/photos/2024/cat.png",
         )
@@ -150,7 +150,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         await self._upload()
 
-        kwargs = self.upsert_objekt.await_args.kwargs
+        kwargs = self.objekt_upsert.await_args.kwargs
         self.assertIs(kwargs["bucket"], self.bucket)
         self.assertIs(kwargs["user"], self.user)
         self.assertEqual(kwargs["object_key"], "2024/cat.png")
@@ -164,13 +164,13 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         await self._upload()
 
         self.assertEqual(
-            self.upsert_objekt.await_args.kwargs["content_type"],
+            self.objekt_upsert.await_args.kwargs["content_type"],
             "application/octet-stream",
         )
 
     async def test_inaccessible_bucket_stops_before_upload(self):
         self._build_mocks()
-        self.load_bucket.side_effect = S3BucketNotFoundError("/photos")
+        self.bucket_load.side_effect = S3BucketNotFoundError("/photos")
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._upload()
@@ -179,7 +179,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_bucket_dir_cleans_staged_file(self):
         self._build_mocks()
-        self.assert_bucket_dir.side_effect = S3BucketNotFoundError()
+        self.bucket_assert.side_effect = S3BucketNotFoundError()
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._upload()
@@ -190,7 +190,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_key_conflict_cleans_staged_file(self):
         self._build_mocks()
-        self.mkdir_object_parent.side_effect = S3ObjektKeyConflictError()
+        self.objekt_mkdir.side_effect = S3ObjektKeyConflictError()
 
         with self.assertRaises(S3ObjektKeyConflictError):
             await self._upload()

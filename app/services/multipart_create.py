@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
+import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,8 +12,8 @@ from app.models.objekt_multipart import ObjektMultipart
 from app.models.user import User
 from app.repositories.file import mkdir
 from app.repositories.orm import ORMRepository
-from app.services.multipart_store import remove_upload_dir, upload_dir
-from app.services.objekt_store import load_bucket
+from app.s3.bucket_load import bucket_load
+from app.s3.multipart_cleanup import multipart_cleanup
 
 log = logging.getLogger(__name__)
 
@@ -37,11 +38,11 @@ async def multipart_create(
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
     repo = ORMRepository(session)
-    bucket = await load_bucket(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, user, resource)
 
     upload_id = uuid.uuid4().hex
-    upload_dir_path = upload_dir(config.MOUNTPOINT_TMP_DIR, upload_id)
-    await mkdir(upload_dir_path)
+    upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
+    await mkdir(upload_dir)
 
     multipart = ObjektMultipart(
         bucket_id=bucket.id,
@@ -53,7 +54,7 @@ async def multipart_create(
         await repo.insert(multipart, commit=True)
     except Exception:
         await repo.rollback()
-        await remove_upload_dir(upload_dir_path)
+        await multipart_cleanup(upload_dir)
         raise
 
     log.info(

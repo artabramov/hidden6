@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
+import os
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,11 +21,7 @@ from app.repositories.file import (
     upload,
 )
 from app.repositories.orm import ORMRepository
-from app.services.multipart_store import (
-    load_multipart,
-    part_path,
-    upload_dir,
-)
+from app.s3.multipart_load import multipart_load
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +53,7 @@ async def multipart_upload(
         raise S3ObjektPartNumberInvalidError(resource)
 
     repo = ORMRepository(session)
-    await load_multipart(
+    await multipart_load(
         repo=repo,
         bucket_name=bucket_name,
         object_key=object_key,
@@ -65,10 +62,10 @@ async def multipart_upload(
         resource=resource,
     )
 
-    upload_dir_path = upload_dir(config.MOUNTPOINT_TMP_DIR, upload_id)
-    part = part_path(upload_dir_path, part_number)
+    upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
+    part = os.path.join(upload_dir, f"{part_number}.part")
 
-    if not await isdir(upload_dir_path):
+    if not await isdir(upload_dir):
         raise S3ObjektUploadNotFoundError(resource)
 
     # A failed upload leaves the part that was stored before in place,

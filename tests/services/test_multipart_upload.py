@@ -56,8 +56,8 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=MagicMock())
-        self.load_multipart = self._patch(
-            "load_multipart",
+        self.multipart_load = self._patch(
+            "multipart_load",
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
@@ -91,7 +91,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
     async def test_stores_part_and_returns_etag(self):
         etag = await self._upload()
 
-        part = "/mnt/tmp/beef/part.00001"
+        part = "/mnt/tmp/beef/1.part"
         self.upload.assert_awaited_once()
         self.assertEqual(self.upload.await_args.args[1], part)
         self.lock.assert_called_once_with(part, LockType.WRITE)
@@ -107,7 +107,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.upload.assert_not_awaited()
 
     async def test_unknown_upload_raises(self):
-        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
+        self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._upload()

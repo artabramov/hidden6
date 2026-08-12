@@ -48,13 +48,13 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
-        self.load_multipart = self._patch(
-            "load_multipart",
+        self.multipart_load = self._patch(
+            "multipart_load",
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
-        self.remove_upload_dir = self._patch(
-            "remove_upload_dir",
+        self.multipart_cleanup = self._patch(
+            "multipart_cleanup",
             new_callable=AsyncMock,
         )
 
@@ -74,13 +74,13 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             self.multipart,
             commit=True,
         )
-        self.remove_upload_dir.assert_awaited_once_with("/mnt/tmp/beef")
+        self.multipart_cleanup.assert_awaited_once_with("/mnt/tmp/beef")
 
     async def test_unknown_upload_raises(self):
-        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
+        self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._abort()
 
         self.repo.delete.assert_not_awaited()
-        self.remove_upload_dir.assert_not_awaited()
+        self.multipart_cleanup.assert_not_awaited()

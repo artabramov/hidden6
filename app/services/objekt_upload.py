@@ -23,13 +23,11 @@ from app.repositories.file import (
     upload,
 )
 from app.repositories.orm import ORMRepository
-from app.services.objekt_store import (
-    assert_bucket_dir,
-    load_bucket,
-    mkdir_object_parent,
-    resolve_object_path,
-    upsert_objekt,
-)
+from app.s3.bucket_assert import bucket_assert
+from app.s3.bucket_load import bucket_load
+from app.s3.objekt_mkdir import objekt_mkdir
+from app.s3.objekt_path import objekt_path
+from app.s3.objekt_upsert import objekt_upsert
 
 log = logging.getLogger(__name__)
 
@@ -57,13 +55,13 @@ async def objekt_upload(
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
     repo = ORMRepository(session)
-    bucket = await load_bucket(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, user, resource)
 
     bucket_path = os.path.join(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
     )
-    object_path = resolve_object_path(bucket_path, object_key, resource)
+    object_path = objekt_path(bucket_path, object_key, resource)
     staged_path = os.path.join(
         config.MOUNTPOINT_TMP_DIR,
         uuid.uuid4().hex,
@@ -76,10 +74,10 @@ async def objekt_upload(
         content_type = await get_mimetype(staged_path)
 
         async with locks.lock_directory(bucket_path, LockType.WRITE):
-            await assert_bucket_dir(bucket_path, resource)
-            await mkdir_object_parent(object_path, resource)
+            await bucket_assert(bucket_path, resource)
+            await objekt_mkdir(object_path, resource)
 
-            objekt = await upsert_objekt(
+            objekt = await objekt_upsert(
                 repo=repo,
                 bucket=bucket,
                 user=user,

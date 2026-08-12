@@ -33,20 +33,14 @@ from app.repositories.file import (
     rename,
 )
 from app.repositories.orm import ORMRepository
+from app.s3.bucket_assert import bucket_assert
+from app.s3.bucket_load import bucket_load
+from app.s3.multipart_cleanup import multipart_cleanup
+from app.s3.multipart_load import multipart_load
+from app.s3.objekt_mkdir import objekt_mkdir
+from app.s3.objekt_path import objekt_path
+from app.s3.objekt_upsert import objekt_upsert
 from app.schemas.multipart_complete import MultipartPart
-from app.services.multipart_store import (
-    load_multipart,
-    part_path,
-    remove_upload_dir,
-    upload_dir,
-)
-from app.services.objekt_store import (
-    assert_bucket_dir,
-    load_bucket,
-    mkdir_object_parent,
-    resolve_object_path,
-    upsert_objekt,
-)
 
 log = logging.getLogger(__name__)
 
@@ -74,8 +68,8 @@ async def multipart_complete(
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
     repo = ORMRepository(session)
-    bucket = await load_bucket(repo, bucket_name, user, resource)
-    multipart = await load_multipart(
+    bucket = await bucket_load(repo, bucket_name, user, resource)
+    multipart = await multipart_load(
         repo=repo,
         bucket_name=bucket_name,
         object_key=object_key,
@@ -85,9 +79,9 @@ async def multipart_complete(
         bucket=bucket,
     )
 
-    upload_dir_path = upload_dir(config.MOUNTPOINT_TMP_DIR, upload_id)
+    upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
     part_paths = await _resolve_part_paths(
-        upload_dir_path,
+        upload_dir,
         parts,
         resource,
     )
@@ -96,7 +90,7 @@ async def multipart_complete(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
     )
-    object_path = resolve_object_path(bucket_path, object_key, resource)
+    object_path = objekt_path(bucket_path, object_key, resource)
     staged_path = os.path.join(
         config.MOUNTPOINT_TMP_DIR,
         uuid.uuid4().hex,
@@ -110,10 +104,10 @@ async def multipart_complete(
         content_type = await get_mimetype(staged_path)
 
         async with locks.lock_directory(bucket_path, LockType.WRITE):
-            await assert_bucket_dir(bucket_path, resource)
-            await mkdir_object_parent(object_path, resource)
+            await bucket_assert(bucket_path, resource)
+            await objekt_mkdir(object_path, resource)
 
-            objekt = await upsert_objekt(
+            objekt = await objekt_upsert(
                 repo=repo,
                 bucket=bucket,
                 user=user,
@@ -131,7 +125,7 @@ async def multipart_complete(
         await delete(staged_path)
         raise
 
-    await remove_upload_dir(upload_dir_path)
+    await multipart_cleanup(upload_dir)
 
     log.info(
         "msg=multipart_completed bucket=%s key=%s size=%d",
@@ -145,7 +139,7 @@ async def multipart_complete(
 
 
 async def _resolve_part_paths(
-    upload_dir_path: str,
+    upload_dir: str,
     parts: list[MultipartPart],
     resource: str,
 ) -> list[str]:
@@ -163,7 +157,7 @@ async def _resolve_part_paths(
             raise S3ObjektPartNumberInvalidError(resource)
 
         previous = part.part_number
-        path = part_path(upload_dir_path, part.part_number)
+        path = os.path.join(upload_dir, f"{part.part_number}.part")
 
         if not await isfile(path):
             raise S3ObjektPartInvalidError(resource)

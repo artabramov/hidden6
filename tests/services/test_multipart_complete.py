@@ -91,12 +91,12 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self._patch("ORMRepository", return_value=self.repo)
         self._patch("uuid.uuid4", return_value=MagicMock(hex="staged"))
         self._patch(
-            "load_bucket",
+            "bucket_load",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.load_multipart = self._patch(
-            "load_multipart",
+        self.multipart_load = self._patch(
+            "multipart_load",
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
@@ -124,23 +124,23 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value="image/png",
         )
-        self.assert_bucket_dir = self._patch(
-            "assert_bucket_dir",
+        self.bucket_assert = self._patch(
+            "bucket_assert",
             new_callable=AsyncMock,
         )
-        self.mkdir_object_parent = self._patch(
-            "mkdir_object_parent",
+        self.objekt_mkdir = self._patch(
+            "objekt_mkdir",
             new_callable=AsyncMock,
         )
-        self.upsert_objekt = self._patch(
-            "upsert_objekt",
+        self.objekt_upsert = self._patch(
+            "objekt_upsert",
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
         self.rename = self._patch("rename", new_callable=AsyncMock)
         self.delete = self._patch("delete", new_callable=AsyncMock)
-        self.remove_upload_dir = self._patch(
-            "remove_upload_dir",
+        self.multipart_cleanup = self._patch(
+            "multipart_cleanup",
             new_callable=AsyncMock,
         )
         self.emit = self._patch("hooks.emit", new_callable=AsyncMock)
@@ -167,8 +167,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         self.concat.assert_awaited_once_with(
             [
-                "/mnt/tmp/beef/part.00001",
-                "/mnt/tmp/beef/part.00002",
+                "/mnt/tmp/beef/1.part",
+                "/mnt/tmp/beef/2.part",
             ],
             "/mnt/tmp/staged",
         )
@@ -192,14 +192,14 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         await self._complete()
 
         self.assertEqual(
-            self.upsert_objekt.await_args.kwargs["etag"],
+            self.objekt_upsert.await_args.kwargs["etag"],
             build_multipart_etag(PART_HASHES),
         )
 
     async def test_removes_staged_parts(self):
         await self._complete()
 
-        self.remove_upload_dir.assert_awaited_once_with("/mnt/tmp/beef")
+        self.multipart_cleanup.assert_awaited_once_with("/mnt/tmp/beef")
 
     async def test_rejects_unordered_parts(self):
         parts = self._build_parts(numbers=(2, 1))
@@ -234,7 +234,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.rename.assert_not_awaited()
 
     async def test_unknown_upload_raises(self):
-        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
+        self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._complete()
