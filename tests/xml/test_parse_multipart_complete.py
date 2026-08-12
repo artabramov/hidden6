@@ -36,6 +36,35 @@ class TestParseMultipartComplete(unittest.TestCase):
         self.assertEqual(parts[0].part_number, 1)
         self.assertEqual(parts[0].etag, "aaa")
 
+    def test_parses_indented_body(self):
+        body = (
+            b"<CompleteMultipartUpload>\n"
+            b"  <Part>\n"
+            b"    <PartNumber>1</PartNumber>\n"
+            b'    <ETag>"aaa"</ETag>\n'
+            b"  </Part>\n"
+            b"</CompleteMultipartUpload>\n"
+        )
+
+        parts = parse_multipart_complete(body)
+
+        self.assertEqual(parts[0].part_number, 1)
+        self.assertEqual(parts[0].etag, "aaa")
+
+    def test_ignores_unknown_part_children(self):
+        body = (
+            b"<CompleteMultipartUpload><Part>"
+            b"<PartNumber>1</PartNumber>"
+            b'<ETag>"aaa"</ETag>'
+            b"<ChecksumCRC32>deadbeef</ChecksumCRC32>"
+            b"</Part></CompleteMultipartUpload>"
+        )
+
+        parts = parse_multipart_complete(body)
+
+        self.assertEqual(parts[0].part_number, 1)
+        self.assertEqual(parts[0].etag, "aaa")
+
     def test_rejects_malformed_xml(self):
         with self.assertRaises(ValueError):
             parse_multipart_complete(b"<CompleteMultipartUpload>")
