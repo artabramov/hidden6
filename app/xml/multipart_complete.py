@@ -7,6 +7,7 @@ from xml.sax.saxutils import escape
 from pydantic import ValidationError
 
 from app.constants import S3_XMLNS
+from app.s3.etag_normalize import etag_normalize
 from app.schemas.multipart_complete import MultipartPart
 
 
@@ -75,15 +76,10 @@ def _build_part(element: ElementTree.Element) -> MultipartPart:
     try:
         return MultipartPart(
             part_number=int(values.get("PartNumber", "")),
-            etag=_normalize_etag(values.get("ETag", "")),
+            etag=etag_normalize(values.get("ETag", "")),
         )
     except (ValidationError, ValueError) as exc:
         raise ValueError("Malformed CompleteMultipartUpload.") from exc
-
-
-def _normalize_etag(value: str) -> str:
-    """Strip the quotes clients wrap around an ETag."""
-    return value.strip().strip('"').lower()
 
 
 def _local_name(tag: str) -> str:
