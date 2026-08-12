@@ -50,9 +50,8 @@ async def objekt_upload(
     creates or updates its metadata. An existing object with the
     same key is overwritten and assigned to the current user.
     """
-    log.info("msg=objekt_upload bucket=%s key=%s", bucket_name, object_key)
-
     config = get_config()
+
     resource = f"/{bucket_name}/{object_key}"
     objekt_key_validate(object_key, resource)
     bucket_path = bucket_dir(
@@ -111,7 +110,5 @@ async def objekt_upload(
         await delete(staged_path)
         raise
 
-    log.info("msg=objekt_uploaded bucket=%s key=%s", bucket_name, object_key)
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
-
     return objekt
