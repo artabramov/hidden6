@@ -1,4 +1,4 @@
-# tests/routers/test_objekt_multipart.py
+# tests/routers/test_multipart_create.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -16,9 +16,8 @@ from app.errors import (  # noqa: E402
     S3ObjektKeyInvalidError,
     S3ObjektXmlMalformedError,
 )
-from app.routers.objekt_multipart import (  # noqa: E402
-    objekt_multipart_abort_router,
-    objekt_multipart_router,
+from app.routers.multipart_create import (  # noqa: E402
+    multipart_create_router,
 )
 
 COMPLETE_XML = (
@@ -28,7 +27,7 @@ COMPLETE_XML = (
 )
 
 
-class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
+class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
     def _build_request(self, body=b""):
         request = MagicMock()
         request.headers = {}
@@ -42,11 +41,11 @@ class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
         session = MagicMock()
 
         with patch(
-            "app.routers.objekt_multipart.multipart_create",
+            "app.routers.multipart_create.multipart_create",
             new_callable=AsyncMock,
             return_value=multipart,
         ) as mock_service:
-            response = await objekt_multipart_router(
+            response = await multipart_create_router(
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(),
@@ -70,11 +69,11 @@ class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
         objekt.etag = "abc-1"
 
         with patch(
-            "app.routers.objekt_multipart.multipart_complete",
+            "app.routers.multipart_create.multipart_complete",
             new_callable=AsyncMock,
             return_value=objekt,
         ) as mock_service:
-            response = await objekt_multipart_router(
+            response = await multipart_create_router(
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(COMPLETE_XML),
@@ -91,7 +90,7 @@ class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
 
     async def test_malformed_body_raises_s3_error(self):
         with self.assertRaises(S3ObjektXmlMalformedError) as cm:
-            await objekt_multipart_router(
+            await multipart_create_router(
                 bucket_name="photos",
                 object_key="cat.png",
                 request=self._build_request(b"<nope"),
@@ -104,7 +103,7 @@ class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
 
     async def test_post_without_multipart_query_is_not_implemented(self):
         with self.assertRaises(S3NotImplementedError) as cm:
-            await objekt_multipart_router(
+            await multipart_create_router(
                 bucket_name="photos",
                 object_key="cat.png",
                 request=self._build_request(),
@@ -116,7 +115,7 @@ class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
 
     async def test_invalid_key_raises_s3_error(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:
-            await objekt_multipart_router(
+            await multipart_create_router(
                 bucket_name="photos",
                 object_key="../etc/passwd",
                 request=self._build_request(),
@@ -126,42 +125,3 @@ class TestObjektMultipartRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
-
-
-class TestObjektMultipartAbortRouter(unittest.IsolatedAsyncioTestCase):
-    async def test_aborts_upload(self):
-        user = MagicMock()
-        session = MagicMock()
-
-        with patch(
-            "app.routers.objekt_multipart.multipart_abort",
-            new_callable=AsyncMock,
-        ) as mock_service:
-            response = await objekt_multipart_abort_router(
-                bucket_name="photos",
-                object_key="2024/cat.png",
-                user=user,
-                session=session,
-                upload_id="beef",
-            )
-
-        mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=user,
-            session=session,
-            upload_id="beef",
-        )
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_204_NO_CONTENT,
-        )
-
-    async def test_delete_without_upload_id_is_not_implemented(self):
-        with self.assertRaises(S3NotImplementedError):
-            await objekt_multipart_abort_router(
-                bucket_name="photos",
-                object_key="cat.png",
-                user=MagicMock(),
-                session=MagicMock(),
-            )

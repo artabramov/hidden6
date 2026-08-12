@@ -42,7 +42,8 @@ from app.routers.user_init import router as user_init_router
 from app.routers.bucket_create import router as bucket_create_router
 from app.routers.bucket_list import router as bucket_list_router
 from app.routers.objekt_upload import router as objekt_upload_router
-from app.routers.objekt_multipart import router as objekt_multipart_router
+from app.routers.multipart_create import router as multipart_create_router
+from app.routers.multipart_abort import router as multipart_abort_router
 
 config = get_config()
 
@@ -95,7 +96,8 @@ app.include_router(user_init_router, prefix=config.API_PREFIX)
 app.include_router(bucket_list_router)
 app.include_router(bucket_create_router)
 app.include_router(objekt_upload_router)
-app.include_router(objekt_multipart_router)
+app.include_router(multipart_create_router)
+app.include_router(multipart_abort_router)
 
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)
 app.add_exception_handler(InternalServerError, internal_server_error_handler)

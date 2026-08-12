@@ -1,13 +1,12 @@
-# tests/schemas/test_objekt_multipart.py
+# tests/schemas/test_multipart_complete.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
 from app.constants import S3_XMLNS
-from app.schemas.objekt_multipart import (
+from app.schemas.multipart_complete import (
     parse_complete_multipart_xml,
     render_complete_multipart_xml,
-    render_initiate_multipart_xml,
 )
 
 
@@ -79,19 +78,7 @@ class TestParseCompleteMultipartXml(unittest.TestCase):
             )
 
 
-class TestRenderMultipartXml(unittest.TestCase):
-    def test_renders_initiate_result(self):
-        xml = render_initiate_multipart_xml(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            upload_id="beef",
-        )
-
-        self.assertIn(f'xmlns="{S3_XMLNS}"', xml)
-        self.assertIn("<Bucket>photos</Bucket>", xml)
-        self.assertIn("<Key>2024/cat.png</Key>", xml)
-        self.assertIn("<UploadId>beef</UploadId>", xml)
-
+class TestRenderCompleteMultipartXml(unittest.TestCase):
     def test_renders_complete_result(self):
         xml = render_complete_multipart_xml(
             bucket_name="photos",
@@ -99,6 +86,7 @@ class TestRenderMultipartXml(unittest.TestCase):
             etag="abc-2",
         )
 
+        self.assertIn(f'xmlns="{S3_XMLNS}"', xml)
         self.assertIn(
             "<Location>/photos/2024/cat.png</Location>",
             xml,
@@ -108,10 +96,10 @@ class TestRenderMultipartXml(unittest.TestCase):
         self.assertIn('<ETag>"abc-2"</ETag>', xml)
 
     def test_escapes_key(self):
-        xml = render_initiate_multipart_xml(
+        xml = render_complete_multipart_xml(
             bucket_name="photos",
             object_key="a&b<c>.png",
-            upload_id="beef",
+            etag="abc-2",
         )
 
         self.assertIn("<Key>a&amp;b&lt;c&gt;.png</Key>", xml)

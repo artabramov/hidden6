@@ -17,7 +17,7 @@ from app.errors import (
 )
 from app.models.user import User
 from app.schemas.objekt_upload import ObjektUploadRequest
-from app.services.objekt_multipart import multipart_upload
+from app.services.multipart_upload import multipart_upload
 from app.services.objekt_upload import objekt_upload
 from app.streams import build_body_reader
 
