@@ -30,8 +30,6 @@ async def bucket_create(
     Create an S3 bucket: mktree under the mountpoint buckets dir and
     insert the Bucket row owned by the caller.
     """
-    log.info("msg=bucket_create bucket=%s", bucket_name)
-
     config = get_config()
     resource = f"/{bucket_name}"
 
@@ -47,14 +45,12 @@ async def bucket_create(
 
         if existing is not None:
             if existing.user_id == user.id:
-                log.warning("msg=bucket_already_owned")
                 raise S3BucketAlreadyOwnedByYouError(resource)
 
-            log.warning("msg=bucket_already_exists")
-            raise S3BucketAlreadyExistsError(resource)
+            else:
+                raise S3BucketAlreadyExistsError(resource)
 
         if await isdir(bucket_path):
-            log.warning("msg=bucket_already_exists")
             raise S3BucketAlreadyExistsError(resource)
 
         await mktree(bucket_path)
