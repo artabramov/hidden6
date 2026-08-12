@@ -41,11 +41,7 @@ async def multipart_upload(
     its ETag. Uploading the same part number again replaces the part
     that was stored before.
     """
-    log.info(
-        "msg=multipart_upload_started upload_id=%s part=%d",
-        upload_id,
-        part_number,
-    )
+    log.info("msg=multipart_upload upload_id=%s part=%d", upload_id, part_number)  # noqa: E501
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
@@ -55,6 +51,7 @@ async def multipart_upload(
 
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, user, resource)
+
     await multipart_load(
         repo=repo,
         bucket=bucket,
@@ -75,10 +72,5 @@ async def multipart_upload(
         await upload(body, part)
         etag = await get_file_hash(part)
 
-    log.info(
-        "msg=multipart_uploaded upload_id=%s part=%d",
-        upload_id,
-        part_number,
-    )
-
+    log.info("msg=multipart_uploaded upload_id=%s part=%d", upload_id, part_number)  # noqa: E501
     return etag

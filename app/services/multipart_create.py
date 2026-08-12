@@ -28,11 +28,7 @@ async def multipart_create(
     upload for the bucket and key, and prepare the directory holding
     its parts until the upload is completed or aborted.
     """
-    log.info(
-        "msg=multipart_create_started bucket=%s key=%s",
-        bucket_name,
-        object_key,
-    )
+    log.info("msg=multipart_create bucket=%s key=%s", bucket_name, object_key)
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
@@ -56,11 +52,5 @@ async def multipart_create(
         await rmtree(upload_dir)
         raise
 
-    log.info(
-        "msg=multipart_created bucket=%s key=%s upload_id=%s",
-        bucket_name,
-        object_key,
-        upload_id,
-    )
-
+    log.info("msg=multipart_created bucket=%s key=%s upload_id=%s", bucket_name, object_key, upload_id)  # noqa: E501
     return multipart

@@ -50,16 +50,14 @@ async def multipart_complete(
     client, publish the result under the bucket directory, upsert the
     Objekt row, and drop the upload with its staged parts.
     """
-    log.info(
-        "msg=multipart_complete_started upload_id=%s parts=%d",
-        upload_id,
-        len(parts),
-    )
+    log.info("msg=multipart_complete upload_id=%s parts=%d", upload_id, len(parts))  # noqa: E501
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
+
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, user, resource)
+
     multipart = await multipart_load(
         repo=repo,
         bucket=bucket,
@@ -71,15 +69,9 @@ async def multipart_complete(
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
     part_paths = await multipart_parts(upload_dir, parts, resource)
 
-    bucket_path = os.path.join(
-        config.MOUNTPOINT_BUCKETS_DIR,
-        bucket_name,
-    )
+    bucket_path = os.path.join(config.MOUNTPOINT_BUCKETS_DIR, bucket_name)
     object_path = objekt_path(bucket_path, object_key, resource)
-    staged_path = os.path.join(
-        config.MOUNTPOINT_TMP_DIR,
-        uuid.uuid4().hex,
-    )
+    staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
 
     try:
         part_hashes = await concat(part_paths, staged_path)
@@ -122,12 +114,7 @@ async def multipart_complete(
     except OSError:
         log.exception("msg=multipart_cleanup_failed path=%s", upload_dir)
 
-    log.info(
-        "msg=multipart_completed bucket=%s key=%s size=%d",
-        bucket_name,
-        object_key,
-        size_bytes,
-    )
+    log.info("msg=multipart_completed bucket=%s key=%s", bucket_name, object_key)  # noqa: E501
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
 
     return objekt
