@@ -4,6 +4,8 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from sqlalchemy.exc import IntegrityError
+
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -46,7 +48,8 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         lock_ctx = self._build_lock_context()
         repo = MagicMock()
         repo.select = AsyncMock(return_value=None)
-        repo.insert = AsyncMock(side_effect=lambda obj, commit=False: obj)
+        repo.insert = AsyncMock(side_effect=lambda obj, **kwargs: obj)
+        repo.commit = AsyncMock()
 
         with (
             patch(
@@ -63,6 +66,11 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
             ),
             patch(
                 "app.services.bucket_create.isdir",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.isfile",
                 new_callable=AsyncMock,
                 return_value=False,
             ),
@@ -91,7 +99,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(inserted, Bucket)
         self.assertEqual(inserted.bucket_name, "photos")
         self.assertEqual(inserted.user_id, 1)
-        self.assertEqual(repo.insert.await_args.kwargs["commit"], True)
+        repo.commit.assert_awaited_once()
         emit_mock.assert_awaited_once_with(Events.BUCKET_CREATED, bucket)
 
     async def test_already_owned_raises(self):
@@ -152,14 +160,139 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                 )
 
-    async def test_rolls_back_dir_when_insert_fails(self):
+    async def test_orphan_dir_raises(self):
         config = MagicMock()
         config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
         lock_ctx = self._build_lock_context()
         repo = MagicMock()
         repo.select = AsyncMock(return_value=None)
-        repo.insert = AsyncMock(side_effect=RuntimeError("db down"))
-        isdir_mock = AsyncMock(side_effect=[False, True])
+
+        with (
+            patch(
+                "app.services.bucket_create.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.bucket_create.locks.lock_directory",
+                return_value=lock_ctx,
+            ),
+            patch(
+                "app.services.bucket_create.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_create.isdir",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+        ):
+            with self.assertRaises(S3BucketAlreadyExistsError):
+                await bucket_create(
+                    bucket_name="photos",
+                    user=self.user,
+                    session=self.session,
+                )
+
+        repo.insert.assert_not_called()
+
+    async def test_file_at_bucket_path_raises(self):
+        config = MagicMock()
+        config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
+        lock_ctx = self._build_lock_context()
+        repo = MagicMock()
+        repo.select = AsyncMock(return_value=None)
+
+        with (
+            patch(
+                "app.services.bucket_create.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.bucket_create.locks.lock_directory",
+                return_value=lock_ctx,
+            ),
+            patch(
+                "app.services.bucket_create.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_create.isdir",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.isfile",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+        ):
+            with self.assertRaises(S3BucketAlreadyExistsError):
+                await bucket_create(
+                    bucket_name="photos",
+                    user=self.user,
+                    session=self.session,
+                )
+
+        repo.insert.assert_not_called()
+
+    async def test_rolls_back_when_insert_races(self):
+        config = MagicMock()
+        config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
+        lock_ctx = self._build_lock_context()
+        raced = Bucket(user_id=99, bucket_name="photos")
+        repo = MagicMock()
+        repo.select = AsyncMock(side_effect=[None, raced])
+        repo.insert = AsyncMock(side_effect=IntegrityError("", "", Exception()))
+        repo.rollback = AsyncMock()
+
+        with (
+            patch(
+                "app.services.bucket_create.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.bucket_create.locks.lock_directory",
+                return_value=lock_ctx,
+            ),
+            patch(
+                "app.services.bucket_create.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_create.isdir",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.isfile",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.mktree",
+                new_callable=AsyncMock,
+            ) as mktree_mock,
+        ):
+            with self.assertRaises(S3BucketAlreadyExistsError):
+                await bucket_create(
+                    bucket_name="photos",
+                    user=self.user,
+                    session=self.session,
+                )
+
+        repo.rollback.assert_awaited_once()
+        mktree_mock.assert_not_awaited()
+
+    async def test_rolls_back_dir_when_filesystem_fails(self):
+        config = MagicMock()
+        config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
+        lock_ctx = self._build_lock_context()
+        repo = MagicMock()
+        repo.select = AsyncMock(return_value=None)
+        repo.insert = AsyncMock(side_effect=lambda obj, **kwargs: obj)
+        repo.commit = AsyncMock(side_effect=RuntimeError("db down"))
+        repo.rollback = AsyncMock()
+        isdir_mock = AsyncMock(return_value=False)
 
         with (
             patch(
@@ -179,6 +312,11 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                 new=isdir_mock,
             ),
             patch(
+                "app.services.bucket_create.isfile",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
                 "app.services.bucket_create.mktree",
                 new_callable=AsyncMock,
             ),
@@ -194,6 +332,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                 )
 
+        repo.rollback.assert_awaited_once()
         rmdir_mock.assert_awaited_once_with("/mnt/buckets/photos")
 
     async def test_invalid_bucket_name_stops_before_storage(self):
