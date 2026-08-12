@@ -113,6 +113,20 @@ async def rmdir(path: str) -> None:
     await _fsync_directory(parent)
 
 
+async def rmtree(path: str) -> None:
+    """
+    Remove a directory with the files it contains and persist the
+    directory entry updates. A missing directory is left as is.
+    """
+    if not await isdir(path):
+        return
+
+    for name in await listdir(path):
+        await delete(os.path.join(path, name))
+
+    await rmdir(path)
+
+
 async def touch(path: str) -> None:
     """
     Create an empty file if it does not exist, or update its

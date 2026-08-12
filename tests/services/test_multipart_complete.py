@@ -12,9 +12,9 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
+    S3BucketNotFoundError,
     S3ObjektPartInvalidError,
     S3ObjektPartOrderInvalidError,
-    S3ObjektPartTooSmallError,
     S3ObjektUploadNotFoundError,
 )
 from app.hooks import Events  # noqa: E402
@@ -36,12 +36,6 @@ PART_HASHES = [
 ]
 
 
-def build_multipart_etag(hashes):
-    digests = b"".join(bytes.fromhex(value) for value in hashes)
-    digest = hashlib.md5(digests).hexdigest()
-    return f"{digest}-{len(hashes)}"
-
-
 class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
     def _patch(self, target, **kwargs):
         patcher = patch(
@@ -53,7 +47,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         return mock
 
     def setUp(self):
-        self._patch("log")
+        self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
@@ -70,7 +64,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             user_id=1,
             object_key="2024/cat.png",
             size_bytes=24,
-            etag=build_multipart_etag(PART_HASHES),
+            etag="joined-2",
             content_type="image/png",
         )
 
@@ -100,19 +94,28 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
+        self.multipart_parts = self._patch(
+            "multipart_parts",
+            new_callable=AsyncMock,
+            return_value=[
+                "/mnt/tmp/beef/1.part",
+                "/mnt/tmp/beef/2.part",
+            ],
+        )
+        self._patch("multipart_etag", return_value="joined-2")
         self.lock = self._patch(
             "locks.lock_directory",
             return_value=lock_context,
         )
-        self.isfile = self._patch(
-            "isfile",
+        self.isdir = self._patch(
+            "isdir",
             new_callable=AsyncMock,
             return_value=True,
         )
         self.get_filesize = self._patch(
             "get_filesize",
             new_callable=AsyncMock,
-            return_value=1024 * 1024 * 6,
+            return_value=24,
         )
         self.concat = self._patch(
             "concat",
@@ -123,10 +126,6 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "get_mimetype",
             new_callable=AsyncMock,
             return_value="image/png",
-        )
-        self.bucket_assert = self._patch(
-            "bucket_assert",
-            new_callable=AsyncMock,
         )
         self.objekt_mkdir = self._patch(
             "objekt_mkdir",
@@ -139,17 +138,14 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         )
         self.rename = self._patch("rename", new_callable=AsyncMock)
         self.delete = self._patch("delete", new_callable=AsyncMock)
-        self.multipart_cleanup = self._patch(
-            "multipart_cleanup",
-            new_callable=AsyncMock,
-        )
+        self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
         self.emit = self._patch("hooks.emit", new_callable=AsyncMock)
 
-    def _build_parts(self, hashes=None, numbers=(1, 2)):
+    def _build_parts(self, hashes=None):
         hashes = hashes or PART_HASHES
         return [
             MultipartPart(part_number=number, etag=value)
-            for number, value in zip(numbers, hashes)
+            for number, value in enumerate(hashes, start=1)
         ]
 
     async def _complete(self, parts=None):
@@ -193,33 +189,41 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             self.objekt_upsert.await_args.kwargs["etag"],
-            build_multipart_etag(PART_HASHES),
+            "joined-2",
         )
 
     async def test_removes_staged_parts(self):
         await self._complete()
 
-        self.multipart_cleanup.assert_awaited_once_with("/mnt/tmp/beef")
+        self.rmtree.assert_awaited_once_with("/mnt/tmp/beef")
 
-    async def test_rejects_unordered_parts(self):
-        parts = self._build_parts(numbers=(2, 1))
+    async def test_failed_cleanup_is_logged(self):
+        self.rmtree.side_effect = OSError("busy")
+
+        objekt = await self._complete()
+
+        self.log.exception.assert_called_once()
+        self.assertIs(objekt, self.objekt)
+
+    async def test_invalid_parts_stop_before_assembly(self):
+        self.multipart_parts.side_effect = (
+            S3ObjektPartOrderInvalidError()
+        )
 
         with self.assertRaises(S3ObjektPartOrderInvalidError):
-            await self._complete(parts)
+            await self._complete()
 
         self.concat.assert_not_awaited()
 
-    async def test_rejects_missing_part(self):
-        self.isfile.return_value = False
+    async def test_missing_bucket_dir_cleans_staged_file(self):
+        self.isdir.return_value = False
 
-        with self.assertRaises(S3ObjektPartInvalidError):
+        with self.assertRaises(S3BucketNotFoundError):
             await self._complete()
 
-    async def test_rejects_small_leading_part(self):
-        self.get_filesize.return_value = 1024
-
-        with self.assertRaises(S3ObjektPartTooSmallError):
-            await self._complete()
+        self.rename.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with("/mnt/tmp/staged")
 
     async def test_rejects_mismatched_part_etag(self):
         parts = self._build_parts(

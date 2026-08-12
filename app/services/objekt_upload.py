@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
+from app.errors import S3BucketNotFoundError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.objekt import Objekt
@@ -19,11 +20,11 @@ from app.repositories.file import (
     get_file_hash,
     get_filesize,
     get_mimetype,
+    isdir,
     rename,
     upload,
 )
 from app.repositories.orm import ORMRepository
-from app.s3.bucket_assert import bucket_assert
 from app.s3.bucket_load import bucket_load
 from app.s3.objekt_mkdir import objekt_mkdir
 from app.s3.objekt_path import objekt_path
@@ -74,7 +75,9 @@ async def objekt_upload(
         content_type = await get_mimetype(staged_path)
 
         async with locks.lock_directory(bucket_path, LockType.WRITE):
-            await bucket_assert(bucket_path, resource)
+            if not await isdir(bucket_path):
+                raise S3BucketNotFoundError(resource)
+
             await objekt_mkdir(object_path, resource)
 
             objekt = await objekt_upsert(

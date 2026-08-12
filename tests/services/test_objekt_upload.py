@@ -74,9 +74,10 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.bucket_assert = self._patch(
-            "bucket_assert",
+        self.isdir = self._patch(
+            "isdir",
             new_callable=AsyncMock,
+            return_value=True,
         )
         self.objekt_mkdir = self._patch(
             "objekt_mkdir",
@@ -126,10 +127,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "/mnt/buckets/photos",
             LockType.WRITE,
         )
-        self.bucket_assert.assert_awaited_once_with(
-            "/mnt/buckets/photos",
-            "/photos/2024/cat.png",
-        )
+        self.isdir.assert_awaited_once_with("/mnt/buckets/photos")
         self.objekt_mkdir.assert_awaited_once_with(
             "/mnt/buckets/photos/2024/cat.png",
             "/photos/2024/cat.png",
@@ -179,7 +177,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_bucket_dir_cleans_staged_file(self):
         self._build_mocks()
-        self.bucket_assert.side_effect = S3BucketNotFoundError()
+        self.isdir.return_value = False
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._upload()

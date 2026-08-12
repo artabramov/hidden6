@@ -50,10 +50,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
             return_value=self.bucket,
         )
         self.mkdir = self._patch("mkdir", new_callable=AsyncMock)
-        self.multipart_cleanup = self._patch(
-            "multipart_cleanup",
-            new_callable=AsyncMock,
-        )
+        self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
 
     async def _create(self):
         return await multipart_create(
@@ -92,4 +89,4 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
             await self._create()
 
         self.repo.rollback.assert_awaited_once()
-        self.multipart_cleanup.assert_awaited_once_with("/mnt/tmp/beef")
+        self.rmtree.assert_awaited_once_with("/mnt/tmp/beef")

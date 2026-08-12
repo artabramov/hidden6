@@ -1,7 +1,6 @@
 # app/services/multipart_complete.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-import hashlib
 import logging
 import os
 import uuid
@@ -9,17 +8,8 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.constants import (
-    OBJEKT_CONTENT_TYPE_DEFAULT,
-    OBJEKT_PART_NUMBER_MAX,
-    OBJEKT_PART_SIZE_MIN_BYTES,
-)
-from app.errors import (
-    S3ObjektPartInvalidError,
-    S3ObjektPartNumberInvalidError,
-    S3ObjektPartOrderInvalidError,
-    S3ObjektPartTooSmallError,
-)
+from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
+from app.errors import S3BucketNotFoundError, S3ObjektPartInvalidError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.objekt import Objekt
@@ -29,14 +19,15 @@ from app.repositories.file import (
     delete,
     get_filesize,
     get_mimetype,
-    isfile,
+    isdir,
     rename,
+    rmtree,
 )
 from app.repositories.orm import ORMRepository
-from app.s3.bucket_assert import bucket_assert
 from app.s3.bucket_load import bucket_load
-from app.s3.multipart_cleanup import multipart_cleanup
+from app.s3.multipart_etag import multipart_etag
 from app.s3.multipart_load import multipart_load
+from app.s3.multipart_parts import multipart_parts
 from app.s3.objekt_mkdir import objekt_mkdir
 from app.s3.objekt_path import objekt_path
 from app.s3.objekt_upsert import objekt_upsert
@@ -71,20 +62,14 @@ async def multipart_complete(
     bucket = await bucket_load(repo, bucket_name, user, resource)
     multipart = await multipart_load(
         repo=repo,
-        bucket_name=bucket_name,
+        bucket=bucket,
         object_key=object_key,
-        user=user,
         upload_id=upload_id,
         resource=resource,
-        bucket=bucket,
     )
 
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
-    part_paths = await _resolve_part_paths(
-        upload_dir,
-        parts,
-        resource,
-    )
+    part_paths = await multipart_parts(upload_dir, parts, resource)
 
     bucket_path = os.path.join(
         config.MOUNTPOINT_BUCKETS_DIR,
@@ -98,13 +83,18 @@ async def multipart_complete(
 
     try:
         part_hashes = await concat(part_paths, staged_path)
-        _assert_part_hashes(parts, part_hashes, resource)
+
+        for part, part_hash in zip(parts, part_hashes):
+            if part.etag != part_hash:
+                raise S3ObjektPartInvalidError(resource)
 
         size_bytes = await get_filesize(staged_path)
         content_type = await get_mimetype(staged_path)
 
         async with locks.lock_directory(bucket_path, LockType.WRITE):
-            await bucket_assert(bucket_path, resource)
+            if not await isdir(bucket_path):
+                raise S3BucketNotFoundError(resource)
+
             await objekt_mkdir(object_path, resource)
 
             objekt = await objekt_upsert(
@@ -113,7 +103,7 @@ async def multipart_complete(
                 user=user,
                 object_key=object_key,
                 size_bytes=size_bytes,
-                etag=_multipart_etag(part_hashes),
+                etag=multipart_etag(part_hashes),
                 content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
             )
             await repo.delete(multipart)
@@ -125,7 +115,12 @@ async def multipart_complete(
         await delete(staged_path)
         raise
 
-    await multipart_cleanup(upload_dir)
+    # The upload is already finished, so parts left behind by a failed
+    # cleanup are logged instead of failing the request.
+    try:
+        await rmtree(upload_dir)
+    except OSError:
+        log.exception("msg=multipart_cleanup_failed path=%s", upload_dir)
 
     log.info(
         "msg=multipart_completed bucket=%s key=%s size=%d",
@@ -136,61 +131,3 @@ async def multipart_complete(
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
 
     return objekt
-
-
-async def _resolve_part_paths(
-    upload_dir: str,
-    parts: list[MultipartPart],
-    resource: str,
-) -> list[str]:
-    """
-    Map the listed parts onto staged part files, checking that they
-    are ordered, present, and large enough to be concatenated.
-    """
-    previous = 0
-    paths: list[str] = []
-
-    for part in parts:
-        if part.part_number <= previous:
-            raise S3ObjektPartOrderInvalidError(resource)
-        if part.part_number > OBJEKT_PART_NUMBER_MAX:
-            raise S3ObjektPartNumberInvalidError(resource)
-
-        previous = part.part_number
-        path = os.path.join(upload_dir, f"{part.part_number}.part")
-
-        if not await isfile(path):
-            raise S3ObjektPartInvalidError(resource)
-
-        paths.append(path)
-
-    for path in paths[:-1]:
-        if await get_filesize(path) < OBJEKT_PART_SIZE_MIN_BYTES:
-            raise S3ObjektPartTooSmallError(resource)
-
-    return paths
-
-
-def _assert_part_hashes(
-    parts: list[MultipartPart],
-    part_hashes: list[str],
-    resource: str,
-) -> None:
-    """
-    Compare the ETag the client listed for every part with the hash of
-    the bytes actually stored for it.
-    """
-    for part, part_hash in zip(parts, part_hashes):
-        if part.etag != part_hash:
-            raise S3ObjektPartInvalidError(resource)
-
-
-def _multipart_etag(part_hashes: list[str]) -> str:
-    """
-    Build the ETag of an assembled object: the MD5 of the concatenated
-    part digests, suffixed with the number of parts.
-    """
-    digests = b"".join(bytes.fromhex(value) for value in part_hashes)
-    digest = hashlib.md5(digests, usedforsecurity=False).hexdigest()
-
-    return f"{digest}-{len(part_hashes)}"

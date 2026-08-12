@@ -21,6 +21,7 @@ from app.repositories.file import (
     upload,
 )
 from app.repositories.orm import ORMRepository
+from app.s3.bucket_load import bucket_load
 from app.s3.multipart_load import multipart_load
 
 log = logging.getLogger(__name__)
@@ -53,11 +54,11 @@ async def multipart_upload(
         raise S3ObjektPartNumberInvalidError(resource)
 
     repo = ORMRepository(session)
+    bucket = await bucket_load(repo, bucket_name, user, resource)
     await multipart_load(
         repo=repo,
-        bucket_name=bucket_name,
+        bucket=bucket,
         object_key=object_key,
-        user=user,
         upload_id=upload_id,
         resource=resource,
     )

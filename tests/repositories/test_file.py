@@ -509,6 +509,26 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         rmd.assert_awaited_once_with("/data/empty")
         fsync.assert_awaited_once_with("/data")
 
+    async def test_rmtree_removes_files_and_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "upload")
+            os.makedirs(path)
+            for name in ("1.part", "2.part"):
+                with open(os.path.join(path, name), "wb") as f:
+                    f.write(b"x")
+
+            await rf.rmtree(path)
+
+            self.assertFalse(os.path.exists(path))
+
+    async def test_rmtree_missing_directory_is_skipped(self):
+        with patch(
+            "app.repositories.file.aiofiles.os.rmdir",
+            new_callable=AsyncMock,
+        ) as rmd:
+            await rf.rmtree("/data/missing")
+        rmd.assert_not_awaited()
+
     async def test_touch(self):
         calls = []
 

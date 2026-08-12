@@ -56,6 +56,11 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=MagicMock())
+        self.bucket_load = self._patch(
+            "bucket_load",
+            new_callable=AsyncMock,
+            return_value=MagicMock(id=7),
+        )
         self.multipart_load = self._patch(
             "multipart_load",
             new_callable=AsyncMock,

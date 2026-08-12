@@ -10,10 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_config
 from app.models.objekt_multipart import ObjektMultipart
 from app.models.user import User
-from app.repositories.file import mkdir
+from app.repositories.file import mkdir, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
-from app.s3.multipart_cleanup import multipart_cleanup
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +53,7 @@ async def multipart_create(
         await repo.insert(multipart, commit=True)
     except Exception:
         await repo.rollback()
-        await multipart_cleanup(upload_dir)
+        await rmtree(upload_dir)
         raise
 
     log.info(
