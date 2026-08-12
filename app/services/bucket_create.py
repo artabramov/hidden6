@@ -17,6 +17,7 @@ from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.file import isdir, mktree, rmdir
 from app.repositories.orm import ORMRepository
+from app.s3.bucket_name_validate import bucket_name_validate
 
 log = logging.getLogger(__name__)
 
@@ -28,13 +29,13 @@ async def bucket_create(
 ) -> Bucket:
     """
     Create an S3 bucket: mktree under the mountpoint buckets dir and
-    insert the Bucket row owned by the caller. bucket_name must already
-    be validated (BucketCreateRequest).
+    insert the Bucket row owned by the caller.
     """
     log.info("msg=bucket_create_started bucket=%s", bucket_name)
 
     config = get_config()
     resource = f"/{bucket_name}"
+    bucket_name_validate(bucket_name, resource)
     bucket_path = os.path.join(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,

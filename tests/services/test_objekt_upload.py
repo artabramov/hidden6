@@ -13,6 +13,7 @@ from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
     S3ObjektKeyConflictError,
+    S3ObjektKeyInvalidError,
 )
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
@@ -231,7 +232,12 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_key_escaping_the_bucket(self):
         self._build_mocks()
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
             await self._upload(key="../../etc/passwd")
 
+        self.assertEqual(
+            cm.exception.resource,
+            "/photos/../../etc/passwd",
+        )
+        self.bucket_load.assert_not_awaited()
         self.upload.assert_not_awaited()

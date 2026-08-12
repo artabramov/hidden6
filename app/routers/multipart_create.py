@@ -4,7 +4,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.require_auth import require_auth
@@ -12,11 +11,9 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.errors import (
     S3NotImplementedError,
-    S3ObjektKeyInvalidError,
     S3ObjektXmlMalformedError,
 )
 from app.models.user import User
-from app.schemas.objekt_upload import ObjektUploadRequest
 from app.services.multipart_complete import multipart_complete
 from app.services.multipart_create import multipart_create
 from app.xml.parse_multipart_complete import parse_multipart_complete
@@ -102,22 +99,17 @@ async def multipart_create_router(
     """
     resource = f"/{bucket_name}/{object_key}"
 
-    try:
-        data = ObjektUploadRequest(object_key=object_key)
-    except ValidationError as exc:
-        raise S3ObjektKeyInvalidError(resource) from exc
-
     if uploads is not None:
         multipart = await multipart_create(
             bucket_name=bucket_name,
-            object_key=data.object_key,
+            object_key=object_key,
             user=user,
             session=session,
         )
         return _xml_response(
             render_multipart_initiate(
                 bucket_name=bucket_name,
-                object_key=data.object_key,
+                object_key=object_key,
                 upload_id=multipart.upload_id,
             ),
         )
@@ -132,7 +124,7 @@ async def multipart_create_router(
 
     objekt = await multipart_complete(
         bucket_name=bucket_name,
-        object_key=data.object_key,
+        object_key=object_key,
         user=user,
         session=session,
         upload_id=upload_id,
@@ -141,7 +133,7 @@ async def multipart_create_router(
     return _xml_response(
         render_multipart_complete(
             bucket_name=bucket_name,
-            object_key=data.object_key,
+            object_key=object_key,
             etag=objekt.etag,
         ),
     )

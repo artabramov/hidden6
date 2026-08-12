@@ -4,15 +4,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
-from app.errors import S3NotImplementedError, S3ObjektKeyInvalidError
+from app.errors import S3NotImplementedError
 from app.models.user import User
-from app.schemas.objekt_upload import ObjektUploadRequest
 from app.services.multipart_abort import multipart_abort
 
 router = APIRouter(include_in_schema=False)
@@ -78,17 +76,12 @@ async def multipart_abort_router(
     """
     resource = f"/{bucket_name}/{object_key}"
 
-    try:
-        data = ObjektUploadRequest(object_key=object_key)
-    except ValidationError as exc:
-        raise S3ObjektKeyInvalidError(resource) from exc
-
     if upload_id is None:
         raise S3NotImplementedError(resource)
 
     await multipart_abort(
         bucket_name=bucket_name,
-        object_key=data.object_key,
+        object_key=object_key,
         user=user,
         session=session,
         upload_id=upload_id,

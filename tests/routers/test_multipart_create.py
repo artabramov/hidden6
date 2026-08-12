@@ -13,7 +13,6 @@ set_minimal_app_config_env()
 
 from app.errors import (  # noqa: E402
     S3NotImplementedError,
-    S3ObjektKeyInvalidError,
     S3ObjektXmlMalformedError,
 )
 from app.routers.multipart_create import (  # noqa: E402
@@ -112,16 +111,3 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.status_code, 501)
-
-    async def test_invalid_key_raises_s3_error(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
-            await multipart_create_router(
-                bucket_name="photos",
-                object_key="../etc/passwd",
-                request=self._build_request(),
-                user=MagicMock(),
-                session=MagicMock(),
-                uploads="",
-            )
-
-        self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")

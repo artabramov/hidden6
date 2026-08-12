@@ -12,6 +12,7 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
+    S3ObjektKeyInvalidError,
     S3ObjektPartNumberInvalidError,
     S3ObjektUploadNotFoundError,
 )
@@ -132,3 +133,19 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(RuntimeError):
             await self._upload()
+
+    async def test_invalid_key_stops_before_storage(self):
+        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+            await multipart_upload(
+                bucket_name="photos",
+                object_key="../etc/passwd",
+                user=self.user,
+                session=self.session,
+                upload_id="beef",
+                part_number=1,
+                body=MagicMock(),
+            )
+
+        self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
+        self.bucket_load.assert_not_awaited()
+        self.upload.assert_not_awaited()

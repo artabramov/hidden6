@@ -11,7 +11,6 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.errors import S3InvalidBucketNameError  # noqa: E402
 from app.routers.bucket_create import bucket_create_router  # noqa: E402
 
 
@@ -39,14 +38,3 @@ class TestBucketCreateRouter(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.headers["Location"], "/photos")
-
-    async def test_invalid_name_raises_s3_error(self):
-        with self.assertRaises(S3InvalidBucketNameError) as cm:
-            await bucket_create_router(
-                bucket_name="Bad_Name",
-                user=MagicMock(),
-                session=MagicMock(),
-            )
-
-        self.assertEqual(cm.exception.resource, "/Bad_Name")
-        self.assertEqual(cm.exception.status_code, 400)

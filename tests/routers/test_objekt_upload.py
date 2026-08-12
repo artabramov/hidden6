@@ -12,7 +12,6 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.errors import (  # noqa: E402
-    S3ObjektKeyInvalidError,
     S3ObjektPartNumberInvalidError,
     S3ObjektTooLargeError,
 )
@@ -94,19 +93,6 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.resource, "/photos/cat.png")
-
-    async def test_invalid_key_raises_s3_error(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
-            await objekt_upload_router(
-                bucket_name="photos",
-                object_key="../etc/passwd",
-                request=self._build_request(),
-                user=MagicMock(),
-                session=MagicMock(),
-            )
-
-        self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
-        self.assertEqual(cm.exception.status_code, 400)
 
     async def test_oversized_content_length_raises_s3_error(self):
         request = self._build_request({"content-length": "99999999999999"})

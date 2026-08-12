@@ -11,10 +11,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.errors import (  # noqa: E402
-    S3NotImplementedError,
-    S3ObjektKeyInvalidError,
-)
+from app.errors import S3NotImplementedError  # noqa: E402
 from app.routers.multipart_abort import (  # noqa: E402
     multipart_abort_router,
 )
@@ -59,15 +56,3 @@ class TestMultipartAbortRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.status_code, 501)
-
-    async def test_invalid_key_raises_s3_error(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
-            await multipart_abort_router(
-                bucket_name="photos",
-                object_key="../etc/passwd",
-                user=MagicMock(),
-                session=MagicMock(),
-                upload_id="beef",
-            )
-
-        self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")

@@ -23,6 +23,7 @@ from app.repositories.file import (
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
 from app.s3.multipart_load import multipart_load
+from app.s3.objekt_key_validate import objekt_key_validate
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ async def multipart_upload(
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
+    objekt_key_validate(object_key, resource)
 
     if part_number < 1 or part_number > OBJEKT_PART_NUMBER_MAX:
         raise S3ObjektPartNumberInvalidError(resource)

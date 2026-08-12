@@ -13,6 +13,7 @@ from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketAlreadyExistsError,
     S3BucketAlreadyOwnedByYouError,
+    S3InvalidBucketNameError,
 )
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
@@ -194,3 +195,28 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                 )
 
         rmdir_mock.assert_awaited_once_with("/mnt/buckets/photos")
+
+    async def test_invalid_bucket_name_stops_before_storage(self):
+        repo = MagicMock()
+        repo.select = AsyncMock(return_value=None)
+
+        with (
+            patch(
+                "app.services.bucket_create.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_create.mktree",
+                new_callable=AsyncMock,
+            ) as mktree_mock,
+        ):
+            with self.assertRaises(S3InvalidBucketNameError) as cm:
+                await bucket_create(
+                    bucket_name="Bad_Name",
+                    user=self.user,
+                    session=self.session,
+                )
+
+        self.assertEqual(cm.exception.resource, "/Bad_Name")
+        repo.select.assert_not_awaited()
+        mktree_mock.assert_not_awaited()

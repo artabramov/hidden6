@@ -10,7 +10,10 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
-from app.errors import S3BucketNotFoundError  # noqa: E402
+from app.errors import (  # noqa: E402
+    S3BucketNotFoundError,
+    S3ObjektKeyInvalidError,
+)
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.multipart_create import multipart_create  # noqa: E402
@@ -90,3 +93,16 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
 
         self.repo.rollback.assert_awaited_once()
         self.rmtree.assert_awaited_once_with("/mnt/tmp/beef")
+
+    async def test_invalid_key_stops_before_storage(self):
+        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+            await multipart_create(
+                bucket_name="photos",
+                object_key="../etc/passwd",
+                user=self.user,
+                session=self.session,
+            )
+
+        self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
+        self.bucket_load.assert_not_awaited()
+        self.mktree.assert_not_awaited()

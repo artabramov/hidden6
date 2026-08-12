@@ -13,6 +13,7 @@ from app.repositories.file import rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
 from app.s3.multipart_load import multipart_load
+from app.s3.objekt_key_validate import objekt_key_validate
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,8 @@ async def multipart_abort(
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
+    objekt_key_validate(object_key, resource)
+
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, user, resource)
     multipart = await multipart_load(

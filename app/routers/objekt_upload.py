@@ -4,19 +4,14 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
-from app.errors import (
-    S3ObjektKeyInvalidError,
-    S3ObjektPartNumberInvalidError,
-)
+from app.errors import S3ObjektPartNumberInvalidError
 from app.models.user import User
-from app.schemas.objekt_upload import ObjektUploadRequest
 from app.services.multipart_upload import multipart_upload
 from app.services.objekt_upload import objekt_upload
 from app.streams import build_body_reader
@@ -92,11 +87,6 @@ async def objekt_upload_router(
     """
     resource = f"/{bucket_name}/{object_key}"
 
-    try:
-        data = ObjektUploadRequest(object_key=object_key)
-    except ValidationError as exc:
-        raise S3ObjektKeyInvalidError(resource) from exc
-
     config = get_config()
     body = build_body_reader(
         request,
@@ -110,7 +100,7 @@ async def objekt_upload_router(
 
         etag = await multipart_upload(
             bucket_name=bucket_name,
-            object_key=data.object_key,
+            object_key=object_key,
             user=user,
             session=session,
             upload_id=upload_id,
@@ -124,7 +114,7 @@ async def objekt_upload_router(
 
     objekt = await objekt_upload(
         bucket_name=bucket_name,
-        object_key=data.object_key,
+        object_key=object_key,
         user=user,
         session=session,
         body=body,
