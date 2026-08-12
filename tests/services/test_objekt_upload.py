@@ -196,6 +196,27 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.rename.assert_not_awaited()
         self.delete.assert_awaited_once_with("/mnt/tmp/beef")
 
+    async def test_directory_at_object_path_is_a_key_conflict(self):
+        self._build_mocks()
+        self.rename.side_effect = IsADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.repo.commit.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
+
+    async def test_object_at_key_prefix_is_a_key_conflict(self):
+        self._build_mocks()
+        self.rename.side_effect = NotADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.repo.commit.assert_not_awaited()
+        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
+
     async def test_failed_upload_cleans_staged_file(self):
         self._build_mocks()
         self.upload.side_effect = RuntimeError("disk full")

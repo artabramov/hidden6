@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
-from app.errors import S3BucketNotFoundError
+from app.errors import S3BucketNotFoundError, S3ObjektKeyConflictError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.objekt import Objekt
@@ -66,6 +66,12 @@ async def objekt_upload(
         etag = await get_file_hash(staged_path)
         content_type = await get_mimetype(staged_path)
 
+        # The body is already staged, so the lock guards publishing
+        # alone: between the key conflict check and the rename that
+        # makes the object visible no other task may occupy the object
+        # path with a directory, or a prefix of the key with an object.
+        # The whole bucket subtree is locked because a conflicting key
+        # can sit at any prefix level.
         async with locks.lock_directory(bucket_path, LockType.WRITE):
             if not await isdir(bucket_path):
                 raise S3BucketNotFoundError(resource)
@@ -81,7 +87,16 @@ async def objekt_upload(
                 etag=etag,
                 content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
             )
-            await rename(staged_path, object_path)
+
+            # The conflict check above already rejected a directory at
+            # the object path, but the lock is local to this process:
+            # another worker or a change made straight on the mount can
+            # still put one there before the rename lands.
+            try:
+                await rename(staged_path, object_path)
+            except (IsADirectoryError, NotADirectoryError) as exc:
+                raise S3ObjektKeyConflictError(resource) from exc
+
             await repo.commit()
 
     except Exception:
