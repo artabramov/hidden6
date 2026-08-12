@@ -1,4 +1,4 @@
-# app/xml/multipart_create.py
+# app/xml/render_multipart_initiate.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from xml.sax.saxutils import escape
@@ -6,7 +6,7 @@ from xml.sax.saxutils import escape
 from app.constants import S3_XMLNS
 
 
-def render_initiate_multipart_xml(
+def render_multipart_initiate(
     bucket_name: str,
     object_key: str,
     upload_id: str,

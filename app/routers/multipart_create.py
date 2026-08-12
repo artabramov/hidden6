@@ -23,7 +23,7 @@ from app.xml.multipart_complete import (
     parse_complete_multipart_xml,
     render_complete_multipart_xml,
 )
-from app.xml.multipart_create import render_initiate_multipart_xml
+from app.xml.render_multipart_initiate import render_multipart_initiate
 
 # CreateMultipartUpload and CompleteMultipartUpload post the same
 # object path and differ only by the uploads and uploadId query
@@ -117,7 +117,7 @@ async def multipart_create_router(
             session=session,
         )
         return _xml_response(
-            render_initiate_multipart_xml(
+            render_multipart_initiate(
                 bucket_name=bucket_name,
                 object_key=data.object_key,
                 upload_id=multipart.upload_id,

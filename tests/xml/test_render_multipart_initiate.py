@@ -1,15 +1,15 @@
-# tests/xml/test_multipart_create.py
+# tests/xml/test_render_multipart_initiate.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
 from app.constants import S3_XMLNS
-from app.xml.multipart_create import render_initiate_multipart_xml
+from app.xml.render_multipart_initiate import render_multipart_initiate
 
 
-class TestRenderInitiateMultipartXml(unittest.TestCase):
+class TestRenderMultipartInitiate(unittest.TestCase):
     def test_renders_initiate_result(self):
-        xml = render_initiate_multipart_xml(
+        xml = render_multipart_initiate(
             bucket_name="photos",
             object_key="2024/cat.png",
             upload_id="beef",
@@ -21,7 +21,7 @@ class TestRenderInitiateMultipartXml(unittest.TestCase):
         self.assertIn("<UploadId>beef</UploadId>", xml)
 
     def test_escapes_key(self):
-        xml = render_initiate_multipart_xml(
+        xml = render_multipart_initiate(
             bucket_name="photos",
             object_key="a&b<c>.png",
             upload_id="beef",
