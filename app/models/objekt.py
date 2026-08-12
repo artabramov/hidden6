@@ -83,11 +83,11 @@ class Objekt(Base):
         server_default=text("'application/octet-stream'"),
     )
 
-    objekt_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
+    objekts_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="objekts",
     )
 
-    objekt_user: Mapped["User"] = relationship(  # noqa: F821
+    objekts_users: Mapped["User"] = relationship(  # noqa: F821
         back_populates="objekts",
     )
 

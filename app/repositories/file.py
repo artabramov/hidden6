@@ -72,6 +72,11 @@ async def get_file_hash(path: str) -> str:
     return digest.hexdigest()
 
 
+async def listdir(path: str) -> list[str]:
+    """Return the entry names contained in a directory."""
+    return list(await aiofiles.os.listdir(path))
+
+
 async def isfile(path: str) -> bool:
     """Return whether the path points to a regular file."""
     return await aiofiles.ospath.isfile(path)
@@ -199,6 +204,30 @@ async def copy(
             yield chunk
 
     await _atomic_write_stream(source_iter(), destination)
+
+
+async def concat(sources: list[str], destination: str) -> list[str]:
+    """
+    Concatenate files into destination using chunked asynchronous I/O.
+    Sources are appended in the given order, and the file is written
+    atomically like a single copy. Returns the MD5 hash of every
+    source in the same order, computed while the data is written.
+    """
+    hashes: list[str] = []
+
+    async def sources_iter() -> AsyncIterator[bytes]:
+        for source in sources:
+            digest = hashlib.md5(usedforsecurity=False)
+
+            async for chunk in _iter_read(source):
+                digest.update(chunk)
+                yield chunk
+
+            hashes.append(digest.hexdigest())
+
+    await _atomic_write_stream(sources_iter(), destination)
+
+    return hashes
 
 
 async def rename(source: str, destination: str) -> None:

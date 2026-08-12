@@ -140,8 +140,8 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(objekt)
 
-        self.assertEqual(objekt.objekt_bucket.id, self.bucket.id)
-        self.assertEqual(objekt.objekt_bucket.bucket_name, "photos")
+        self.assertEqual(objekt.objekts_buckets.id, self.bucket.id)
+        self.assertEqual(objekt.objekts_buckets.bucket_name, "photos")
 
     def test_relationship_back_to_user(self):
         objekt = self._objekt(object_key="x.bin", size_bytes=0, etag="c" * 32)
@@ -149,8 +149,8 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(objekt)
 
-        self.assertEqual(objekt.objekt_user.id, self.user.id)
-        self.assertEqual(objekt.objekt_user.username, "alice")
+        self.assertEqual(objekt.objekts_users.id, self.user.id)
+        self.assertEqual(objekt.objekts_users.username, "alice")
 
     def test_bucket_relationship_to_objekts(self):
         self.session.add(self._objekt(object_key="a.txt", etag="a" * 32))

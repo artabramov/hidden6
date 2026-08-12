@@ -38,6 +38,7 @@ class S3ErrorCode:
     INVALID_ACCESS_KEY_ID = "InvalidAccessKeyId"
     SIGNATURE_DOES_NOT_MATCH = "SignatureDoesNotMatch"
     REQUEST_TIME_TOO_SKEWED = "RequestTimeTooSkewed"
+    NOT_IMPLEMENTED = "NotImplemented"
     BUCKET_NAME_INVALID = "InvalidBucketName"
     BUCKET_ALREADY_EXISTS = "BucketAlreadyExists"
     BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
@@ -46,6 +47,12 @@ class S3ErrorCode:
     OBJEKT_KEY_CONFLICT = "InvalidArgument"
     OBJEKT_TOO_LARGE = "EntityTooLarge"
     OBJEKT_BODY_INCOMPLETE = "IncompleteBody"
+    OBJEKT_UPLOAD_NOT_FOUND = "NoSuchUpload"
+    OBJEKT_PART_NUMBER_INVALID = "InvalidArgument"
+    OBJEKT_PART_INVALID = "InvalidPart"
+    OBJEKT_PART_ORDER_INVALID = "InvalidPartOrder"
+    OBJEKT_PART_TOO_SMALL = "EntityTooSmall"
+    OBJEKT_XML_MALFORMED = "MalformedXML"
 
 
 class S3Error(Exception):
@@ -230,5 +237,110 @@ class S3ObjektBodyIncompleteError(S3Error):
                 "the chunked encoding declared by the client."
             ),
             status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektUploadNotFoundError(S3Error):
+    """Raised when the multipart upload is unknown (404)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_UPLOAD_NOT_FOUND,
+            message=(
+                "The specified multipart upload does not exist. It "
+                "may have been completed or aborted."
+            ),
+            status_code=status.HTTP_404_NOT_FOUND,
+            resource=resource,
+        )
+
+
+class S3ObjektPartNumberInvalidError(S3Error):
+    """Raised when the part number is out of the allowed range."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_PART_NUMBER_INVALID,
+            message=(
+                "The part number must be an integer between 1 and "
+                "10000, inclusive."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektPartInvalidError(S3Error):
+    """Raised when a listed part is missing or mismatched (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_PART_INVALID,
+            message=(
+                "One or more of the listed parts could not be found, "
+                "or its entity tag does not match the uploaded part."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektPartOrderInvalidError(S3Error):
+    """Raised when listed parts are not in ascending order (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_PART_ORDER_INVALID,
+            message=(
+                "The list of parts was not in ascending order. Parts "
+                "must be ordered by part number."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektPartTooSmallError(S3Error):
+    """Raised when a part other than the last is too small (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_PART_TOO_SMALL,
+            message=(
+                "Each part but the last one must be at least 5 MiB "
+                "in size."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektXmlMalformedError(S3Error):
+    """Raised when the request XML cannot be parsed (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_XML_MALFORMED,
+            message=(
+                "The XML provided was not well formed or did not "
+                "validate against the published schema."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3NotImplementedError(S3Error):
+    """Raised when the requested S3 operation is missing (501)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.NOT_IMPLEMENTED,
+            message=(
+                "The requested S3 operation is not implemented by "
+                "this server."
+            ),
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
             resource=resource,
         )

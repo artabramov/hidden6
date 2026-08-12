@@ -13,6 +13,7 @@ set_minimal_app_config_env()
 
 from app.errors import (  # noqa: E402
     S3ObjektKeyInvalidError,
+    S3ObjektPartNumberInvalidError,
     S3ObjektTooLargeError,
 )
 from app.routers.objekt_upload import objekt_upload_router  # noqa: E402
@@ -55,6 +56,44 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
             response.headers["ETag"],
             '"d41d8cd98f00b204e9800998ecf8427e"',
         )
+
+    async def test_uploads_part_when_upload_id_is_given(self):
+        user = MagicMock()
+        session = MagicMock()
+
+        with patch(
+            "app.routers.objekt_upload.multipart_upload",
+            new_callable=AsyncMock,
+            return_value="9b2cf5",
+        ) as mock_service:
+            response = await objekt_upload_router(
+                bucket_name="photos",
+                object_key="2024/cat.png",
+                request=self._build_request(),
+                user=user,
+                session=session,
+                upload_id="beef",
+                part_number=2,
+            )
+
+        kwargs = mock_service.await_args.kwargs
+        self.assertEqual(kwargs["upload_id"], "beef")
+        self.assertEqual(kwargs["part_number"], 2)
+        self.assertIsInstance(kwargs["body"], RequestBodyReader)
+        self.assertEqual(response.headers["ETag"], '"9b2cf5"')
+
+    async def test_part_without_number_raises_s3_error(self):
+        with self.assertRaises(S3ObjektPartNumberInvalidError) as cm:
+            await objekt_upload_router(
+                bucket_name="photos",
+                object_key="cat.png",
+                request=self._build_request(),
+                user=MagicMock(),
+                session=MagicMock(),
+                upload_id="beef",
+            )
+
+        self.assertEqual(cm.exception.resource, "/photos/cat.png")
 
     async def test_invalid_key_raises_s3_error(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:

@@ -93,8 +93,8 @@ class TestUserKeyModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(key)
 
-        self.assertEqual(key.user_key_user.id, self.user.id)
-        self.assertEqual(key.user_key_user.username, "alice")
+        self.assertEqual(key.users_keys_users.id, self.user.id)
+        self.assertEqual(key.users_keys_users.username, "alice")
 
     def test_cascade_delete_with_user(self):
         self.session.add(

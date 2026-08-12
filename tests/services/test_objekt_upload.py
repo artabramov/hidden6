@@ -11,7 +11,6 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
-    S3AccessDeniedError,
     S3BucketNotFoundError,
     S3ObjektKeyConflictError,
 )
@@ -29,9 +28,18 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
-        self.root = User(id=2, username="root", is_root=True)
         self.session = MagicMock()
         self.body = MagicMock()
+        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.objekt = Objekt(
+            id=3,
+            bucket_id=7,
+            user_id=1,
+            object_key="2024/cat.png",
+            size_bytes=12,
+            etag="etag123",
+            content_type="image/png",
+        )
 
     def _patch(self, target, **kwargs):
         patcher = patch(f"app.services.objekt_upload.{target}", **kwargs)
@@ -45,31 +53,39 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         ctx.__aexit__.return_value = None
         return ctx
 
-    def _build_repo(self, *select_results):
-        repo = MagicMock()
-        repo.select = AsyncMock(side_effect=list(select_results))
-        repo.insert = AsyncMock(side_effect=lambda obj: obj)
-        repo.update = AsyncMock(side_effect=lambda obj: obj)
-        repo.commit = AsyncMock()
-        repo.rollback = AsyncMock()
-        return repo
-
-    def _build_mocks(
-        self,
-        repo,
-        isdir_results=(True, False),
-        mimetype="image/png",
-    ):
+    def _build_mocks(self, mimetype="image/png"):
         config = MagicMock()
         config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
         config.MOUNTPOINT_TMP_DIR = "/mnt/tmp"
 
+        self.repo = MagicMock()
+        self.repo.commit = AsyncMock()
+        self.repo.rollback = AsyncMock()
+
         self._patch("get_config", return_value=config)
-        self._patch("ORMRepository", return_value=repo)
+        self._patch("ORMRepository", return_value=self.repo)
         self._patch("uuid.uuid4", return_value=MagicMock(hex="beef"))
         self.lock = self._patch(
             "locks.lock_directory",
             return_value=self._build_lock_context(),
+        )
+        self.load_bucket = self._patch(
+            "load_bucket",
+            new_callable=AsyncMock,
+            return_value=self.bucket,
+        )
+        self.assert_bucket_dir = self._patch(
+            "assert_bucket_dir",
+            new_callable=AsyncMock,
+        )
+        self.mkdir_object_parent = self._patch(
+            "mkdir_object_parent",
+            new_callable=AsyncMock,
+        )
+        self.upsert_objekt = self._patch(
+            "upsert_objekt",
+            new_callable=AsyncMock,
+            return_value=self.objekt,
         )
         self.upload = self._patch("upload", new_callable=AsyncMock)
         self._patch(
@@ -87,31 +103,21 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=mimetype,
         )
-        self.isdir = self._patch(
-            "isdir",
-            new_callable=AsyncMock,
-            side_effect=list(isdir_results),
-        )
-        self.mkdir = self._patch("mkdir", new_callable=AsyncMock)
         self.rename = self._patch("rename", new_callable=AsyncMock)
         self.delete = self._patch("delete", new_callable=AsyncMock)
         self.emit = self._patch("hooks.emit", new_callable=AsyncMock)
 
-    async def _upload(self, user=None, key="2024/cat.png"):
+    async def _upload(self, key="2024/cat.png"):
         return await objekt_upload(
             bucket_name="photos",
             object_key=key,
-            user=user or self.user,
+            user=self.user,
             session=self.session,
             body=self.body,
         )
 
-    async def test_stages_and_publishes_new_object(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-            None,
-        )
-        self._build_mocks(repo)
+    async def test_stages_and_publishes_object(self):
+        self._build_mocks()
 
         objekt = await self._upload()
 
@@ -120,142 +126,93 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "/mnt/buckets/photos",
             LockType.WRITE,
         )
-        self.mkdir.assert_awaited_once_with("/mnt/buckets/photos/2024")
+        self.assert_bucket_dir.assert_awaited_once_with(
+            "/mnt/buckets/photos",
+            "/photos/2024/cat.png",
+        )
+        self.mkdir_object_parent.assert_awaited_once_with(
+            "/mnt/buckets/photos/2024/cat.png",
+            "/photos/2024/cat.png",
+        )
         self.rename.assert_awaited_once_with(
             "/mnt/tmp/beef",
             "/mnt/buckets/photos/2024/cat.png",
         )
-        repo.insert.assert_awaited_once_with(objekt)
-        repo.commit.assert_awaited_once()
-        self.assertIsInstance(objekt, Objekt)
-        self.assertEqual(objekt.bucket_id, 7)
-        self.assertEqual(objekt.user_id, 1)
-        self.assertEqual(objekt.object_key, "2024/cat.png")
-        self.assertEqual(objekt.size_bytes, 12)
-        self.assertEqual(objekt.etag, "etag123")
-        self.assertEqual(objekt.content_type, "image/png")
+        self.repo.commit.assert_awaited_once()
+        self.assertIs(objekt, self.objekt)
         self.emit.assert_awaited_once_with(
             Events.OBJEKT_UPLOADED,
             objekt,
         )
 
-    async def test_overwrite_updates_existing_row(self):
-        existing = Objekt(
-            id=3,
-            bucket_id=7,
-            user_id=99,
-            object_key="2024/cat.png",
-            size_bytes=1,
-            etag="old",
-            content_type="text/plain",
-        )
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-            existing,
-        )
-        self._build_mocks(repo)
+    async def test_upserts_metadata_of_staged_body(self):
+        self._build_mocks()
 
-        objekt = await self._upload()
+        await self._upload()
 
-        self.assertIs(objekt, existing)
-        repo.insert.assert_not_awaited()
-        repo.update.assert_awaited_once_with(existing)
-        self.assertEqual(existing.user_id, 1)
-        self.assertEqual(existing.size_bytes, 12)
-        self.assertEqual(existing.etag, "etag123")
-        self.assertEqual(existing.content_type, "image/png")
+        kwargs = self.upsert_objekt.await_args.kwargs
+        self.assertIs(kwargs["bucket"], self.bucket)
+        self.assertIs(kwargs["user"], self.user)
+        self.assertEqual(kwargs["object_key"], "2024/cat.png")
+        self.assertEqual(kwargs["size_bytes"], 12)
+        self.assertEqual(kwargs["etag"], "etag123")
+        self.assertEqual(kwargs["content_type"], "image/png")
 
     async def test_unknown_mimetype_falls_back_to_octet_stream(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-            None,
-        )
-        self._build_mocks(repo, mimetype=None)
+        self._build_mocks(mimetype=None)
 
-        objekt = await self._upload()
+        await self._upload()
 
         self.assertEqual(
-            objekt.content_type,
+            self.upsert_objekt.await_args.kwargs["content_type"],
             "application/octet-stream",
         )
 
-    async def test_root_uploads_into_foreign_bucket(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=99, bucket_name="photos"),
-            None,
-        )
-        self._build_mocks(repo)
-
-        objekt = await self._upload(user=self.root)
-
-        self.assertEqual(objekt.user_id, 2)
-
-    async def test_missing_bucket_row_raises(self):
-        repo = self._build_repo(None)
-        self._build_mocks(repo)
+    async def test_inaccessible_bucket_stops_before_upload(self):
+        self._build_mocks()
+        self.load_bucket.side_effect = S3BucketNotFoundError("/photos")
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._upload()
 
         self.upload.assert_not_awaited()
 
-    async def test_foreign_bucket_is_denied(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=99, bucket_name="photos"),
-        )
-        self._build_mocks(repo)
-
-        with self.assertRaises(S3AccessDeniedError):
-            await self._upload()
-
-        self.upload.assert_not_awaited()
-
-    async def test_missing_bucket_dir_raises_and_cleans_staged(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-        )
-        self._build_mocks(repo, isdir_results=(False,))
+    async def test_missing_bucket_dir_cleans_staged_file(self):
+        self._build_mocks()
+        self.assert_bucket_dir.side_effect = S3BucketNotFoundError()
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._upload()
 
         self.rename.assert_not_awaited()
-        repo.rollback.assert_awaited_once()
+        self.repo.rollback.assert_awaited_once()
         self.delete.assert_awaited_once_with("/mnt/tmp/beef")
 
-    async def test_directory_at_key_raises_conflict(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-        )
-        self._build_mocks(repo, isdir_results=(True, True))
+    async def test_key_conflict_cleans_staged_file(self):
+        self._build_mocks()
+        self.mkdir_object_parent.side_effect = S3ObjektKeyConflictError()
 
         with self.assertRaises(S3ObjektKeyConflictError):
             await self._upload()
 
         self.rename.assert_not_awaited()
-
-    async def test_file_at_key_prefix_raises_conflict(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-        )
-        self._build_mocks(repo)
-        self.mkdir.side_effect = NotADirectoryError()
-
-        with self.assertRaises(S3ObjektKeyConflictError):
-            await self._upload()
-
-        self.rename.assert_not_awaited()
+        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
 
     async def test_failed_upload_cleans_staged_file(self):
-        repo = self._build_repo(
-            Bucket(id=7, user_id=1, bucket_name="photos"),
-        )
-        self._build_mocks(repo)
+        self._build_mocks()
         self.upload.side_effect = RuntimeError("disk full")
 
         with self.assertRaises(RuntimeError):
             await self._upload()
 
-        repo.rollback.assert_awaited_once()
+        self.repo.rollback.assert_awaited_once()
         self.delete.assert_awaited_once_with("/mnt/tmp/beef")
         self.emit.assert_not_awaited()
+
+    async def test_rejects_key_escaping_the_bucket(self):
+        self._build_mocks()
+
+        with self.assertRaises(Exception):
+            await self._upload(key="../../etc/passwd")
+
+        self.upload.assert_not_awaited()

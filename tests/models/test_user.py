@@ -84,14 +84,17 @@ class TestUserModel(unittest.TestCase):
             select(User)
             .where(User.id == user.id)
             .options(
-                selectinload(User.user_keys),
+                selectinload(User.users_keys),
                 selectinload(User.buckets),
             ),
         )
 
-        self.assertEqual(len(loaded.user_keys), 1)
+        self.assertEqual(len(loaded.users_keys), 1)
         self.assertEqual(len(loaded.buckets), 1)
-        self.assertEqual(loaded.user_keys[0].access_key_id, "AKIAEXAMPLE000001")
+        self.assertEqual(
+            loaded.users_keys[0].access_key_id,
+            "AKIAEXAMPLE000001",
+        )
         self.assertEqual(loaded.buckets[0].bucket_name, "photos")
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -104,7 +107,7 @@ class TestUserModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.user_keys
+            _ = loaded.users_keys
 
         with self.assertRaises(InvalidRequestError):
             _ = loaded.buckets

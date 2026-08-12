@@ -73,8 +73,8 @@ class TestBucketModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(bucket)
 
-        self.assertEqual(bucket.bucket_user.id, self.user.id)
-        self.assertEqual(bucket.bucket_user.username, "alice")
+        self.assertEqual(bucket.buckets_users.id, self.user.id)
+        self.assertEqual(bucket.buckets_users.username, "alice")
 
     def test_user_relationship_to_buckets(self):
         self.session.add(Bucket(user_id=self.user.id, bucket_name="photos"))

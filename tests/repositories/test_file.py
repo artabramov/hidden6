@@ -369,6 +369,14 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         ):
             self.assertFalse(await rf.isdir("/b"))
 
+    async def test_listdir(self):
+        with patch(
+            "app.repositories.file.aiofiles.os.listdir",
+            new_callable=AsyncMock,
+            return_value=["a", "b"],
+        ):
+            self.assertEqual(await rf.listdir("/data"), ["a", "b"])
+
     async def test_ismount(self):
         with patch(
             "app.repositories.file.aiofiles.ospath.ismount",
@@ -402,6 +410,46 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         with patch.object(rf, "_iter_read", side_effect=fake_iter):
             data = await rf.read("/f")
         self.assertEqual(data, b"onetwo")
+
+    # --- concat ---
+
+    async def test_concat_writes_sources_in_order(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = os.path.join(tmp, "first")
+            second = os.path.join(tmp, "second")
+            destination = os.path.join(tmp, "joined")
+            with open(first, "wb") as f:
+                f.write(b"hello ")
+            with open(second, "wb") as f:
+                f.write(b"hidden")
+
+            hashes = await rf.concat([first, second], destination)
+
+            with open(destination, "rb") as f:
+                self.assertEqual(f.read(), b"hello hidden")
+
+        self.assertEqual(
+            hashes,
+            [
+                hashlib.md5(b"hello ").hexdigest(),
+                hashlib.md5(b"hidden").hexdigest(),
+            ],
+        )
+
+    async def test_concat_leaves_no_file_when_source_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            first = os.path.join(tmp, "first")
+            destination = os.path.join(tmp, "joined")
+            with open(first, "wb") as f:
+                f.write(b"hello")
+
+            with self.assertRaises(FileNotFoundError):
+                await rf.concat(
+                    [first, os.path.join(tmp, "missing")],
+                    destination,
+                )
+
+            self.assertFalse(os.path.exists(destination))
 
     # --- mkdir, rmdir, touch ---
 

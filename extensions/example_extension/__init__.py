@@ -10,6 +10,7 @@ from app.repositories.orm import ORMRepository
 from app.models.user import User
 from app.models.user_key import UserKey
 from app.models.bucket import Bucket
+from app.models.objekt import Objekt
 
 
 async def gocryptfs_initialized(_: None) -> None:
@@ -50,6 +51,10 @@ async def bucket_listed(bucket: List[Bucket]) -> None:
     ...
 
 
+async def objekt_uploaded(objekt: Objekt) -> None:
+    ...
+
+
 def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_INITIALIZED, gocryptfs_initialized)
     hook_manager.on(Events.GOCRYPTFS_MOUNTED, gocryptfs_mounted)
@@ -59,3 +64,4 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.USER_INITIALIZED, user_initialized)
     hook_manager.on(Events.BUCKET_CREATED, bucket_created)
     hook_manager.on(Events.BUCKET_LISTED, bucket_listed)
+    hook_manager.on(Events.OBJEKT_UPLOADED, objekt_uploaded)

@@ -59,20 +59,28 @@ class User(Base):
         index=True,
     )
 
-    user_keys: Mapped[list["UserKey"]] = relationship(  # noqa: F821
-        back_populates="user_key_user",
+    users_keys: Mapped[list["UserKey"]] = relationship(  # noqa: F821
+        back_populates="users_keys_users",
         passive_deletes=True,
         lazy="raise",
     )
 
     buckets: Mapped[list["Bucket"]] = relationship(  # noqa: F821
-        back_populates="bucket_user",
+        back_populates="buckets_users",
         passive_deletes=True,
         lazy="raise",
     )
 
     objekts: Mapped[list["Objekt"]] = relationship(  # noqa: F821
-        back_populates="objekt_user",
+        back_populates="objekts_users",
+        passive_deletes=True,
+        lazy="raise",
+    )
+
+    objekts_multiparts: Mapped[
+        list["ObjektMultipart"]  # noqa: F821
+    ] = relationship(
+        back_populates="objekts_multiparts_users",
         passive_deletes=True,
         lazy="raise",
     )

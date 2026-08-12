@@ -1,7 +1,9 @@
 # app/routers/objekt_upload.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,9 +11,13 @@ from app.config import get_config
 from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
-from app.errors import S3ObjektKeyInvalidError
+from app.errors import (
+    S3ObjektKeyInvalidError,
+    S3ObjektPartNumberInvalidError,
+)
 from app.models.user import User
 from app.schemas.objekt_upload import ObjektUploadRequest
+from app.services.objekt_multipart import multipart_upload
 from app.services.objekt_upload import objekt_upload
 from app.streams import build_body_reader
 
@@ -26,8 +32,9 @@ router = APIRouter(include_in_schema=False)
                 "The object key cannot be stored: it is empty, "
                 "longer than 1024 bytes, contains segments that do "
                 "not map onto a path, or collides with an object "
-                "already stored in the bucket. The body exceeding "
-                "the configured upload limit is reported here too."
+                "already stored in the bucket. A body exceeding the "
+                "configured upload limit and an out-of-range part "
+                "number are reported here too."
             ),
         },
         403: {
@@ -39,8 +46,9 @@ router = APIRouter(include_in_schema=False)
         },
         404: {
             "description": (
-                "The bucket does not exist, or its directory is "
-                "missing under the mountpoint."
+                "The bucket does not exist, its directory is missing "
+                "under the mountpoint, or the multipart upload the "
+                "part belongs to is unknown."
             ),
         },
         503: {
@@ -54,7 +62,7 @@ router = APIRouter(include_in_schema=False)
     status_code=status.HTTP_200_OK,
     response_class=Response,
     dependencies=[Depends(require_gocryptfs())],
-    summary="Upload an S3 object.",
+    summary="Upload an S3 object or one of its parts.",
 )
 async def objekt_upload_router(
     bucket_name: str,
@@ -62,13 +70,23 @@ async def objekt_upload_router(
     request: Request,
     user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    upload_id: Annotated[
+        str | None,
+        Query(alias="uploadId"),
+    ] = None,
+    part_number: Annotated[
+        int | None,
+        Query(alias="partNumber"),
+    ] = None,
 ) -> Response:
     """
     Upload an object into a bucket for the authenticated user.
 
     Validates the object key, streams the request body into the bucket
-    owned by the caller (or into any bucket for root), stores the
-    object metadata, and returns the ETag of the stored bytes.
+    owned by the caller (or into any bucket for root), and returns the
+    ETag of the stored bytes. When the request carries an upload id,
+    the body is stored as a single part of that multipart upload
+    (UploadPart) instead of becoming an object of its own (PutObject).
 
     `OBJEKT_UPLOADED` — hook executed after the object is uploaded.
     """
@@ -85,6 +103,24 @@ async def objekt_upload_router(
         max_bytes=config.S3_UPLOAD_MAX_BYTES,
         resource=resource,
     )
+
+    if upload_id is not None:
+        if part_number is None:
+            raise S3ObjektPartNumberInvalidError(resource)
+
+        etag = await multipart_upload(
+            bucket_name=bucket_name,
+            object_key=data.object_key,
+            user=user,
+            session=session,
+            upload_id=upload_id,
+            part_number=part_number,
+            body=body,
+        )
+        return Response(
+            status_code=status.HTTP_200_OK,
+            headers={"ETag": f'"{etag}"'},
+        )
 
     objekt = await objekt_upload(
         bucket_name=bucket_name,

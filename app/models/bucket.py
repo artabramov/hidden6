@@ -57,12 +57,20 @@ class Bucket(Base):
         unique=True,
     )
 
-    bucket_user: Mapped["User"] = relationship(  # noqa: F821
+    buckets_users: Mapped["User"] = relationship(  # noqa: F821
         back_populates="buckets",
     )
 
     objekts: Mapped[list["Objekt"]] = relationship(  # noqa: F821
-        back_populates="objekt_bucket",
+        back_populates="objekts_buckets",
+        passive_deletes=True,
+        lazy="raise",
+    )
+
+    objekts_multiparts: Mapped[
+        list["ObjektMultipart"]  # noqa: F821
+    ] = relationship(
+        back_populates="objekts_multiparts_buckets",
         passive_deletes=True,
         lazy="raise",
     )

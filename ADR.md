@@ -29,3 +29,4 @@ ADR-22: S3 routes are excluded from the OpenAPI schema.
 ADR-23: S3 object names do not collide with Python builtins.
 ADR-24: S3 object keys map to nested filesystem paths.
 ADR-25: S3 upload bodies are decoded from aws-chunked framing.
+ADR-26: S3 multipart uploads are tracked in the database.

@@ -4,10 +4,9 @@
 from datetime import UTC, datetime
 from xml.sax.saxutils import escape
 
+from app.constants import S3_XMLNS
 from app.models.bucket import Bucket
 from app.models.user import User
-
-S3_XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 
 
 def format_creation_date(unix_ts: int) -> str:

@@ -20,6 +20,13 @@ FILE_MIMETYPE_READ_BYTES = 1024 * 16
 OBJEKT_KEY_MAX_BYTES = 1024
 OBJEKT_CONTENT_TYPE_DEFAULT = "application/octet-stream"
 
+# S3 allows 10000 parts per multipart upload, and every part except
+# the last one must be at least 5 MiB.
+OBJEKT_PART_NUMBER_MAX = 10000
+OBJEKT_PART_SIZE_MIN_BYTES = 1024 * 1024 * 5
+
+S3_XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
+
 USER_ROOT_USERNAME = "root"
 USER_ACCESS_KEY_ID_LENGTH = 20
 USER_SECRET_ACCESS_KEY_LENGTH = 40
