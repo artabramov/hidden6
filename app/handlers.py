@@ -12,7 +12,7 @@ from app.errors import (
     BadGatewayError,
     S3Error,
 )
-from app.xml.s3_error import render_s3_error_xml
+from app.xml.render_error import render_error
 
 
 async def unauthorized_handler(
@@ -50,7 +50,7 @@ async def s3_error_handler(
     request_id = get_context_var("request_uuid", "-")
 
     return Response(
-        content=render_s3_error_xml(exc, str(request_id)),
+        content=render_error(exc, str(request_id)),
         status_code=exc.status_code,
         media_type="application/xml",
     )

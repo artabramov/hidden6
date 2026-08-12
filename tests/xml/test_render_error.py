@@ -1,13 +1,13 @@
-# tests/xml/test_s3_error.py
+# tests/xml/test_render_error.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
 from app.errors import S3Error
-from app.xml.s3_error import render_s3_error_xml
+from app.xml.render_error import render_error
 
 
-class TestS3ErrorXml(unittest.TestCase):
+class TestRenderError(unittest.TestCase):
     def test_render_with_resource(self):
         exc = S3Error(
             code="InvalidBucketName",
@@ -15,7 +15,7 @@ class TestS3ErrorXml(unittest.TestCase):
             status_code=400,
             resource="/Bad_Name",
         )
-        xml = render_s3_error_xml(exc, "req-1")
+        xml = render_error(exc, "req-1")
 
         self.assertIn("<Error>", xml)
         self.assertIn("<Code>InvalidBucketName</Code>", xml)
@@ -32,7 +32,7 @@ class TestS3ErrorXml(unittest.TestCase):
             message="Access Denied",
             status_code=403,
         )
-        xml = render_s3_error_xml(exc, "req-2")
+        xml = render_error(exc, "req-2")
 
         self.assertNotIn("<Resource>", xml)
         self.assertIn("<Code>AccessDenied</Code>", xml)
@@ -44,7 +44,7 @@ class TestS3ErrorXml(unittest.TestCase):
             status_code=400,
             resource="/x<y",
         )
-        xml = render_s3_error_xml(exc, "req-3")
+        xml = render_error(exc, "req-3")
 
         self.assertIn("<Message>a &amp; b</Message>", xml)
         self.assertIn("<Resource>/x&lt;y</Resource>", xml)

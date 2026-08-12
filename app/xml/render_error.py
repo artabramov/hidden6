@@ -1,4 +1,4 @@
-# app/xml/s3_error.py
+# app/xml/render_error.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from xml.sax.saxutils import escape
@@ -6,7 +6,7 @@ from xml.sax.saxutils import escape
 from app.errors import S3Error
 
 
-def render_s3_error_xml(exc: S3Error, request_id: str) -> str:
+def render_error(exc: S3Error, request_id: str) -> str:
     """
     Render an S3-compatible XML error response, carrying the error code
     and message plus the request id that correlates the failure with the
