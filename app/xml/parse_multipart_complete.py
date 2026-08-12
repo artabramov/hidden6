@@ -23,13 +23,13 @@ def parse_multipart_complete(body: bytes) -> list[MultipartPart]:
     except ElementTree.ParseError as exc:
         raise ValueError("Malformed CompleteMultipartUpload.") from exc
 
-    if _local_name(root.tag) != "CompleteMultipartUpload":
+    if _strip_element(root.tag) != "CompleteMultipartUpload":
         raise ValueError("Malformed CompleteMultipartUpload.")
 
     parts = [
-        _build_part(element)
+        _parse_element(element)
         for element in root
-        if _local_name(element.tag) == "Part"
+        if _strip_element(element.tag) == "Part"
     ]
 
     if not parts:
@@ -38,12 +38,12 @@ def parse_multipart_complete(body: bytes) -> list[MultipartPart]:
     return parts
 
 
-def _build_part(element: ElementTree.Element) -> MultipartPart:
-    """Build a listed part from its Part element."""
+def _parse_element(element: ElementTree.Element) -> MultipartPart:
+    """Parse a single listed part from its Part element."""
     values: dict[str, str] = {}
 
     for child in element:
-        name = _local_name(child.tag)
+        name = _strip_element(child.tag)
 
         if name in ("PartNumber", "ETag") and child.text:
             values[name] = child.text.strip()
@@ -57,6 +57,6 @@ def _build_part(element: ElementTree.Element) -> MultipartPart:
         raise ValueError("Malformed CompleteMultipartUpload.") from exc
 
 
-def _local_name(tag: str) -> str:
+def _strip_element(tag: str) -> str:
     """Return an element name without its namespace prefix."""
     return tag.rsplit("}", 1)[-1]
