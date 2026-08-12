@@ -18,8 +18,8 @@ async def bucket_list(
     session: AsyncSession,
 ) -> list[Bucket]:
     """
-    List buckets visible to the authenticated user (ADR-21).
-    Root sees all buckets; other users see only their own.
+    List buckets visible to the authenticated user. Root user
+    sees all buckets; other users see only their own buckets.
     """
     log.info("msg=bucket_list_started user_id=%s", user.id)
 

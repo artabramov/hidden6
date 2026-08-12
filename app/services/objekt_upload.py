@@ -41,32 +41,24 @@ async def objekt_upload(
     body: AsyncReadable,
 ) -> Objekt:
     """
-    Upload an object into a bucket: stage the body in the mountpoint
-    tmp dir, publish it under the bucket directory, and upsert the
-    Objekt row. Overwriting a key replaces the stored bytes and makes
-    the caller its uploader. object_key must already be validated
-    (ObjektUploadRequest).
+    Upload an S3 object to the specified bucket.
+
+    Stages the object data in the temporary directory, creates the
+    required key directories, stores the object in the bucket, and
+    creates or updates its metadata. An existing object with the
+    same key is overwritten and assigned to the current user.
     """
-    log.info(
-        "msg=objekt_upload_started bucket=%s key=%s",
-        bucket_name,
-        object_key,
-    )
+    log.info("msg=objekt_upload bucket=%s key=%s", bucket_name, object_key)
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
+
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, user, resource)
 
-    bucket_path = os.path.join(
-        config.MOUNTPOINT_BUCKETS_DIR,
-        bucket_name,
-    )
+    bucket_path = os.path.join(config.MOUNTPOINT_BUCKETS_DIR, bucket_name)
     object_path = objekt_path(bucket_path, object_key, resource)
-    staged_path = os.path.join(
-        config.MOUNTPOINT_TMP_DIR,
-        uuid.uuid4().hex,
-    )
+    staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
 
     try:
         await upload(body, staged_path)
@@ -97,12 +89,7 @@ async def objekt_upload(
         await delete(staged_path)
         raise
 
-    log.info(
-        "msg=objekt_uploaded bucket=%s key=%s size=%d",
-        bucket_name,
-        object_key,
-        size_bytes,
-    )
+    log.info("msg=objekt_uploaded bucket=%s key=%s", bucket_name, object_key)
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
 
     return objekt
