@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_config
 from app.models.objekt_multipart import ObjektMultipart
 from app.models.user import User
-from app.repositories.file import mkdir, rmtree
+from app.repositories.file import mktree, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
 
@@ -41,7 +41,7 @@ async def multipart_create(
 
     upload_id = uuid.uuid4().hex
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
-    await mkdir(upload_dir)
+    await mktree(upload_dir)
 
     multipart = ObjektMultipart(
         bucket_id=bucket.id,

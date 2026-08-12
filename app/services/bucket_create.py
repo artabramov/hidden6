@@ -15,7 +15,7 @@ from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.bucket import Bucket
 from app.models.user import User
-from app.repositories.file import isdir, mkdir, rmdir
+from app.repositories.file import isdir, mktree, rmdir
 from app.repositories.orm import ORMRepository
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ async def bucket_create(
     session: AsyncSession,
 ) -> Bucket:
     """
-    Create an S3 bucket: mkdir under the mountpoint buckets dir and
+    Create an S3 bucket: mktree under the mountpoint buckets dir and
     insert the Bucket row owned by the caller. bucket_name must already
     be validated (BucketCreateRequest).
     """
@@ -58,7 +58,7 @@ async def bucket_create(
             )
             raise S3BucketAlreadyExistsError(resource)
 
-        await mkdir(bucket_path)
+        await mktree(bucket_path)
 
         bucket = Bucket(
             user_id=user.id,

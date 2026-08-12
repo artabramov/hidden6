@@ -9,7 +9,7 @@ from app.db.schema import create_all_tables
 from app.errors import UnauthorizedError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.repositories.file import isdir, mkdir, read
+from app.repositories.file import isdir, mktree, read
 from app.runtime.cipherdir import cipherdir_mount, cipherdir_unmount
 from app.security.encryption import decrypt_passphrase
 
@@ -47,7 +47,7 @@ async def gocryptfs_mount(master_password: str) -> None:
             raise UnauthorizedError
 
         if not await isdir(config.INSTALL_MOUNTPOINT):
-            await mkdir(config.INSTALL_MOUNTPOINT)
+            await mktree(config.INSTALL_MOUNTPOINT)
 
         await cipherdir_mount(
             passphrase=passphrase_bytes.decode("utf-8"),
@@ -57,13 +57,13 @@ async def gocryptfs_mount(master_password: str) -> None:
 
         try:
             if not await isdir(config.MOUNTPOINT_DB_DIR):
-                await mkdir(config.MOUNTPOINT_DB_DIR)
+                await mktree(config.MOUNTPOINT_DB_DIR)
 
             if not await isdir(config.MOUNTPOINT_BUCKETS_DIR):
-                await mkdir(config.MOUNTPOINT_BUCKETS_DIR)
+                await mktree(config.MOUNTPOINT_BUCKETS_DIR)
 
             if not await isdir(config.MOUNTPOINT_TMP_DIR):
-                await mkdir(config.MOUNTPOINT_TMP_DIR)
+                await mktree(config.MOUNTPOINT_TMP_DIR)
 
             await create_all_tables()
             await check_db_integrity(config.SQLITE_PATH)

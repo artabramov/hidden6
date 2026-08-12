@@ -94,7 +94,7 @@ async def ismount(path: str) -> bool:
     return await aiofiles.ospath.ismount(path)
 
 
-async def mkdir(path: str) -> None:
+async def mktree(path: str) -> None:
     """
     Create a directory together with its missing parents and persist
     the directory entry updates. An existing directory is left as is,

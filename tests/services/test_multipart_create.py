@@ -49,7 +49,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.mkdir = self._patch("mkdir", new_callable=AsyncMock)
+        self.mktree = self._patch("mktree", new_callable=AsyncMock)
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
 
     async def _create(self):
@@ -63,7 +63,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
     async def test_registers_upload_and_stages_dir(self):
         multipart = await self._create()
 
-        self.mkdir.assert_awaited_once_with("/mnt/tmp/beef")
+        self.mktree.assert_awaited_once_with("/mnt/tmp/beef")
         self.repo.insert.assert_awaited_once()
         self.assertEqual(multipart.upload_id, "beef")
         self.assertEqual(multipart.bucket_id, 7)
@@ -80,7 +80,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3BucketNotFoundError):
             await self._create()
 
-        self.mkdir.assert_not_awaited()
+        self.mktree.assert_not_awaited()
 
     async def test_failed_insert_removes_staged_dir(self):
         self.repo.insert.side_effect = RuntimeError("db down")

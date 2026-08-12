@@ -451,7 +451,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
             self.assertFalse(os.path.exists(destination))
 
-    # --- mkdir, rmdir, touch ---
+    # --- mktree, rmdir, rmtree, touch ---
 
     async def test_mkdir_fsyncs_every_created_level(self):
         calls = []
@@ -468,7 +468,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             "_fsync_directory",
             new_callable=AsyncMock,
         ) as fsync:
-            await rf.mkdir("/data/sub/deep")
+            await rf.mktree("/data/sub/deep")
         self.assertEqual(calls[0][0], rf._makedirs_sync)
         self.assertEqual(calls[0][1], ("/data/sub/deep",))
         self.assertEqual(
@@ -478,13 +478,13 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_mkdir_existing_directory_is_left_as_is(self):
         with tempfile.TemporaryDirectory() as tmp:
-            await rf.mkdir(tmp)
+            await rf.mktree(tmp)
             self.assertTrue(os.path.isdir(tmp))
 
     async def test_mkdir_creates_missing_parents(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "a", "b", "c")
-            await rf.mkdir(path)
+            await rf.mktree(path)
             self.assertTrue(os.path.isdir(path))
 
     def test_makedirs_sync_returns_created_levels(self):

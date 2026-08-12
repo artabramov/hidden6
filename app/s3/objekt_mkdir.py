@@ -4,7 +4,7 @@
 import os
 
 from app.errors import S3ObjektKeyConflictError
-from app.repositories.file import isdir, mkdir
+from app.repositories.file import isdir, mktree
 
 
 async def objekt_mkdir(object_path: str, resource: str) -> None:
@@ -17,6 +17,6 @@ async def objekt_mkdir(object_path: str, resource: str) -> None:
         raise S3ObjektKeyConflictError(resource)
 
     try:
-        await mkdir(os.path.dirname(object_path))
+        await mktree(os.path.dirname(object_path))
     except (FileExistsError, NotADirectoryError) as exc:
         raise S3ObjektKeyConflictError(resource) from exc

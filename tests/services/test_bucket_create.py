@@ -66,7 +66,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                 return_value=False,
             ),
             patch(
-                "app.services.bucket_create.mkdir",
+                "app.services.bucket_create.mktree",
                 new_callable=AsyncMock,
             ) as mkdir_mock,
             patch(
@@ -178,7 +178,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                 new=isdir_mock,
             ),
             patch(
-                "app.services.bucket_create.mkdir",
+                "app.services.bucket_create.mktree",
                 new_callable=AsyncMock,
             ),
             patch(

@@ -110,7 +110,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 new=isdir_mock,
             ),
             patch(
-                "app.services.gocryptfs_mount.mkdir",
+                "app.services.gocryptfs_mount.mktree",
                 new=mkdir_mock,
             ),
             patch(
@@ -183,7 +183,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 new=isdir_mock,
             ),
             patch(
-                "app.services.gocryptfs_mount.mkdir",
+                "app.services.gocryptfs_mount.mktree",
                 new=AsyncMock(),
             ),
             patch(
@@ -245,7 +245,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 new=isdir_mock,
             ),
             patch(
-                "app.services.gocryptfs_mount.mkdir",
+                "app.services.gocryptfs_mount.mktree",
                 new=AsyncMock(),
             ),
             patch(
@@ -304,7 +304,7 @@ class TestGocryptfsMount(unittest.IsolatedAsyncioTestCase):
                 new=isdir_mock,
             ),
             patch(
-                "app.services.gocryptfs_mount.mkdir",
+                "app.services.gocryptfs_mount.mktree",
                 new=AsyncMock(),
             ),
             patch(

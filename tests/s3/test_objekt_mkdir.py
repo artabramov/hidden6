@@ -22,7 +22,7 @@ class TestObjektMkdir(unittest.IsolatedAsyncioTestCase):
                 return_value=isdir_value,
             ),
             patch(
-                "app.s3.objekt_mkdir.mkdir",
+                "app.s3.objekt_mkdir.mktree",
                 new_callable=AsyncMock,
                 side_effect=mkdir_error,
             ) as mkdir_mock,
