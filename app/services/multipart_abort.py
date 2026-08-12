@@ -29,7 +29,7 @@ async def multipart_abort(
     Abort a multipart upload (S3 AbortMultipartUpload): drop the
     upload together with every part staged for it.
     """
-    log.info("msg=multipart_abort_started upload_id=%s", upload_id)
+    log.info("msg=multipart_abort upload_id=%s", upload_id)
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"

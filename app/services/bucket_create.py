@@ -31,48 +31,42 @@ async def bucket_create(
     Create an S3 bucket: mktree under the mountpoint buckets dir and
     insert the Bucket row owned by the caller.
     """
-    log.info("msg=bucket_create_started bucket=%s", bucket_name)
+    log.info("msg=bucket_create bucket=%s", bucket_name)
 
     config = get_config()
     resource = f"/{bucket_name}"
-    bucket_name_validate(bucket_name, resource)
-    bucket_path = os.path.join(
-        config.MOUNTPOINT_BUCKETS_DIR,
-        bucket_name,
-    )
 
-    async with locks.lock_directory(
-        bucket_path,
-        LockType.WRITE,
-    ):
+    bucket_name_validate(bucket_name, resource)
+    bucket_path = os.path.join(config.MOUNTPOINT_BUCKETS_DIR, bucket_name)
+
+    async with locks.lock_directory(bucket_path, LockType.WRITE):
         repo = ORMRepository(session)
         existing = await repo.select(Bucket, bucket_name=bucket_name)
+
         if existing is not None:
             if existing.user_id == user.id:
+                log.warning("msg=bucket_already_owned")
                 raise S3BucketAlreadyOwnedByYouError(resource)
+
+            log.warning("msg=bucket_already_exists")
             raise S3BucketAlreadyExistsError(resource)
 
         if await isdir(bucket_path):
-            log.warning(
-                "msg=bucket_create_orphan_dir bucket=%s",
-                bucket_name,
-            )
+            log.warning("msg=bucket_already_exists")
             raise S3BucketAlreadyExistsError(resource)
 
         await mktree(bucket_path)
+        bucket = Bucket(user_id=user.id, bucket_name=bucket_name)
 
-        bucket = Bucket(
-            user_id=user.id,
-            bucket_name=bucket_name,
-        )
         try:
             await repo.insert(bucket, commit=True)
+
         except Exception:
             if await isdir(bucket_path):
                 await rmdir(bucket_path)
             raise
 
-    log.info("msg=bucket_created bucket=%s", bucket_name)
+    log.info("msg=bucket_created")
     await hooks.emit(Events.BUCKET_CREATED, bucket)
 
     return bucket

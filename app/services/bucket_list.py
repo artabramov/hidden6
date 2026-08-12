@@ -21,19 +21,20 @@ async def bucket_list(
     List buckets visible to the authenticated user. Root user
     sees all buckets; other users see only their own buckets.
     """
-    log.info("msg=bucket_list_started user_id=%s", user.id)
+    log.info("msg=bucket_list user_id=%s", user.id)
 
     repo = ORMRepository(session)
-    filters: dict[str, object] = {
+    filters = {
         "order_by": "bucket_name",
         "order": "asc",
     }
+
     if not user.is_root:
         filters["user_id"] = user.id
 
     buckets = await repo.select_all(Bucket, **filters)
 
-    log.info("msg=bucket_list_completed count=%d", len(buckets))
+    log.info("msg=bucket_listed", len(buckets))
     await hooks.emit(Events.BUCKET_LISTED, buckets)
 
     return buckets
