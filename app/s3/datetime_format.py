@@ -1,0 +1,16 @@
+# app/s3/datetime_format.py
+# SPDX-License-Identifier: GPL-3.0-only
+
+from datetime import UTC, datetime
+
+
+def datetime_format(unix_ts: int) -> str:
+    """
+    Format a timestamp the way S3 carries time in XML bodies: ISO 8601
+    in UTC with milliseconds and a Z suffix. Milliseconds are always
+    zero because timestamps are stored with second precision, which is
+    the precision S3 itself reports.
+    """
+    dt = datetime.fromtimestamp(unix_ts, tz=UTC)
+
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")

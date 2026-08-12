@@ -1,12 +1,12 @@
 # app/xml/bucket_list.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from datetime import UTC, datetime
 from xml.sax.saxutils import escape
 
 from app.constants import S3_XMLNS
 from app.models.bucket import Bucket
 from app.models.user import User
+from app.s3.datetime_format import datetime_format
 
 
 def render_list_buckets_xml(
@@ -32,7 +32,7 @@ def render_list_buckets_xml(
             f"<Name>{escape(bucket.bucket_name)}</Name>",
             (
                 f"<CreationDate>"
-                f"{format_creation_date(bucket.created_at)}"
+                f"{datetime_format(bucket.created_at)}"
                 f"</CreationDate>"
             ),
             "</Bucket>",
@@ -42,9 +42,3 @@ def render_list_buckets_xml(
         "</ListAllMyBucketsResult>",
     ])
     return "".join(parts)
-
-
-def format_creation_date(unix_ts: int) -> str:
-    """Format a bucket creation timestamp as S3 ISO 8601 UTC."""
-    dt = datetime.fromtimestamp(unix_ts, tz=UTC)
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")

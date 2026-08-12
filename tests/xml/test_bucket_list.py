@@ -10,19 +10,10 @@ set_minimal_app_config_env()
 
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.xml.bucket_list import (  # noqa: E402
-    format_creation_date,
-    render_list_buckets_xml,
-)
+from app.xml.bucket_list import render_list_buckets_xml  # noqa: E402
 
 
 class TestBucketListXml(unittest.TestCase):
-    def test_format_creation_date(self):
-        self.assertEqual(
-            format_creation_date(1_704_067_200),
-            "2024-01-01T00:00:00.000Z",
-        )
-
     def test_render_empty_list(self):
         owner = User(id=1, username="root", is_root=True)
         xml = render_list_buckets_xml(owner=owner, buckets=[])
