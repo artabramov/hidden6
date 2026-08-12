@@ -8,7 +8,7 @@ from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
-from app.schemas.bucket_list import render_list_buckets_xml
+from app.xml.bucket_list import render_list_buckets_xml
 from app.services.bucket_list import bucket_list
 
 router = APIRouter(include_in_schema=False)

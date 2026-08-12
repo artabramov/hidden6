@@ -1,10 +1,10 @@
-# tests/schemas/test_multipart_complete.py
+# tests/xml/test_multipart_complete.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
 from app.constants import S3_XMLNS
-from app.schemas.multipart_complete import (
+from app.xml.multipart_complete import (
     parse_complete_multipart_xml,
     render_complete_multipart_xml,
 )

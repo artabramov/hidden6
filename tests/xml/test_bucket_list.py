@@ -1,4 +1,4 @@
-# tests/schemas/test_bucket_list.py
+# tests/xml/test_bucket_list.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -10,13 +10,13 @@ set_minimal_app_config_env()
 
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.schemas.bucket_list import (  # noqa: E402
+from app.xml.bucket_list import (  # noqa: E402
     format_creation_date,
     render_list_buckets_xml,
 )
 
 
-class TestBucketListSchema(unittest.TestCase):
+class TestBucketListXml(unittest.TestCase):
     def test_format_creation_date(self):
         self.assertEqual(
             format_creation_date(1_704_067_200),

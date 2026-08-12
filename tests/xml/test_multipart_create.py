@@ -1,10 +1,10 @@
-# tests/schemas/test_multipart_create.py
+# tests/xml/test_multipart_create.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
 from app.constants import S3_XMLNS
-from app.schemas.multipart_create import render_initiate_multipart_xml
+from app.xml.multipart_create import render_initiate_multipart_xml
 
 
 class TestRenderInitiateMultipartXml(unittest.TestCase):

@@ -16,14 +16,14 @@ from app.errors import (
     S3ObjektXmlMalformedError,
 )
 from app.models.user import User
-from app.schemas.multipart_complete import (
-    parse_complete_multipart_xml,
-    render_complete_multipart_xml,
-)
-from app.schemas.multipart_create import render_initiate_multipart_xml
 from app.schemas.objekt_upload import ObjektUploadRequest
 from app.services.multipart_complete import multipart_complete
 from app.services.multipart_create import multipart_create
+from app.xml.multipart_complete import (
+    parse_complete_multipart_xml,
+    render_complete_multipart_xml,
+)
+from app.xml.multipart_create import render_initiate_multipart_xml
 
 # CreateMultipartUpload and CompleteMultipartUpload post the same
 # object path and differ only by the uploads and uploadId query

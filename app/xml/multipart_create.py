@@ -1,4 +1,4 @@
-# app/schemas/multipart_create.py
+# app/xml/multipart_create.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from xml.sax.saxutils import escape
