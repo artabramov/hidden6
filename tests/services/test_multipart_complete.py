@@ -3,7 +3,7 @@
 
 import hashlib
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from tests.helpers import set_minimal_app_config_env
 
@@ -168,9 +168,12 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             ],
             "/mnt/tmp/staged",
         )
-        self.lock.assert_called_once_with(
-            "/mnt/buckets/photos",
-            LockType.WRITE,
+        self.assertEqual(
+            self.lock.call_args_list,
+            [
+                call("/mnt/tmp/beef", LockType.READ),
+                call("/mnt/buckets/photos", LockType.WRITE),
+            ],
         )
         self.rename.assert_awaited_once_with(
             "/mnt/tmp/staged",

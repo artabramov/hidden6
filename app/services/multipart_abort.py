@@ -7,6 +7,7 @@ import os
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
+from app.locks import LockType, locks
 from app.models.user import User
 from app.repositories.file import rmtree
 from app.repositories.orm import ORMRepository
@@ -45,9 +46,12 @@ async def multipart_abort(
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
 
     # The upload is already dropped, so parts left behind by a failed
-    # cleanup are logged instead of failing the request.
+    # cleanup are logged instead of failing the request. The lock keeps
+    # the cleanup from pulling the parts out from under an assembly or
+    # a part upload that is already running.
     try:
-        await rmtree(upload_dir)
+        async with locks.lock_directory(upload_dir, LockType.WRITE):
+            await rmtree(upload_dir)
     except OSError:
         log.exception("msg=multipart_cleanup_failed path=%s", upload_dir)
 

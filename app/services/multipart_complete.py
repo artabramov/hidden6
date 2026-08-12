@@ -67,14 +67,18 @@ async def multipart_complete(
     )
 
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
-    part_paths = await multipart_parts(upload_dir, parts, resource)
-
     bucket_path = os.path.join(config.MOUNTPOINT_BUCKETS_DIR, bucket_name)
     object_path = objekt_path(bucket_path, object_key, resource)
     staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
 
     try:
-        part_hashes = await concat(part_paths, staged_path)
+        # The lock keeps an abort or a part upload from changing the
+        # parts between their validation and the assembly. A part
+        # replaced before the lock was taken is still caught by the
+        # ETag comparison below.
+        async with locks.lock_directory(upload_dir, LockType.READ):
+            part_paths = await multipart_parts(upload_dir, parts, resource)
+            part_hashes = await concat(part_paths, staged_path)
 
         for part, part_hash in zip(parts, part_hashes):
             if part.etag != part_hash:

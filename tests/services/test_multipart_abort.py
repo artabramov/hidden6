@@ -14,6 +14,7 @@ from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
     S3ObjektUploadNotFoundError,
 )
+from app.locks import LockType  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -65,6 +66,14 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         )
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
 
+        lock_context = AsyncMock()
+        lock_context.__aenter__.return_value = None
+        lock_context.__aexit__.return_value = None
+        self.lock = self._patch(
+            "locks.lock_directory",
+            return_value=lock_context,
+        )
+
     async def _abort(self):
         await multipart_abort(
             bucket_name="photos",
@@ -82,6 +91,10 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             commit=True,
         )
         self.rmtree.assert_awaited_once_with("/mnt/tmp/beef")
+        self.lock.assert_called_once_with(
+            "/mnt/tmp/beef",
+            LockType.WRITE,
+        )
 
     async def test_failed_cleanup_is_logged(self):
         self.rmtree.side_effect = OSError("busy")

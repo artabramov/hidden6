@@ -89,9 +89,9 @@ async def objekt_upload(
             )
 
             # The conflict check above already rejected a directory at
-            # the object path, but the lock is local to this process:
-            # another worker or a change made straight on the mount can
-            # still put one there before the rename lands.
+            # the object path, but the lock covers requests only: a
+            # change made straight on the mount can still put one there
+            # before the rename lands.
             try:
                 await rename(staged_path, object_path)
             except (IsADirectoryError, NotADirectoryError) as exc:
