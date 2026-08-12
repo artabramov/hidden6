@@ -62,9 +62,9 @@ async def get_filesize(path: str) -> int:
     return stats.st_size
 
 
-async def get_checksum(path: str) -> str:
-    """Return a hexadecimal SHA-256 checksum of the file."""
-    digest = hashlib.sha256()
+async def get_file_hash(path: str) -> str:
+    """Return a hexadecimal MD5 hash of the file, used as S3 ETag."""
+    digest = hashlib.md5(usedforsecurity=False)
 
     async for chunk in _iter_read(path):
         digest.update(chunk)
@@ -91,11 +91,14 @@ async def ismount(path: str) -> bool:
 
 async def mkdir(path: str) -> None:
     """
-    Create a directory and persist the directory entry update.
+    Create a directory together with its missing parents and persist
+    the directory entry updates. An existing directory is left as is,
+    and every level actually created is fsynced through its parent.
     """
-    parent = _parent_dir(path)
-    await asyncio.to_thread(os.mkdir, path)
-    await _fsync_directory(parent)
+    created = await asyncio.to_thread(_makedirs_sync, path)
+
+    for directory in reversed(created):
+        await _fsync_directory(_parent_dir(directory))
 
 
 async def rmdir(path: str) -> None:
@@ -261,6 +264,28 @@ async def _atomic_write_stream(
         except FileNotFoundError:
             pass
         raise
+
+
+def _makedirs_sync(path: str) -> list[str]:
+    """
+    Create a directory tree and return the directories that were
+    missing, ordered from the deepest to the shallowest one.
+    """
+    created: list[str] = []
+    cursor = os.path.abspath(path)
+
+    while not os.path.isdir(cursor):
+        created.append(cursor)
+        parent = os.path.dirname(cursor)
+
+        if parent == cursor:
+            break
+
+        cursor = parent
+
+    os.makedirs(path, exist_ok=True)
+
+    return created
 
 
 def _touch_sync(path: str) -> None:

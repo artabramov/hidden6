@@ -26,6 +26,7 @@ class Events:
     USER_INITIALIZED = "user_initialized"
     BUCKET_CREATED = "bucket_created"
     BUCKET_LISTED = "bucket_listed"
+    OBJEKT_UPLOADED = "objekt_uploaded"
 
 
 class HookManager:

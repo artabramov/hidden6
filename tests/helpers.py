@@ -31,6 +31,7 @@ def build_default_config_values() -> dict[str, object]:
         "S3_REGION": "us-east-1",
         "S3_SERVICE": "s3",
         "S3_SIGV4_MAX_SKEW_SECONDS": 900,
+        "S3_UPLOAD_MAX_BYTES": 5368709120,
         "WATCHDOG_INTERVAL_SECONDS": 60,
         "WATCHDOG_LIVENESS_SECONDS": 120,
     }

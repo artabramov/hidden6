@@ -41,6 +41,11 @@ class S3ErrorCode:
     BUCKET_NAME_INVALID = "InvalidBucketName"
     BUCKET_ALREADY_EXISTS = "BucketAlreadyExists"
     BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
+    BUCKET_NOT_FOUND = "NoSuchBucket"
+    OBJEKT_KEY_INVALID = "InvalidArgument"
+    OBJEKT_KEY_CONFLICT = "InvalidArgument"
+    OBJEKT_TOO_LARGE = "EntityTooLarge"
+    OBJEKT_BODY_INCOMPLETE = "IncompleteBody"
 
 
 class S3Error(Exception):
@@ -156,5 +161,74 @@ class S3BucketAlreadyOwnedByYouError(S3Error):
                 "current user."
             ),
             status_code=status.HTTP_409_CONFLICT,
+            resource=resource,
+        )
+
+
+class S3BucketNotFoundError(S3Error):
+    """Raised when the bucket does not exist (404)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.BUCKET_NOT_FOUND,
+            message="The specified bucket does not exist.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            resource=resource,
+        )
+
+
+class S3ObjektKeyInvalidError(S3Error):
+    """Raised when the object key is not a valid S3 key (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_KEY_INVALID,
+            message="The specified object key is not valid.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektKeyConflictError(S3Error):
+    """Raised when the key collides with a stored object (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_KEY_CONFLICT,
+            message=(
+                "The specified object key conflicts with an object "
+                "already stored in the bucket."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektTooLargeError(S3Error):
+    """Raised when the object exceeds the upload size limit (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_TOO_LARGE,
+            message=(
+                "The uploaded object exceeds the maximum size "
+                "allowed by a single upload request."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            resource=resource,
+        )
+
+
+class S3ObjektBodyIncompleteError(S3Error):
+    """Raised when the uploaded body ends or frames wrongly (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_BODY_INCOMPLETE,
+            message=(
+                "The request body is incomplete or does not match "
+                "the chunked encoding declared by the client."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
             resource=resource,
         )

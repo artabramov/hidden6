@@ -44,6 +44,7 @@ class Config(BaseSettings):
     S3_REGION: str
     S3_SERVICE: str
     S3_SIGV4_MAX_SKEW_SECONDS: int
+    S3_UPLOAD_MAX_BYTES: int
     EXTENSIONS_ENABLED: str = ""
 
     @cached_property

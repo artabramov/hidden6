@@ -3,6 +3,7 @@
 
 import hashlib
 import os
+import tempfile
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -376,9 +377,9 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         ):
             self.assertTrue(await rf.ismount("/mnt"))
 
-    # --- get_checksum, read ---
+    # --- get_file_hash, read ---
 
-    async def test_get_checksum(self):
+    async def test_get_file_hash(self):
         async def fake_iter(
             _path: str,
             chunk_size: int = FILE_CHUNK_SIZE_BYTES,
@@ -387,8 +388,8 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             yield b"cd"
 
         with patch.object(rf, "_iter_read", side_effect=fake_iter):
-            hx = await rf.get_checksum("/f")
-        self.assertEqual(hx, hashlib.sha256(b"abcd").hexdigest())
+            hx = await rf.get_file_hash("/f")
+        self.assertEqual(hx, hashlib.md5(b"abcd").hexdigest())
 
     async def test_read(self):
         async def fake_iter(
@@ -404,12 +405,12 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     # --- mkdir, rmdir, touch ---
 
-    async def test_mkdir(self):
+    async def test_mkdir_fsyncs_every_created_level(self):
         calls = []
 
         async def fake_to_thread(fn, /, *args, **kwargs):
             calls.append((fn, args))
-            return None
+            return ["/data/sub/deep", "/data/sub"]
 
         with patch(
             "app.repositories.file.asyncio.to_thread",
@@ -419,10 +420,33 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             "_fsync_directory",
             new_callable=AsyncMock,
         ) as fsync:
-            await rf.mkdir("/data/sub")
-        self.assertEqual(calls[0][0], os.mkdir)
-        self.assertEqual(calls[0][1], ("/data/sub",))
-        fsync.assert_awaited_once_with("/data")
+            await rf.mkdir("/data/sub/deep")
+        self.assertEqual(calls[0][0], rf._makedirs_sync)
+        self.assertEqual(calls[0][1], ("/data/sub/deep",))
+        self.assertEqual(
+            [call.args[0] for call in fsync.await_args_list],
+            ["/data", "/data/sub"],
+        )
+
+    async def test_mkdir_existing_directory_is_left_as_is(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            await rf.mkdir(tmp)
+            self.assertTrue(os.path.isdir(tmp))
+
+    async def test_mkdir_creates_missing_parents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "a", "b", "c")
+            await rf.mkdir(path)
+            self.assertTrue(os.path.isdir(path))
+
+    def test_makedirs_sync_returns_created_levels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "a", "b")
+            created = rf._makedirs_sync(path)
+        self.assertEqual(
+            created,
+            [path, os.path.join(tmp, "a")],
+        )
 
     async def test_rmdir(self):
         with patch(
