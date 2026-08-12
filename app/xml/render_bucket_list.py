@@ -1,4 +1,4 @@
-# app/xml/bucket_list.py
+# app/xml/render_bucket_list.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from xml.sax.saxutils import escape
@@ -9,7 +9,7 @@ from app.models.user import User
 from app.s3.datetime_format import datetime_format
 
 
-def render_list_buckets_xml(
+def render_bucket_list(
     owner: User,
     buckets: list[Bucket],
 ) -> str:

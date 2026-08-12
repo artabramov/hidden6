@@ -1,4 +1,4 @@
-# tests/xml/test_bucket_list.py
+# tests/xml/test_render_bucket_list.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -10,13 +10,13 @@ set_minimal_app_config_env()
 
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.xml.bucket_list import render_list_buckets_xml  # noqa: E402
+from app.xml.render_bucket_list import render_bucket_list  # noqa: E402
 
 
-class TestBucketListXml(unittest.TestCase):
+class TestRenderBucketList(unittest.TestCase):
     def test_render_empty_list(self):
         owner = User(id=1, username="root", is_root=True)
-        xml = render_list_buckets_xml(owner=owner, buckets=[])
+        xml = render_bucket_list(owner=owner, buckets=[])
 
         self.assertIn("<ListAllMyBucketsResult", xml)
         self.assertIn("<ID>1</ID>", xml)
@@ -30,7 +30,7 @@ class TestBucketListXml(unittest.TestCase):
             Bucket(user_id=2, bucket_name="alpha", created_at=1_704_067_200),
             Bucket(user_id=2, bucket_name="beta", created_at=1_704_153_600),
         ]
-        xml = render_list_buckets_xml(owner=owner, buckets=buckets)
+        xml = render_bucket_list(owner=owner, buckets=buckets)
 
         self.assertIn("<Name>alpha</Name>", xml)
         self.assertIn("<Name>beta</Name>", xml)
@@ -48,7 +48,7 @@ class TestBucketListXml(unittest.TestCase):
         buckets = [
             Bucket(user_id=1, bucket_name="x<y", created_at=1_704_067_200),
         ]
-        xml = render_list_buckets_xml(owner=owner, buckets=buckets)
+        xml = render_bucket_list(owner=owner, buckets=buckets)
 
         self.assertIn("<DisplayName>a&amp;b</DisplayName>", xml)
         self.assertIn("<Name>x&lt;y</Name>", xml)
