@@ -5,7 +5,7 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.hooks import hooks, Events
+from app.hooks import Events, hooks
 from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
@@ -18,12 +18,11 @@ async def bucket_list(
     session: AsyncSession,
 ) -> list[Bucket]:
     """
-    List buckets visible to the authenticated user. Root user
-    sees all buckets; other users see only their own buckets.
-    """
-    log.info("msg=bucket_list user_id=%s", user.id)
+    List S3 buckets visible to the authenticated user.
 
-    repo = ORMRepository(session)
+    Returns all buckets for the root user and only owned buckets
+    for other users, ordered by bucket name.
+    """
     filters = {
         "order_by": "bucket_name",
         "order": "asc",
@@ -32,9 +31,8 @@ async def bucket_list(
     if not user.is_root:
         filters["user_id"] = user.id
 
+    repo = ORMRepository(session)
     buckets = await repo.select_all(Bucket, **filters)
 
-    log.info("msg=bucket_listed", len(buckets))
     await hooks.emit(Events.BUCKET_LISTED, buckets)
-
     return buckets
