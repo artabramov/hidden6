@@ -1,7 +1,7 @@
 # app/constants.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-HIDDEN_TITLE = "Hidden — S3-compatible storage powered by gocryptfs"
+HIDDEN_TITLE = "Hidden — S3-compatible storage secured by gocryptfs"
 
 GOCRYPTFS_PASSPHRASE_LENGTH = 80
 GOCRYPTFS_PASSPHRASE_FILENAME = "gocryptfs_passphrase.enc"

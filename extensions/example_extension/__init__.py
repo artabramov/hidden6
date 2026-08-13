@@ -47,11 +47,15 @@ async def bucket_created(bucket: Bucket) -> None:
     ...
 
 
-async def bucket_listed(bucket: List[Bucket]) -> None:
+async def bucket_listed(buckets: List[Bucket]) -> None:
     ...
 
 
 async def objekt_uploaded(objekt: Objekt) -> None:
+    ...
+
+
+async def objekt_listed(objekts: List[Objekt]) -> None:
     ...
 
 
@@ -65,3 +69,4 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.BUCKET_CREATED, bucket_created)
     hook_manager.on(Events.BUCKET_LISTED, bucket_listed)
     hook_manager.on(Events.OBJEKT_UPLOADED, objekt_uploaded)
+    hook_manager.on(Events.OBJEKT_LISTED, objekt_listed)
