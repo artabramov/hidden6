@@ -73,8 +73,8 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
     def _metadata(self, **kwargs) -> ObjektVersionMetadata:
         defaults = {
             "objekt_version_id": self.version.id,
-            "key": "x-amz-meta-color",
-            "value": "red",
+            "meta_key": "x-amz-meta-color",
+            "meta_value": "red",
         }
         defaults.update(kwargs)
         return ObjektVersionMetadata(**defaults)
@@ -87,8 +87,8 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
 
     def test_persists_required_fields(self):
         row = self._metadata(
-            key="x-amz-meta-owner",
-            value="alice",
+            meta_key="x-amz-meta-owner",
+            meta_value="alice",
         )
         self.session.add(row)
         self.session.commit()
@@ -96,18 +96,22 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
 
         self.assertIsNotNone(row.id)
         self.assertEqual(row.objekt_version_id, self.version.id)
-        self.assertEqual(row.key, "x-amz-meta-owner")
-        self.assertEqual(row.value, "alice")
+        self.assertEqual(row.meta_key, "x-amz-meta-owner")
+        self.assertEqual(row.meta_value, "alice")
 
-    def test_key_unique_per_version(self):
-        self.session.add(self._metadata(key="x-amz-meta-color", value="red"))
+    def test_meta_key_unique_per_version(self):
+        self.session.add(
+            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
+        )
         self.session.commit()
 
-        self.session.add(self._metadata(key="x-amz-meta-color", value="blue"))
+        self.session.add(
+            self._metadata(meta_key="x-amz-meta-color", meta_value="blue"),
+        )
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_key_allowed_on_different_versions(self):
+    def test_same_meta_key_allowed_on_different_versions(self):
         other = ObjektVersion(
             objekt_id=self.objekt.id,
             user_id=self.user.id,
@@ -117,12 +121,14 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(other)
 
-        self.session.add(self._metadata(key="x-amz-meta-color", value="red"))
+        self.session.add(
+            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
+        )
         self.session.add(
             self._metadata(
                 objekt_version_id=other.id,
-                key="x-amz-meta-color",
-                value="blue",
+                meta_key="x-amz-meta-color",
+                meta_value="blue",
             ),
         )
         self.session.commit()
@@ -146,8 +152,12 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
         )
 
     def test_version_relationship_to_metadata(self):
-        self.session.add(self._metadata(key="x-amz-meta-color", value="red"))
-        self.session.add(self._metadata(key="Cache-Control", value="no-cache"))
+        self.session.add(
+            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
+        )
+        self.session.add(
+            self._metadata(meta_key="Cache-Control", meta_value="no-cache"),
+        )
         self.session.commit()
 
         loaded = self.session.scalar(
@@ -156,7 +166,7 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
             .options(selectinload(ObjektVersion.objekt_version_metadata)),
         )
 
-        keys = sorted(item.key for item in loaded.objekt_version_metadata)
+        keys = sorted(item.meta_key for item in loaded.objekt_version_metadata)
         self.assertEqual(keys, ["Cache-Control", "x-amz-meta-color"])
 
     def test_relationship_access_without_eager_load_raises(self):

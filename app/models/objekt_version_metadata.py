@@ -35,12 +35,12 @@ class ObjektVersionMetadata(Base):
         index=True,
     )
 
-    key: Mapped[str] = mapped_column(
+    meta_key: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )
 
-    value: Mapped[str] = mapped_column(
+    meta_value: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
@@ -53,8 +53,8 @@ class ObjektVersionMetadata(Base):
     __table_args__ = (
         UniqueConstraint(
             "objekt_version_id",
-            "key",
-            name="uq_objekts_versions_metadata_version_key",
+            "meta_key",
+            name="uq_objekts_versions_metadata_version_meta_key",
         ),
         {"sqlite_autoincrement": True},
     )
