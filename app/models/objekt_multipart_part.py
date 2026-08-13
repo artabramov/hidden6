@@ -33,7 +33,7 @@ class ObjektMultipartPart(Base):
 
     objekt_multipart_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts_multiparts.id", ondelete="CASCADE"),
+        ForeignKey("objekts_multiparts.id"),
         nullable=False,
         index=True,
     )

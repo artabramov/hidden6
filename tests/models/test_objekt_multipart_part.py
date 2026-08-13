@@ -3,7 +3,7 @@
 
 import unittest
 
-from sqlalchemy import create_engine, event, select
+from sqlalchemy import create_engine, delete, event, select
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import Session, selectinload
 
@@ -222,12 +222,16 @@ class TestObjektMultipartPartModel(unittest.TestCase):
         with self.assertRaises(InvalidRequestError):
             _ = loaded.objekt_multipart_parts
 
-    def test_cascade_delete_with_multipart(self):
+    def test_multipart_delete_is_restricted(self):
         self.session.add(self._part())
         self.session.commit()
 
-        self.session.delete(self.multipart)
-        self.session.commit()
-
-        remaining = self.session.scalars(select(ObjektMultipartPart)).all()
-        self.assertEqual(remaining, [])
+        # FK has no ON DELETE CASCADE; Core DELETE exercises the
+        # database constraint (ORM cascade would still remove parts).
+        with self.assertRaises(IntegrityError):
+            self.session.execute(
+                delete(ObjektMultipart).where(
+                    ObjektMultipart.id == self.multipart.id,
+                ),
+            )
+            self.session.commit()

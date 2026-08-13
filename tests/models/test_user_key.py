@@ -3,7 +3,7 @@
 
 import unittest
 
-from sqlalchemy import create_engine, delete, event, select
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import Session, selectinload
 
@@ -129,7 +129,7 @@ class TestUserKeyModel(unittest.TestCase):
         with self.assertRaises(InvalidRequestError):
             _ = loaded.user_key_user
 
-    def test_cascade_delete_with_user(self):
+    def test_user_delete_is_restricted(self):
         self.session.add(
             UserKey(
                 user_id=self.user.id,
@@ -139,13 +139,9 @@ class TestUserKeyModel(unittest.TestCase):
         )
         self.session.commit()
 
-        # DB ON DELETE CASCADE; Core DELETE avoids ORM nulling the FK
-        # under lazy="raise" without passive_deletes.
-        self.session.execute(delete(User).where(User.id == self.user.id))
-        self.session.commit()
-
-        remaining = self.session.scalars(select(UserKey)).all()
-        self.assertEqual(remaining, [])
+        self.session.delete(self.user)
+        with self.assertRaises(IntegrityError):
+            self.session.commit()
 
     def test_is_enabled_independent_of_user(self):
         key = UserKey(
