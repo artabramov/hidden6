@@ -84,14 +84,6 @@ class Bucket(Base):
         lazy="raise",
     )
 
-    bucket_objekts_versions: Mapped[
-        list["ObjektVersion"]  # noqa: F821
-    ] = relationship(
-        back_populates="objekt_version_bucket",
-        passive_deletes=True,
-        lazy="raise",
-    )
-
     __table_args__ = (
         {"sqlite_autoincrement": True},
     )

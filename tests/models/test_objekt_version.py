@@ -62,7 +62,6 @@ class TestObjektVersionModel(unittest.TestCase):
 
     def _version(self, **kwargs) -> ObjektVersion:
         defaults = {
-            "bucket_id": self.bucket.id,
             "objekt_id": self.objekt.id,
             "user_id": self.user.id,
             "version_id": "a" * 32,
@@ -86,7 +85,6 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.refresh(version)
 
         self.assertIsNotNone(version.id)
-        self.assertEqual(version.bucket_id, self.bucket.id)
         self.assertEqual(version.objekt_id, self.objekt.id)
         self.assertEqual(version.user_id, self.user.id)
         self.assertEqual(version.version_id, "c" * 32)
@@ -190,14 +188,6 @@ class TestObjektVersionModel(unittest.TestCase):
         ids = sorted(v.version_id for v in loaded.objekt_versions)
         self.assertEqual(ids, ["a" * 32, "b" * 32])
 
-    def test_relationship_back_to_bucket(self):
-        version = self._version(version_id="e" * 32)
-        self.session.add(version)
-        self.session.commit()
-        self.session.refresh(version)
-
-        self.assertEqual(version.objekt_version_bucket.id, self.bucket.id)
-
     def test_relationship_back_to_user(self):
         version = self._version(version_id="f" * 32)
         self.session.add(version)
@@ -205,37 +195,6 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.refresh(version)
 
         self.assertEqual(version.objekt_version_user.id, self.user.id)
-
-    def test_bucket_relationship_to_versions(self):
-        other = Objekt(
-            bucket_id=self.bucket.id,
-            user_id=self.user.id,
-            object_key="b.txt",
-            size_bytes=2,
-            etag="e" * 32,
-        )
-        self.session.add(other)
-        self.session.commit()
-        self.session.refresh(other)
-
-        self.session.add(self._version(version_id="a" * 32))
-        self.session.add(
-            self._version(
-                objekt_id=other.id,
-                version_id="b" * 32,
-                etag="b" * 32,
-            ),
-        )
-        self.session.commit()
-
-        loaded = self.session.scalar(
-            select(Bucket)
-            .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_objekts_versions)),
-        )
-
-        ids = sorted(v.version_id for v in loaded.bucket_objekts_versions)
-        self.assertEqual(ids, ["a" * 32, "b" * 32])
 
     def test_relationship_access_without_eager_load_raises(self):
         self.session.add(self._version(version_id="a" * 32))
@@ -247,17 +206,6 @@ class TestObjektVersionModel(unittest.TestCase):
 
         with self.assertRaises(InvalidRequestError):
             _ = loaded.objekt_versions
-
-    def test_bucket_relationship_access_without_eager_load_raises(self):
-        self.session.add(self._version(version_id="a" * 32))
-        self.session.commit()
-
-        loaded = self.session.scalar(
-            select(Bucket).where(Bucket.id == self.bucket.id),
-        )
-
-        with self.assertRaises(InvalidRequestError):
-            _ = loaded.bucket_objekts_versions
 
     def test_cascade_delete_with_objekt(self):
         self.session.add(self._version(version_id="a" * 32))

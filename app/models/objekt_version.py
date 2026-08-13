@@ -43,13 +43,6 @@ class ObjektVersion(Base):
         primary_key=True,
     )
 
-    bucket_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("buckets.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-
     objekt_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("objekts.id", ondelete="CASCADE"),
@@ -121,11 +114,6 @@ class ObjektVersion(Base):
         Boolean,
         nullable=False,
         server_default=text("0"),
-    )
-
-    objekt_version_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
-        back_populates="bucket_objekts_versions",
-        foreign_keys=[bucket_id],
     )
 
     objekt_version_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
