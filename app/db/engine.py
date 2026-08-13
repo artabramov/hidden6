@@ -73,3 +73,4 @@ def load_all_models() -> None:
     import app.models.objekt  # noqa: F401, PLC0415
     import app.models.objekt_multipart  # noqa: F401, PLC0415
     import app.models.objekt_version  # noqa: F401, PLC0415
+    import app.models.objekt_version_metadata  # noqa: F401, PLC0415
