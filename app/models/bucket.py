@@ -133,6 +133,12 @@ class Bucket(Base):
         lazy="raise",
     )
 
+    bucket_tags: Mapped[list["BucketTag"]] = relationship(  # noqa: F821
+        back_populates="bucket_tag_bucket",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
     __table_args__ = (
         CheckConstraint(
             "versioning_status IN ('Disabled', 'Enabled', 'Suspended')",
