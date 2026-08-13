@@ -143,6 +143,12 @@ class ObjektVersion(Base):
         lazy="raise",
     )
 
+    objekt_version_tags: Mapped[list["ObjektVersionTag"]] = relationship(  # noqa: E501, F821
+        back_populates="objekt_version_tag_objekt_version",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
     __table_args__ = (
         CheckConstraint(
             """
