@@ -1,26 +1,34 @@
-# tests/s3/test_datetime_format.py
+# tests/s3/test_datetime.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
-from app.s3.datetime_format import datetime_format
+from app.s3.datetime import datetime_format, datetime_http
 
 
 class TestDatetimeFormat(unittest.TestCase):
-    def test_format_epoch(self):
+    def test_formats_epoch_zero(self):
         self.assertEqual(
             datetime_format(0),
             "1970-01-01T00:00:00.000Z",
         )
 
-    def test_format_utc_midnight(self):
+    def test_formats_known_timestamp(self):
         self.assertEqual(
             datetime_format(1_704_067_200),
             "2024-01-01T00:00:00.000Z",
         )
 
-    def test_format_keeps_seconds(self):
+    def test_milliseconds_are_always_zero(self):
         self.assertEqual(
             datetime_format(1_704_067_259),
             "2024-01-01T00:00:59.000Z",
+        )
+
+
+class TestDatetimeHttp(unittest.TestCase):
+    def test_formats_rfc1123_gmt(self):
+        self.assertEqual(
+            datetime_http(1_704_067_200),
+            "Mon, 01 Jan 2024 00:00:00 GMT",
         )

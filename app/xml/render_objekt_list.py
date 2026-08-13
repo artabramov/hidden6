@@ -5,7 +5,7 @@ from xml.sax.saxutils import escape
 
 from app.constants import S3_XMLNS
 from app.models.objekt import Objekt
-from app.s3.datetime_format import datetime_format
+from app.s3.datetime import datetime_format
 
 
 def render_objekt_list(

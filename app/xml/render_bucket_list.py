@@ -6,7 +6,7 @@ from xml.sax.saxutils import escape
 from app.constants import S3_XMLNS
 from app.models.bucket import Bucket
 from app.models.user import User
-from app.s3.datetime_format import datetime_format
+from app.s3.datetime import datetime_format
 
 
 def render_bucket_list(
