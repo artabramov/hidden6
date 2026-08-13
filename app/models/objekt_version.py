@@ -61,10 +61,12 @@ class ObjektVersion(Base):
         default=lambda: int(time.time()),
     )
 
-    updated_at: Mapped[int | None] = mapped_column(
+    # Unix timestamp corresponding to the S3 Last-Modified
+    # value of this object version.
+    modified_at: Mapped[int] = mapped_column(
         Integer,
-        nullable=True,
-        onupdate=lambda: int(time.time()),
+        nullable=False,
+        index=True,
     )
 
     # S3 version identifier returned to clients as VersionId.

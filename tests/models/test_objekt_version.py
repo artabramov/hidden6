@@ -15,6 +15,7 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
+from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
 from app.models.objekt_version import ObjektVersion  # noqa: E402
@@ -53,6 +54,7 @@ class TestObjektVersionModel(unittest.TestCase):
             object_key="a.txt",
             size_bytes=10,
             etag="c" * 32,
+            content_type="text/plain",
         )
         self.session.add(self.objekt)
         self.session.commit()
@@ -67,15 +69,40 @@ class TestObjektVersionModel(unittest.TestCase):
             "objekt_id": self.objekt.id,
             "user_id": self.user.id,
             "version_id": "a" * 32,
+            "modified_at": 1_704_067_200,
+            "size_bytes": 1,
+            "etag": "b" * 32,
+            "content_type": "text/plain",
         }
         defaults.update(kwargs)
         return ObjektVersion(**defaults)
+
+    def _delete_marker(self, **kwargs) -> ObjektVersion:
+        defaults = {
+            "delete_marker": True,
+            "size_bytes": None,
+            "etag": None,
+            "content_type": None,
+        }
+        defaults.update(kwargs)
+        return self._version(**defaults)
+
+    def _assert_rejects(self, version):
+        self.session.add(version)
+        with self.assertRaises(IntegrityError):
+            self.session.commit()
 
     def test_tablename(self):
         self.assertEqual(ObjektVersion.__tablename__, "objekts_versions")
 
     def test_persists_required_fields_and_defaults(self):
-        version = self._version(version_id="c" * 32)
+        version = self._version(
+            version_id="c" * 32,
+            modified_at=1_704_153_600,
+            size_bytes=1024,
+            etag="d41d8cd98f00b204e9800998ecf8427e",
+            content_type="image/png",
+        )
         self.session.add(version)
         self.session.commit()
         self.session.refresh(version)
@@ -84,15 +111,15 @@ class TestObjektVersionModel(unittest.TestCase):
         self.assertEqual(version.objekt_id, self.objekt.id)
         self.assertEqual(version.user_id, self.user.id)
         self.assertEqual(version.version_id, "c" * 32)
-        self.assertIsNone(version.size_bytes)
-        self.assertIsNone(version.etag)
-        self.assertIsNone(version.content_type)
+        self.assertEqual(version.modified_at, 1_704_153_600)
+        self.assertEqual(version.size_bytes, 1024)
+        self.assertEqual(version.etag, "d41d8cd98f00b204e9800998ecf8427e")
+        self.assertEqual(version.content_type, "image/png")
         self.assertFalse(version.delete_marker)
         self.assertIsNone(version.lock_mode)
         self.assertIsNone(version.retain_until)
         self.assertFalse(version.legal_hold)
         self.assertIsInstance(version.created_at, int)
-        self.assertIsNone(version.updated_at)
 
     def test_same_objekt_may_have_many_versions(self):
         self.session.add(self._version(version_id="a" * 32, etag="a" * 32))
@@ -122,6 +149,7 @@ class TestObjektVersionModel(unittest.TestCase):
             object_key="other.txt",
             size_bytes=1,
             etag="d" * 32,
+            content_type="text/plain",
         )
         self.session.add(other)
         self.session.commit()
@@ -137,14 +165,8 @@ class TestObjektVersionModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_delete_marker_and_lock_fields(self):
-        version = self._version(
-            version_id="d" * 32,
-            delete_marker=True,
-            lock_mode="COMPLIANCE",
-            retain_until=1_704_067_200,
-            legal_hold=True,
-        )
+    def test_delete_marker_has_no_payload(self):
+        version = self._delete_marker(version_id="d" * 32)
         self.session.add(version)
         self.session.commit()
         self.session.refresh(version)
@@ -153,9 +175,56 @@ class TestObjektVersionModel(unittest.TestCase):
         self.assertIsNone(version.size_bytes)
         self.assertIsNone(version.etag)
         self.assertIsNone(version.content_type)
+        self.assertIsNone(version.lock_mode)
+        self.assertIsNone(version.retain_until)
+        self.assertFalse(version.legal_hold)
+
+    def test_object_lock_fields(self):
+        version = self._version(
+            version_id="d" * 32,
+            lock_mode="COMPLIANCE",
+            retain_until=1_704_067_200,
+            legal_hold=True,
+        )
+        self.session.add(version)
+        self.session.commit()
+        self.session.refresh(version)
+
+        self.assertFalse(version.delete_marker)
         self.assertEqual(version.lock_mode, "COMPLIANCE")
         self.assertEqual(version.retain_until, 1_704_067_200)
         self.assertTrue(version.legal_hold)
+
+    def test_payload_required_when_not_delete_marker(self):
+        self._assert_rejects(self._version(etag=None))
+
+    def test_payload_forbidden_on_delete_marker(self):
+        self._assert_rejects(self._delete_marker(etag="a" * 32))
+
+    def test_delete_marker_cannot_have_object_lock(self):
+        self._assert_rejects(
+            self._delete_marker(
+                lock_mode="GOVERNANCE",
+                retain_until=1_704_067_200,
+            ),
+        )
+
+    def test_delete_marker_cannot_have_legal_hold(self):
+        self._assert_rejects(self._delete_marker(legal_hold=True))
+
+    def test_lock_mode_requires_retain_until(self):
+        self._assert_rejects(self._version(lock_mode="GOVERNANCE"))
+
+    def test_lock_mode_must_be_governance_or_compliance(self):
+        self._assert_rejects(
+            self._version(
+                lock_mode="INVALID",
+                retain_until=1_704_067_200,
+            ),
+        )
+
+    def test_size_bytes_must_be_nonnegative(self):
+        self._assert_rejects(self._version(size_bytes=-1))
 
     def test_relationship_back_to_objekt(self):
         version = self._version(version_id="e" * 32)

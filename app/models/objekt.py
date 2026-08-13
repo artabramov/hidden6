@@ -26,10 +26,42 @@ class Objekt(Base):
     """
     Current S3 state for an object key inside a bucket.
 
-    Stores metadata for the current object version or delete marker.
-    Object bytes live under the bucket directory at the S3 key when
-    the current state contains object data; delete markers have no
-    corresponding object bytes.
+    The row represents exactly one current state of a key. That state
+    may be either an object with stored bytes or an S3 delete marker.
+
+    With versioning disabled, writes replace the current state without
+    retaining previous versions.
+
+    With versioning enabled, every new PUT creates a new version
+    identifier. Before the current state is replaced, its metadata is
+    copied to ObjektVersion and its bytes are moved to version storage.
+    The new state then becomes current.
+
+    A normal DELETE in a versioning-enabled bucket does not remove
+    previous object versions. Instead, it creates a new delete marker
+    as the current state. Previous object versions remain available by
+    version ID.
+
+    Writing the same key after a delete marker creates a new current
+    object version. The delete marker remains in version history.
+
+    Deleting a specific version removes that version permanently.
+    If the deleted version is the current state, the newest remaining
+    historical state becomes current. That state may itself be either
+    an object version or a delete marker.
+
+    With versioning suspended, existing named versions are retained
+    while new writes follow S3 null-version semantics.
+
+    Object Lock applies to individual object versions, not to the key
+    as a whole. Retention mode and retain-until time protect a version
+    for a defined period, while legal hold protects it independently
+    and without an expiration time. Delete markers do not carry Object
+    Lock protection.
+
+    Object payload metadata is present only when the current state
+    represents stored object data. Delete markers have no size, ETag,
+    content type, or corresponding object bytes.
     """
 
     __tablename__ = "objekts"
@@ -61,8 +93,8 @@ class Objekt(Base):
         default=lambda: int(time.time()),
     )
 
-    # Unix timestamp when the current S3 state was created.
-    # Corresponds to the S3 Last-Modified value.
+    # Unix timestamp corresponding to the S3 Last-Modified
+    # value of this object version.
     modified_at: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

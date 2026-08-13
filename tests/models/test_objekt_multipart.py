@@ -19,6 +19,7 @@ from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa
 from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
 from app.models.objekt import Objekt  # noqa: E402, F401
+from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 

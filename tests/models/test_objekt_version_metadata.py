@@ -15,6 +15,7 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
+from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
 from app.models.objekt_version import ObjektVersion  # noqa: E402
@@ -53,6 +54,7 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
             object_key="a.txt",
             size_bytes=10,
             etag="c" * 32,
+            content_type="text/plain",
         )
         self.session.add(self.objekt)
         self.session.commit()
@@ -62,6 +64,10 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
             objekt_id=self.objekt.id,
             user_id=self.user.id,
             version_id="a" * 32,
+            modified_at=1_704_067_200,
+            size_bytes=1,
+            etag="b" * 32,
+            content_type="text/plain",
         )
         self.session.add(self.version)
         self.session.commit()
@@ -117,6 +123,10 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
             objekt_id=self.objekt.id,
             user_id=self.user.id,
             version_id="b" * 32,
+            modified_at=1_704_067_200,
+            size_bytes=2,
+            etag="c" * 32,
+            content_type="text/plain",
         )
         self.session.add(other)
         self.session.commit()
