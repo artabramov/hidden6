@@ -1,4 +1,4 @@
-# app/s3/multipart_parts.py
+# app/s3/multipart.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import os
@@ -12,9 +12,38 @@ from app.errors import (
     S3ObjektPartNumberInvalidError,
     S3ObjektPartOrderInvalidError,
     S3ObjektPartTooSmallError,
+    S3ObjektUploadNotFoundError,
 )
+from app.models.bucket import Bucket
+from app.models.objekt_multipart import ObjektMultipart
 from app.repositories.io import get_filesize, isfile
+from app.repositories.orm import ORMRepository
 from app.schemas.multipart_complete import MultipartPart
+
+
+async def multipart_load(
+    repo: ORMRepository,
+    bucket: Bucket,
+    object_key: str,
+    upload_id: str,
+    resource: str,
+) -> ObjektMultipart:
+    """
+    Load an in-progress upload and check that it belongs to the bucket
+    and key being addressed. The caller has been authorized against the
+    bucket, so its owner and root may upload parts into, finish, or
+    abort any upload started in it.
+    """
+    multipart = await repo.select(ObjektMultipart, upload_id=upload_id)
+
+    if multipart is None:
+        raise S3ObjektUploadNotFoundError(resource)
+    if multipart.bucket_id != bucket.id:
+        raise S3ObjektUploadNotFoundError(resource)
+    if multipart.object_key != object_key:
+        raise S3ObjektUploadNotFoundError(resource)
+
+    return multipart
 
 
 async def multipart_parts(
