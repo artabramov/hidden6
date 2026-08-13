@@ -54,7 +54,7 @@ class ObjektMultipartMetadata(Base):
         UniqueConstraint(
             "objekt_multipart_id",
             "metadata_key",
-            name="uq_objekts_multiparts_metadata_multipart_metadata_key",
+            name="uq_objekts_multiparts_metadata_multipart_meta_key",
         ),
         {"sqlite_autoincrement": True},
     )
