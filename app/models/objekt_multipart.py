@@ -87,6 +87,12 @@ class ObjektMultipart(Base):
         lazy="raise",
     )
 
+    objekt_multipart_parts: Mapped[list["ObjektMultipartPart"]] = relationship(  # noqa: E501, F821
+        back_populates="objekt_multipart_part_objekt_multipart",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
     objekt_multipart_metadata: Mapped[list["ObjektMultipartMetadata"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_metadata_objekt_multipart",
         cascade="all, delete-orphan",
