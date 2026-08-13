@@ -91,6 +91,13 @@ class Objekt(Base):
         back_populates="objekts",
     )
 
+    objekts_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: F821
+        back_populates="objekts_versions_objekts",
+        foreign_keys="ObjektVersion.objekt_id",
+        passive_deletes=True,
+        lazy="raise",
+    )
+
     __table_args__ = (
         UniqueConstraint(
             "bucket_id",

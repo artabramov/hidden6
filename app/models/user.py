@@ -85,6 +85,14 @@ class User(Base):
         lazy="raise",
     )
 
+    objekts_versions: Mapped[
+        list["ObjektVersion"]  # noqa: F821
+    ] = relationship(
+        back_populates="objekts_versions_users",
+        passive_deletes=True,
+        lazy="raise",
+    )
+
     __table_args__ = (
         {"sqlite_autoincrement": True},
     )
