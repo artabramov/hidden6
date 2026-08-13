@@ -18,6 +18,7 @@ from app.models.objekt import Objekt  # noqa: E402
 from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
+from app.models.objekt_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
 from app.models.objekt_tag import ObjektTag  # noqa: E402, F401
 from app.models.objekt_version import ObjektVersion  # noqa: E402
 from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401

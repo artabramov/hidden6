@@ -16,6 +16,7 @@ from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
+from app.models.objekt_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
 from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
 from app.models.objekt_version_tag import ObjektVersionTag  # noqa: E402, F401
