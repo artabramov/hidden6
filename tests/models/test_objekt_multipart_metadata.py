@@ -140,14 +140,23 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         row = self._metadata()
         self.session.add(row)
         self.session.commit()
-        self.session.refresh(row)
+
+        loaded = self.session.scalar(
+            select(ObjektMultipartMetadata)
+            .where(ObjektMultipartMetadata.id == row.id)
+            .options(
+                selectinload(
+                    ObjektMultipartMetadata.objekt_multipart_metadata_objekt_multipart,
+                ),
+            ),
+        )
 
         self.assertEqual(
-            row.objekt_multipart_metadata_objekt_multipart.id,
+            loaded.objekt_multipart_metadata_objekt_multipart.id,
             self.multipart.id,
         )
         self.assertEqual(
-            row.objekt_multipart_metadata_objekt_multipart.upload_id,
+            loaded.objekt_multipart_metadata_objekt_multipart.upload_id,
             "a" * 32,
         )
 

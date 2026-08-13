@@ -234,11 +234,16 @@ class TestObjektVersionModel(unittest.TestCase):
         version = self._version(version_id="e" * 32)
         self.session.add(version)
         self.session.commit()
-        self.session.refresh(version)
 
-        self.assertEqual(version.objekt_version_objekt.id, self.objekt.id)
+        loaded = self.session.scalar(
+            select(ObjektVersion)
+            .where(ObjektVersion.id == version.id)
+            .options(selectinload(ObjektVersion.objekt_version_objekt)),
+        )
+
+        self.assertEqual(loaded.objekt_version_objekt.id, self.objekt.id)
         self.assertEqual(
-            version.objekt_version_objekt.object_key,
+            loaded.objekt_version_objekt.object_key,
             "a.txt",
         )
 
@@ -262,9 +267,14 @@ class TestObjektVersionModel(unittest.TestCase):
         version = self._version(version_id="f" * 32)
         self.session.add(version)
         self.session.commit()
-        self.session.refresh(version)
 
-        self.assertEqual(version.objekt_version_user.id, self.user.id)
+        loaded = self.session.scalar(
+            select(ObjektVersion)
+            .where(ObjektVersion.id == version.id)
+            .options(selectinload(ObjektVersion.objekt_version_user)),
+        )
+
+        self.assertEqual(loaded.objekt_version_user.id, self.user.id)
 
     def test_relationship_access_without_eager_load_raises(self):
         self.session.add(self._version(version_id="a" * 32))

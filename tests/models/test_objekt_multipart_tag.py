@@ -136,14 +136,23 @@ class TestObjektMultipartTagModel(unittest.TestCase):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
-        self.session.refresh(row)
+
+        loaded = self.session.scalar(
+            select(ObjektMultipartTag)
+            .where(ObjektMultipartTag.id == row.id)
+            .options(
+                selectinload(
+                    ObjektMultipartTag.objekt_multipart_tag_objekt_multipart,
+                ),
+            ),
+        )
 
         self.assertEqual(
-            row.objekt_multipart_tag_objekt_multipart.id,
+            loaded.objekt_multipart_tag_objekt_multipart.id,
             self.multipart.id,
         )
         self.assertEqual(
-            row.objekt_multipart_tag_objekt_multipart.upload_id,
+            loaded.objekt_multipart_tag_objekt_multipart.upload_id,
             "a" * 32,
         )
 

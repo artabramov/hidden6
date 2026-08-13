@@ -154,14 +154,23 @@ class TestObjektVersionTagModel(unittest.TestCase):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
-        self.session.refresh(row)
+
+        loaded = self.session.scalar(
+            select(ObjektVersionTag)
+            .where(ObjektVersionTag.id == row.id)
+            .options(
+                selectinload(
+                    ObjektVersionTag.objekt_version_tag_objekt_version,
+                ),
+            ),
+        )
 
         self.assertEqual(
-            row.objekt_version_tag_objekt_version.id,
+            loaded.objekt_version_tag_objekt_version.id,
             self.version.id,
         )
         self.assertEqual(
-            row.objekt_version_tag_objekt_version.version_id,
+            loaded.objekt_version_tag_objekt_version.version_id,
             "a" * 32,
         )
 

@@ -137,10 +137,15 @@ class TestObjektTagModel(unittest.TestCase):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
-        self.session.refresh(row)
 
-        self.assertEqual(row.objekt_tag_objekt.id, self.objekt.id)
-        self.assertEqual(row.objekt_tag_objekt.object_key, "a.txt")
+        loaded = self.session.scalar(
+            select(ObjektTag)
+            .where(ObjektTag.id == row.id)
+            .options(selectinload(ObjektTag.objekt_tag_objekt)),
+        )
+
+        self.assertEqual(loaded.objekt_tag_objekt.id, self.objekt.id)
+        self.assertEqual(loaded.objekt_tag_objekt.object_key, "a.txt")
 
     def test_objekt_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))

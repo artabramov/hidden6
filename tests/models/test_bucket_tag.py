@@ -121,10 +121,15 @@ class TestBucketTagModel(unittest.TestCase):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
-        self.session.refresh(row)
 
-        self.assertEqual(row.bucket_tag_bucket.id, self.bucket.id)
-        self.assertEqual(row.bucket_tag_bucket.bucket_name, "photos")
+        loaded = self.session.scalar(
+            select(BucketTag)
+            .where(BucketTag.id == row.id)
+            .options(selectinload(BucketTag.bucket_tag_bucket)),
+        )
+
+        self.assertEqual(loaded.bucket_tag_bucket.id, self.bucket.id)
+        self.assertEqual(loaded.bucket_tag_bucket.bucket_name, "photos")
 
     def test_bucket_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))

@@ -155,14 +155,23 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
         row = self._metadata()
         self.session.add(row)
         self.session.commit()
-        self.session.refresh(row)
+
+        loaded = self.session.scalar(
+            select(ObjektVersionMetadata)
+            .where(ObjektVersionMetadata.id == row.id)
+            .options(
+                selectinload(
+                    ObjektVersionMetadata.objekt_version_metadata_objekt_version,
+                ),
+            ),
+        )
 
         self.assertEqual(
-            row.objekt_version_metadata_objekt_version.id,
+            loaded.objekt_version_metadata_objekt_version.id,
             self.version.id,
         )
         self.assertEqual(
-            row.objekt_version_metadata_objekt_version.version_id,
+            loaded.objekt_version_metadata_objekt_version.version_id,
             "a" * 32,
         )
 

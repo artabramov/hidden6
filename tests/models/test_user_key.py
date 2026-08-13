@@ -3,9 +3,9 @@
 
 import unittest
 
-from sqlalchemy import create_engine, event, select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, delete, event, select
+from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from sqlalchemy.orm import Session, selectinload
 
 from tests.helpers import set_minimal_app_config_env
 
@@ -102,10 +102,31 @@ class TestUserKeyModel(unittest.TestCase):
         )
         self.session.add(key)
         self.session.commit()
-        self.session.refresh(key)
 
-        self.assertEqual(key.user_key_user.id, self.user.id)
-        self.assertEqual(key.user_key_user.username, "alice")
+        loaded = self.session.scalar(
+            select(UserKey)
+            .where(UserKey.id == key.id)
+            .options(selectinload(UserKey.user_key_user)),
+        )
+
+        self.assertEqual(loaded.user_key_user.id, self.user.id)
+        self.assertEqual(loaded.user_key_user.username, "alice")
+
+    def test_relationship_access_without_eager_load_raises(self):
+        key = UserKey(
+            user_id=self.user.id,
+            access_key_id="AKIAEXAMPLE000001",
+            secret_access_key_encrypted="enc-secret",
+        )
+        self.session.add(key)
+        self.session.commit()
+
+        loaded = self.session.scalar(
+            select(UserKey).where(UserKey.id == key.id),
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            _ = loaded.user_key_user
 
     def test_cascade_delete_with_user(self):
         self.session.add(
@@ -117,7 +138,9 @@ class TestUserKeyModel(unittest.TestCase):
         )
         self.session.commit()
 
-        self.session.delete(self.user)
+        # DB ON DELETE CASCADE; Core DELETE avoids ORM nulling the FK
+        # under lazy="raise" without passive_deletes.
+        self.session.execute(delete(User).where(User.id == self.user.id))
         self.session.commit()
 
         remaining = self.session.scalars(select(UserKey)).all()
