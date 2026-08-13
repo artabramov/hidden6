@@ -79,6 +79,12 @@ class ObjektMultipart(Base):
         back_populates="user_objekts_multiparts",
     )
 
+    objekt_multipart_metadata: Mapped[list["ObjektMultipartMetadata"]] = relationship(  # noqa: E501, F821
+        back_populates="objekt_multipart_metadata_objekt_multipart",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
     __table_args__ = (
         {"sqlite_autoincrement": True},
     )

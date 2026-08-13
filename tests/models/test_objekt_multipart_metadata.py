@@ -1,4 +1,4 @@
-# tests/models/test_objekt_version_metadata.py
+# tests/models/test_objekt_multipart_metadata.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -14,16 +14,16 @@ set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.objekt import Objekt  # noqa: E402
-from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
-from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
-from app.models.objekt_version import ObjektVersion  # noqa: E402
-from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402
+from app.models.objekt import Objekt  # noqa: E402, F401
+from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
+from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402
+from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
+from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjektVersionMetadataModel(unittest.TestCase):
+class TestObjektMultipartMetadataModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -47,127 +47,123 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.objekt = Objekt(
+        self.multipart = ObjektMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
+            upload_id="a" * 32,
             object_key="a.txt",
-            size_bytes=10,
-            etag="c" * 32,
         )
-        self.session.add(self.objekt)
+        self.session.add(self.multipart)
         self.session.commit()
-        self.session.refresh(self.objekt)
-
-        self.version = ObjektVersion(
-            objekt_id=self.objekt.id,
-            user_id=self.user.id,
-            version_id="a" * 32,
-        )
-        self.session.add(self.version)
-        self.session.commit()
-        self.session.refresh(self.version)
+        self.session.refresh(self.multipart)
 
     def tearDown(self):
         self.session.close()
         self.engine.dispose()
 
-    def _metadata(self, **kwargs) -> ObjektVersionMetadata:
+    def _metadata(self, **kwargs) -> ObjektMultipartMetadata:
         defaults = {
-            "objekt_version_id": self.version.id,
-            "meta_key": "x-amz-meta-color",
-            "meta_value": "red",
+            "objekt_multipart_id": self.multipart.id,
+            "metadata_key": "x-amz-meta-color",
+            "metadata_value": "red",
         }
         defaults.update(kwargs)
-        return ObjektVersionMetadata(**defaults)
+        return ObjektMultipartMetadata(**defaults)
 
     def test_tablename(self):
         self.assertEqual(
-            ObjektVersionMetadata.__tablename__,
-            "objekts_versions_metadata",
+            ObjektMultipartMetadata.__tablename__,
+            "objekts_multiparts_metadata",
         )
 
     def test_persists_required_fields(self):
         row = self._metadata(
-            meta_key="x-amz-meta-owner",
-            meta_value="alice",
+            metadata_key="x-amz-meta-owner",
+            metadata_value="alice",
         )
         self.session.add(row)
         self.session.commit()
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_version_id, self.version.id)
-        self.assertEqual(row.meta_key, "x-amz-meta-owner")
-        self.assertEqual(row.meta_value, "alice")
+        self.assertEqual(row.objekt_multipart_id, self.multipart.id)
+        self.assertEqual(row.metadata_key, "x-amz-meta-owner")
+        self.assertEqual(row.metadata_value, "alice")
 
-    def test_meta_key_unique_per_version(self):
+    def test_metadata_key_unique_per_multipart(self):
         self.session.add(
-            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
+            self._metadata(metadata_key="x-amz-meta-color", metadata_value="red"),
         )
         self.session.commit()
 
         self.session.add(
-            self._metadata(meta_key="x-amz-meta-color", meta_value="blue"),
+            self._metadata(
+                metadata_key="x-amz-meta-color",
+                metadata_value="blue",
+            ),
         )
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_meta_key_allowed_on_different_versions(self):
-        other = ObjektVersion(
-            objekt_id=self.objekt.id,
+    def test_same_metadata_key_allowed_on_different_multiparts(self):
+        other = ObjektMultipart(
+            bucket_id=self.bucket.id,
             user_id=self.user.id,
-            version_id="b" * 32,
+            upload_id="b" * 32,
+            object_key="b.txt",
         )
         self.session.add(other)
         self.session.commit()
         self.session.refresh(other)
 
         self.session.add(
-            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
+            self._metadata(metadata_key="x-amz-meta-color", metadata_value="red"),
         )
         self.session.add(
             self._metadata(
-                objekt_version_id=other.id,
-                meta_key="x-amz-meta-color",
-                meta_value="blue",
+                objekt_multipart_id=other.id,
+                metadata_key="x-amz-meta-color",
+                metadata_value="blue",
             ),
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(ObjektVersionMetadata)).all()
+        rows = self.session.scalars(select(ObjektMultipartMetadata)).all()
         self.assertEqual(len(rows), 2)
 
-    def test_relationship_back_to_version(self):
+    def test_relationship_back_to_multipart(self):
         row = self._metadata()
         self.session.add(row)
         self.session.commit()
         self.session.refresh(row)
 
         self.assertEqual(
-            row.objekt_version_metadata_objekt_version.id,
-            self.version.id,
+            row.objekt_multipart_metadata_objekt_multipart.id,
+            self.multipart.id,
         )
         self.assertEqual(
-            row.objekt_version_metadata_objekt_version.version_id,
+            row.objekt_multipart_metadata_objekt_multipart.upload_id,
             "a" * 32,
         )
 
-    def test_version_relationship_to_metadata(self):
+    def test_multipart_relationship_to_metadata(self):
         self.session.add(
-            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
+            self._metadata(metadata_key="x-amz-meta-color", metadata_value="red"),
         )
         self.session.add(
-            self._metadata(meta_key="Cache-Control", meta_value="no-cache"),
+            self._metadata(metadata_key="Cache-Control", metadata_value="no-cache"),
         )
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektVersion)
-            .where(ObjektVersion.id == self.version.id)
-            .options(selectinload(ObjektVersion.objekt_version_metadata)),
+            select(ObjektMultipart)
+            .where(ObjektMultipart.id == self.multipart.id)
+            .options(selectinload(ObjektMultipart.objekt_multipart_metadata)),
         )
 
-        keys = sorted(item.meta_key for item in loaded.objekt_version_metadata)
+        keys = sorted(
+            item.metadata_key for item in loaded.objekt_multipart_metadata
+        )
         self.assertEqual(keys, ["Cache-Control", "x-amz-meta-color"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -175,18 +171,20 @@ class TestObjektVersionMetadataModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektVersion).where(ObjektVersion.id == self.version.id),
+            select(ObjektMultipart).where(
+                ObjektMultipart.id == self.multipart.id,
+            ),
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_version_metadata
+            _ = loaded.objekt_multipart_metadata
 
-    def test_cascade_delete_with_version(self):
+    def test_cascade_delete_with_multipart(self):
         self.session.add(self._metadata())
         self.session.commit()
 
-        self.session.delete(self.version)
+        self.session.delete(self.multipart)
         self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektVersionMetadata)).all()
+        remaining = self.session.scalars(select(ObjektMultipartMetadata)).all()
         self.assertEqual(remaining, [])
