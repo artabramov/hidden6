@@ -19,7 +19,7 @@ from app.db.base import Base
 # keeping a gocryptfs mount human-recoverable without the application.
 # Non-current versions are indexed in objekts_versions and stored
 # separately. The objekts row represents the current state of a key,
-# while objekts_versions stores its retained version history.
+# while versions stores its retained version history.
 
 
 class ObjektVersion(Base):
