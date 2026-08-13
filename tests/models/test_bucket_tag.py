@@ -1,4 +1,4 @@
-# tests/models/test_objekt_multipart_tag.py
+# tests/models/test_bucket_tag.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -14,12 +14,12 @@ set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.bucket_tag import BucketTag  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402, F401
 from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
-from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
+from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
-from app.models.objekt_multipart_tag import ObjektMultipartTag  # noqa: E402
+from app.models.objekt_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
 from app.models.objekt_tag import ObjektTag  # noqa: E402, F401
 from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
@@ -28,7 +28,7 @@ from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjektMultipartTagModel(unittest.TestCase):
+class TestBucketTagModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -52,34 +52,21 @@ class TestObjektMultipartTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.multipart = ObjektMultipart(
-            bucket_id=self.bucket.id,
-            user_id=self.user.id,
-            upload_id="a" * 32,
-            object_key="a.txt",
-        )
-        self.session.add(self.multipart)
-        self.session.commit()
-        self.session.refresh(self.multipart)
-
     def tearDown(self):
         self.session.close()
         self.engine.dispose()
 
-    def _tag(self, **kwargs) -> ObjektMultipartTag:
+    def _tag(self, **kwargs) -> BucketTag:
         defaults = {
-            "objekt_multipart_id": self.multipart.id,
+            "bucket_id": self.bucket.id,
             "tag_key": "color",
             "tag_value": "red",
         }
         defaults.update(kwargs)
-        return ObjektMultipartTag(**defaults)
+        return BucketTag(**defaults)
 
     def test_tablename(self):
-        self.assertEqual(
-            ObjektMultipartTag.__tablename__,
-            "objekts_multiparts_tags",
-        )
+        self.assertEqual(BucketTag.__tablename__, "buckets_tags")
 
     def test_persists_required_fields(self):
         row = self._tag(tag_key="owner", tag_value="alice")
@@ -88,7 +75,7 @@ class TestObjektMultipartTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_multipart_id, self.multipart.id)
+        self.assertEqual(row.bucket_id, self.bucket.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -100,7 +87,7 @@ class TestObjektMultipartTagModel(unittest.TestCase):
 
         self.assertEqual(row.tag_value, "")
 
-    def test_tag_key_unique_per_multipart(self):
+    def test_tag_key_unique_per_bucket(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.commit()
 
@@ -108,12 +95,10 @@ class TestObjektMultipartTagModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_tag_key_allowed_on_different_multiparts(self):
-        other = ObjektMultipart(
-            bucket_id=self.bucket.id,
+    def test_same_tag_key_allowed_on_different_buckets(self):
+        other = Bucket(
             user_id=self.user.id,
-            upload_id="b" * 32,
-            object_key="b.txt",
+            bucket_name="docs",
         )
         self.session.add(other)
         self.session.commit()
@@ -122,43 +107,37 @@ class TestObjektMultipartTagModel(unittest.TestCase):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(
             self._tag(
-                objekt_multipart_id=other.id,
+                bucket_id=other.id,
                 tag_key="color",
                 tag_value="blue",
             ),
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(ObjektMultipartTag)).all()
+        rows = self.session.scalars(select(BucketTag)).all()
         self.assertEqual(len(rows), 2)
 
-    def test_relationship_back_to_multipart(self):
+    def test_relationship_back_to_bucket(self):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
         self.session.refresh(row)
 
-        self.assertEqual(
-            row.objekt_multipart_tag_objekt_multipart.id,
-            self.multipart.id,
-        )
-        self.assertEqual(
-            row.objekt_multipart_tag_objekt_multipart.upload_id,
-            "a" * 32,
-        )
+        self.assertEqual(row.bucket_tag_bucket.id, self.bucket.id)
+        self.assertEqual(row.bucket_tag_bucket.bucket_name, "photos")
 
-    def test_multipart_relationship_to_tags(self):
+    def test_bucket_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(self._tag(tag_key="owner", tag_value="alice"))
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektMultipart)
-            .where(ObjektMultipart.id == self.multipart.id)
-            .options(selectinload(ObjektMultipart.objekt_multipart_tags)),
+            select(Bucket)
+            .where(Bucket.id == self.bucket.id)
+            .options(selectinload(Bucket.bucket_tags)),
         )
 
-        keys = sorted(item.tag_key for item in loaded.objekt_multipart_tags)
+        keys = sorted(item.tag_key for item in loaded.bucket_tags)
         self.assertEqual(keys, ["color", "owner"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -166,20 +145,18 @@ class TestObjektMultipartTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektMultipart).where(
-                ObjektMultipart.id == self.multipart.id,
-            ),
+            select(Bucket).where(Bucket.id == self.bucket.id),
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_multipart_tags
+            _ = loaded.bucket_tags
 
-    def test_cascade_delete_with_multipart(self):
+    def test_cascade_delete_with_bucket(self):
         self.session.add(self._tag())
         self.session.commit()
 
-        self.session.delete(self.multipart)
+        self.session.delete(self.bucket)
         self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektMultipartTag)).all()
+        remaining = self.session.scalars(select(BucketTag)).all()
         self.assertEqual(remaining, [])

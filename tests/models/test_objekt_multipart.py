@@ -14,6 +14,7 @@ set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
 from app.models.objekt_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
