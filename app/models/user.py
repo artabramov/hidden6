@@ -66,7 +66,7 @@ class User(Base):
     )
 
     user_buckets: Mapped[list["Bucket"]] = relationship(  # noqa: F821
-        back_populates="bucket_users",
+        back_populates="bucket_user",
         passive_deletes=True,
         lazy="raise",
     )

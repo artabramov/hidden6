@@ -3,6 +3,7 @@
 
 import os
 import re
+import time
 
 from app.errors import (
     S3AccessDeniedError,
@@ -12,6 +13,9 @@ from app.errors import (
 from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
+
+_SECONDS_PER_DAY = 24 * 60 * 60
+_SECONDS_PER_YEAR = 365 * _SECONDS_PER_DAY
 
 # AWS S3 bucket naming (DNS-compliant). The pattern also carries the
 # length limits, because a name is one leading character, up to 61 in
@@ -59,3 +63,27 @@ async def bucket_load(
         raise S3AccessDeniedError(resource)
 
     return bucket
+
+
+def bucket_default_object_lock(
+    bucket: Bucket,
+    now: int | None = None,
+) -> tuple[str | None, int | None]:
+    """
+    Object Lock fields applied to a new object version from the bucket
+    default retention rule. Returns (None, None) when Object Lock is
+    off or no default retention is configured.
+    """
+    if not bucket.object_lock_enabled or bucket.default_lock_mode is None:
+        return None, None
+
+    now = int(time.time()) if now is None else now
+
+    if bucket.default_retention_days is not None:
+        retain_until = now + bucket.default_retention_days * _SECONDS_PER_DAY
+    elif bucket.default_retention_years is not None:
+        retain_until = now + bucket.default_retention_years * _SECONDS_PER_YEAR
+    else:
+        return None, None
+
+    return bucket.default_lock_mode, retain_until

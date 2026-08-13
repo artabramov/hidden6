@@ -262,6 +262,8 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(objekt.etag, "etag123")
         self.assertEqual(objekt.content_type, "image/png")
         self.assertFalse(objekt.delete_marker)
+        self.assertIsNone(objekt.lock_mode)
+        self.assertIsNone(objekt.retain_until)
 
     async def test_updates_existing_objekt(self):
         existing = Objekt(
@@ -303,3 +305,72 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(existing.size_bytes, 12)
         self.assertEqual(existing.etag, "etag123")
         self.assertEqual(existing.content_type, "image/png")
+
+    async def test_applies_bucket_default_retention_days(self):
+        self.bucket.object_lock_enabled = True
+        self.bucket.default_lock_mode = "GOVERNANCE"
+        self.bucket.default_retention_days = 2
+        repo = self._build_repo(None)
+
+        with patch("app.s3.bucket.time.time", return_value=1_000_000):
+            objekt = await self._upsert(repo)
+
+        self.assertEqual(objekt.lock_mode, "GOVERNANCE")
+        self.assertEqual(objekt.retain_until, 1_000_000 + 2 * 86400)
+        self.assertFalse(objekt.legal_hold)
+
+    async def test_applies_bucket_default_retention_years(self):
+        self.bucket.object_lock_enabled = True
+        self.bucket.default_lock_mode = "COMPLIANCE"
+        self.bucket.default_retention_years = 1
+        repo = self._build_repo(None)
+
+        with patch("app.s3.bucket.time.time", return_value=1_000_000):
+            objekt = await self._upsert(repo)
+
+        self.assertEqual(objekt.lock_mode, "COMPLIANCE")
+        self.assertEqual(objekt.retain_until, 1_000_000 + 365 * 86400)
+
+    async def test_overwrite_applies_bucket_default_retention(self):
+        self.bucket.object_lock_enabled = True
+        self.bucket.default_lock_mode = "GOVERNANCE"
+        self.bucket.default_retention_days = 1
+        existing = Objekt(
+            id=3,
+            bucket_id=7,
+            user_id=1,
+            object_key="2024/cat.png",
+            size_bytes=1,
+            etag="old",
+            content_type="text/plain",
+            legal_hold=True,
+        )
+        repo = self._build_repo(existing)
+
+        with patch("app.s3.bucket.time.time", return_value=1_000_000):
+            await self._upsert(repo)
+
+        self.assertEqual(existing.lock_mode, "GOVERNANCE")
+        self.assertEqual(existing.retain_until, 1_000_000 + 86400)
+        self.assertFalse(existing.legal_hold)
+
+    async def test_overwrite_clears_lock_without_bucket_default(self):
+        existing = Objekt(
+            id=3,
+            bucket_id=7,
+            user_id=1,
+            object_key="2024/cat.png",
+            size_bytes=1,
+            etag="old",
+            content_type="text/plain",
+            lock_mode="COMPLIANCE",
+            retain_until=999,
+            legal_hold=True,
+        )
+        repo = self._build_repo(existing)
+
+        await self._upsert(repo)
+
+        self.assertIsNone(existing.lock_mode)
+        self.assertIsNone(existing.retain_until)
+        self.assertFalse(existing.legal_hold)

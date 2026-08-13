@@ -15,7 +15,7 @@ from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_dir
+from app.s3.bucket import bucket_default_object_lock, bucket_dir
 
 # Segments that cannot be mapped onto a filesystem path. Empty rejects
 # an empty key, a leading or trailing slash, and repeated slashes.
@@ -128,8 +128,12 @@ async def objekt_upsert(
     """
     Insert the Objekt row for a new key or update the existing row when
     the key is overwritten. The current state becomes an object with a
-    payload (not a delete marker). Changes are flushed, not committed.
+    payload (not a delete marker). Bucket default Object Lock retention
+    is applied to the new current state. Changes are flushed, not
+    committed.
     """
+    lock_mode, retain_until = bucket_default_object_lock(bucket)
+
     objekt = await repo.select(
         Objekt,
         bucket_id=bucket.id,
@@ -145,6 +149,8 @@ async def objekt_upsert(
             etag=etag,
             content_type=content_type,
             delete_marker=False,
+            lock_mode=lock_mode,
+            retain_until=retain_until,
         )
         return await repo.insert(objekt)
 
@@ -153,6 +159,9 @@ async def objekt_upsert(
     objekt.etag = etag
     objekt.content_type = content_type
     objekt.delete_marker = False
+    objekt.lock_mode = lock_mode
+    objekt.retain_until = retain_until
+    objekt.legal_hold = False
     objekt.modified_at = int(time.time())
 
     return await repo.update(objekt)

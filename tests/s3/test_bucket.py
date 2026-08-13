@@ -16,9 +16,10 @@ from app.errors import (  # noqa: E402
     S3AccessDeniedError,
     S3BucketNotFoundError,
 )
+from app.constants import BUCKET_VERSIONING_ENABLED  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.s3.bucket import bucket_load  # noqa: E402
+from app.s3.bucket import bucket_default_object_lock, bucket_load  # noqa: E402
 
 load_all_models()
 
@@ -133,3 +134,50 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
                 self.user,
                 "/photos",
             )
+
+
+class TestBucketDefaultObjectLock(unittest.TestCase):
+    def test_returns_none_when_lock_disabled(self):
+        bucket = Bucket(user_id=1, bucket_name="photos")
+
+        self.assertEqual(bucket_default_object_lock(bucket), (None, None))
+
+    def test_returns_none_when_no_default_rule(self):
+        bucket = Bucket(
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+
+        self.assertEqual(bucket_default_object_lock(bucket), (None, None))
+
+    def test_computes_retain_until_from_days(self):
+        bucket = Bucket(
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+            default_lock_mode="GOVERNANCE",
+            default_retention_days=10,
+        )
+
+        mode, until = bucket_default_object_lock(bucket, now=1000)
+
+        self.assertEqual(mode, "GOVERNANCE")
+        self.assertEqual(until, 1000 + 10 * 86400)
+
+    def test_computes_retain_until_from_years(self):
+        bucket = Bucket(
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+            default_lock_mode="COMPLIANCE",
+            default_retention_years=2,
+        )
+
+        mode, until = bucket_default_object_lock(bucket, now=1000)
+
+        self.assertEqual(mode, "COMPLIANCE")
+        self.assertEqual(until, 1000 + 2 * 365 * 86400)
