@@ -59,6 +59,10 @@ async def objekt_listed(objekts: List[Objekt]) -> None:
     ...
 
 
+async def objekt_downloaded(objekt: Objekt) -> None:
+    ...
+
+
 def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.GOCRYPTFS_INITIALIZED, gocryptfs_initialized)
     hook_manager.on(Events.GOCRYPTFS_MOUNTED, gocryptfs_mounted)
@@ -70,3 +74,4 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.BUCKET_LISTED, bucket_listed)
     hook_manager.on(Events.OBJEKT_UPLOADED, objekt_uploaded)
     hook_manager.on(Events.OBJEKT_LISTED, objekt_listed)
+    hook_manager.on(Events.OBJEKT_DOWNLOADED, objekt_downloaded)

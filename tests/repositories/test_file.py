@@ -395,7 +395,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             yield b"ab"
             yield b"cd"
 
-        with patch.object(rf, "_iter_read", side_effect=fake_iter):
+        with patch.object(rf, "iter_read", side_effect=fake_iter):
             hx = await rf.get_file_hash("/f")
         self.assertEqual(hx, hashlib.md5(b"abcd").hexdigest())
 
@@ -407,7 +407,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             yield b"one"
             yield b"two"
 
-        with patch.object(rf, "_iter_read", side_effect=fake_iter):
+        with patch.object(rf, "iter_read", side_effect=fake_iter):
             data = await rf.read("/f")
         self.assertEqual(data, b"onetwo")
 
@@ -738,7 +738,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(
             rf,
-            "_iter_read",
+            "iter_read",
             side_effect=fake_iter_read,
         ), patch(
             "app.repositories.file.aiofiles.open",
@@ -895,7 +895,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(OSError):
                 await rf.write("/tmp/out.bin", b"abc")
 
-    # --- _iter_read ---
+    # --- iter_read ---
 
     async def test_iter_read(self):
         mock_f = MagicMock()
@@ -908,7 +908,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             "app.repositories.file.aiofiles.open",
             return_value=cm,
         ):
-            async for ch in rf._iter_read("/p", chunk_size=2):
+            async for ch in rf.iter_read("/p", chunk_size=2):
                 out.append(ch)
         self.assertEqual(out, [b"aa", b"bb"])
         self.assertEqual(mock_f.read.await_args_list[0][0][0], 2)

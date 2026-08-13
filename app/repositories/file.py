@@ -66,7 +66,7 @@ async def get_file_hash(path: str) -> str:
     """Return a hexadecimal MD5 hash of the file, used as S3 ETag."""
     digest = hashlib.md5(usedforsecurity=False)
 
-    async for chunk in _iter_read(path):
+    async for chunk in iter_read(path):
         digest.update(chunk)
 
     return digest.hexdigest()
@@ -182,7 +182,7 @@ async def read(path: str) -> bytes:
     """
     result = bytearray()
 
-    async for chunk in _iter_read(path):
+    async for chunk in iter_read(path):
         result.extend(chunk)
 
     return bytes(result)
@@ -214,7 +214,7 @@ async def copy(
     atomically replaced, and the parent directory is fsynced.
     """
     async def source_iter() -> AsyncIterator[bytes]:
-        async for chunk in _iter_read(source):
+        async for chunk in iter_read(source):
             yield chunk
 
     await _atomic_write_stream(source_iter(), destination)
@@ -233,7 +233,7 @@ async def concat(sources: list[str], destination: str) -> list[str]:
         for source in sources:
             digest = hashlib.md5(usedforsecurity=False)
 
-            async for chunk in _iter_read(source):
+            async for chunk in iter_read(source):
                 digest.update(chunk)
                 yield chunk
 
@@ -261,7 +261,7 @@ async def rename(source: str, destination: str) -> None:
         await _fsync_directory(destination_parent)
 
 
-async def _iter_read(
+async def iter_read(
     path: str,
     chunk_size: int = FILE_CHUNK_SIZE_BYTES,
 ) -> AsyncIterator[bytes]:

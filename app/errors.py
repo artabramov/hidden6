@@ -43,6 +43,7 @@ class S3ErrorCode:
     BUCKET_ALREADY_EXISTS = "BucketAlreadyExists"
     BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
     BUCKET_NOT_FOUND = "NoSuchBucket"
+    OBJEKT_NOT_FOUND = "NoSuchKey"
     OBJEKT_KEY_INVALID = "InvalidArgument"
     OBJEKT_KEY_CONFLICT = "InvalidArgument"
     OBJEKT_TOO_LARGE = "EntityTooLarge"
@@ -179,6 +180,18 @@ class S3BucketNotFoundError(S3Error):
         super().__init__(
             code=S3ErrorCode.BUCKET_NOT_FOUND,
             message="The specified bucket does not exist.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            resource=resource,
+        )
+
+
+class S3ObjektNotFoundError(S3Error):
+    """Raised when the object does not exist (404)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJEKT_NOT_FOUND,
+            message="The specified key does not exist.",
             status_code=status.HTTP_404_NOT_FOUND,
             resource=resource,
         )

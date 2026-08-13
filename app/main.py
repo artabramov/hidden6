@@ -45,6 +45,7 @@ from app.routers.objekt_upload import router as objekt_upload_router
 from app.routers.multipart_create import router as multipart_create_router
 from app.routers.multipart_abort import router as multipart_abort_router
 from app.routers.objekt_list import router as objekt_list_router
+from app.routers.objekt_download import router as objekt_download_router
 
 config = get_config()
 
@@ -100,6 +101,7 @@ app.include_router(objekt_upload_router)
 app.include_router(multipart_create_router)
 app.include_router(multipart_abort_router)
 app.include_router(objekt_list_router)
+app.include_router(objekt_download_router)
 
 app.add_exception_handler(UnauthorizedError, unauthorized_handler)
 app.add_exception_handler(InternalServerError, internal_server_error_handler)

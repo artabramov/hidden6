@@ -28,6 +28,7 @@ class Events:
     BUCKET_LISTED = "bucket_listed"
     OBJEKT_UPLOADED = "objekt_uploaded"
     OBJEKT_LISTED = "objekt_listed"
+    OBJEKT_DOWNLOADED = "objekt_downloaded"
 
 
 class HookManager:
