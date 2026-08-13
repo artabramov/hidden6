@@ -14,10 +14,15 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
-# NOTE (ADR-24): Current object bytes stay on the key path under the
-# bucket directory so a gocryptfs mount remains human-recoverable
-# without the application. Non-current versions are stored as opaque
-# uuid files under the mountpoint versions directory and indexed here.
+# NOTE (ADR-27): S3 versioning keeps the current object on the key path.
+# Current bytes remain under the bucket directory at the S3 object key,
+# keeping a gocryptfs mount human-recoverable without the application.
+# Non-current versions are indexed in objekts_versions and stored flat
+# as versions/{bucket}/{version_id}. The objekts row represents the
+# current state of each key. When versioning replaces or deletes an
+# object, its previous metadata and bytes move into objekts_versions.
+# Bucket.versioning_status selects Disabled, Enabled, or Suspended;
+# version history is created only while Enabled.
 
 
 class ObjektVersion(Base):
