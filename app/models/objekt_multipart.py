@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,9 +22,11 @@ from app.db.base import Base
 
 class ObjektMultipart(Base):
     """
-    In-progress S3 multipart upload. The row lives from
-    CreateMultipartUpload until the upload is completed or aborted;
-    completion turns the staged parts into a single Objekt.
+    In-progress S3 multipart upload.
+
+    Tracks the target object and metadata from CreateMultipartUpload
+    until the upload is completed or aborted. Uploaded part bytes are
+    staged separately and assembled into the final object on completion.
     """
 
     __tablename__ = "objekts_multiparts"
@@ -35,14 +38,14 @@ class ObjektMultipart(Base):
 
     bucket_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("buckets.id", ondelete="CASCADE"),
+        ForeignKey("buckets.id"),
         nullable=False,
         index=True,
     )
 
     user_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id"),
         nullable=False,
         index=True,
     )
@@ -60,15 +63,24 @@ class ObjektMultipart(Base):
         onupdate=lambda: int(time.time()),
     )
 
+    # S3 multipart upload identifier exposed to clients as UploadId.
     upload_id: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
         unique=True,
     )
 
+    # Target S3 object key for the completed multipart upload.
     object_key: Mapped[str] = mapped_column(
         String(1024),
         nullable=False,
+    )
+
+    # Media type assigned to the final object on completion.
+    content_type: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        server_default=text("'application/octet-stream'"),
     )
 
     objekt_multipart_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
