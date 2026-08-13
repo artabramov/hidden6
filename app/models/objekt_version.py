@@ -126,7 +126,7 @@ class ObjektVersion(Base):
     )
 
     objekts_versions_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
-        back_populates="objekts_versions",
+        back_populates="bucket_objekts_versions",
         foreign_keys=[bucket_id],
     )
 

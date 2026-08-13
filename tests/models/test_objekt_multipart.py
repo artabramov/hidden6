@@ -15,6 +15,7 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
+from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.objekt import Objekt  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
@@ -137,10 +138,10 @@ class TestMultipartModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Bucket)
             .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.objekts_multiparts)),
+            .options(selectinload(Bucket.bucket_objekts_multiparts)),
         )
 
-        keys = sorted(m.object_key for m in loaded.objekts_multiparts)
+        keys = sorted(m.object_key for m in loaded.bucket_objekts_multiparts)
         self.assertEqual(keys, ["a.txt", "b.txt"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -152,7 +153,7 @@ class TestMultipartModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekts_multiparts
+            _ = loaded.bucket_objekts_multiparts
 
     def test_cascade_delete_with_bucket(self):
         self.session.add(self._multipart())

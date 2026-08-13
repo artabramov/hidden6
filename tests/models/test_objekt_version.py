@@ -95,7 +95,7 @@ class TestObjektVersionModel(unittest.TestCase):
         self.assertEqual(version.size_bytes, 1024)
         self.assertEqual(version.etag, "d41d8cd98f00b204e9800998ecf8427e")
         self.assertEqual(version.content_type, "application/octet-stream")
-        self.assertFalse(version.is_delete_marker)
+        self.assertFalse(version.is_deleted)
         self.assertIsNone(version.lock_mode)
         self.assertIsNone(version.retain_until)
         self.assertFalse(version.legal_hold)
@@ -146,12 +146,12 @@ class TestObjektVersionModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_delete_marker_and_lock_fields(self):
+    def test_deleted_and_lock_fields(self):
         version = self._version(
             version_id="d" * 32,
             size_bytes=0,
             etag="",
-            is_delete_marker=True,
+            is_deleted=True,
             lock_mode="COMPLIANCE",
             retain_until=1_704_067_200,
             legal_hold=True,
@@ -160,7 +160,7 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertTrue(version.is_delete_marker)
+        self.assertTrue(version.is_deleted)
         self.assertEqual(version.lock_mode, "COMPLIANCE")
         self.assertEqual(version.retain_until, 1_704_067_200)
         self.assertTrue(version.legal_hold)
@@ -235,10 +235,10 @@ class TestObjektVersionModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Bucket)
             .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.objekts_versions)),
+            .options(selectinload(Bucket.bucket_objekts_versions)),
         )
 
-        keys = sorted(v.object_key for v in loaded.objekts_versions)
+        keys = sorted(v.object_key for v in loaded.bucket_objekts_versions)
         self.assertEqual(keys, ["a.txt", "b.txt"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -251,6 +251,17 @@ class TestObjektVersionModel(unittest.TestCase):
 
         with self.assertRaises(InvalidRequestError):
             _ = loaded.objekts_versions
+
+    def test_bucket_relationship_access_without_eager_load_raises(self):
+        self.session.add(self._version(version_id="a" * 32))
+        self.session.commit()
+
+        loaded = self.session.scalar(
+            select(Bucket).where(Bucket.id == self.bucket.id),
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            _ = loaded.bucket_objekts_versions
 
     def test_cascade_delete_with_objekt(self):
         self.session.add(self._version(version_id="a" * 32))

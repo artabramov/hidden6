@@ -84,7 +84,7 @@ class Objekt(Base):
     )
 
     objekts_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
-        back_populates="objekts",
+        back_populates="bucket_objekts",
     )
 
     objekts_users: Mapped["User"] = relationship(  # noqa: F821

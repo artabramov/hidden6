@@ -72,7 +72,7 @@ class ObjektMultipart(Base):
     )
 
     objekts_multiparts_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
-        back_populates="objekts_multiparts",
+        back_populates="bucket_objekts_multiparts",
     )
 
     objekts_multiparts_users: Mapped["User"] = relationship(  # noqa: F821
