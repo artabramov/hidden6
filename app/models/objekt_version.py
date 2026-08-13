@@ -27,13 +27,13 @@ from app.db.base import Base
 
 class ObjektVersion(Base):
     """
-    Non-current S3 object version (or a non-current delete marker).
+    Non-current S3 object version or delete marker.
 
-    The live object for a key remains in objekts and on the key path
-    under the bucket. When versioning replaces or soft-deletes that
-    object, its previous metadata and bytes move here: metadata in
-    this row (linked to the current objekts row via objekt_id), bytes
-    at versions/{bucket}/{version_id}.
+    Current object state remains in objekts. When a current object
+    version becomes non-current, its metadata moves here and its bytes
+    move to versions/{bucket}/{version_id}. Delete markers are stored
+    as metadata-only version records and have no corresponding object
+    bytes.
     """
 
     __tablename__ = "objekts_versions"
@@ -76,22 +76,19 @@ class ObjektVersion(Base):
         unique=True,
     )
 
-    size_bytes: Mapped[int] = mapped_column(
+    size_bytes: Mapped[int | None] = mapped_column(
         Integer,
-        nullable=False,
-        server_default=text("0"),
+        nullable=True,
     )
 
-    etag: Mapped[str] = mapped_column(
+    etag: Mapped[str | None] = mapped_column(
         String(64),
-        nullable=False,
-        server_default=text("''"),
+        nullable=True,
     )
 
-    content_type: Mapped[str] = mapped_column(
+    content_type: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=False,
-        server_default=text("'application/octet-stream'"),
+        nullable=True,
     )
 
     delete_marker: Mapped[bool] = mapped_column(

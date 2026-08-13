@@ -65,8 +65,6 @@ class TestObjektVersionModel(unittest.TestCase):
             "objekt_id": self.objekt.id,
             "user_id": self.user.id,
             "version_id": "a" * 32,
-            "size_bytes": 1,
-            "etag": "b" * 32,
         }
         defaults.update(kwargs)
         return ObjektVersion(**defaults)
@@ -75,11 +73,7 @@ class TestObjektVersionModel(unittest.TestCase):
         self.assertEqual(ObjektVersion.__tablename__, "objekts_versions")
 
     def test_persists_required_fields_and_defaults(self):
-        version = self._version(
-            version_id="c" * 32,
-            size_bytes=1024,
-            etag="d41d8cd98f00b204e9800998ecf8427e",
-        )
+        version = self._version(version_id="c" * 32)
         self.session.add(version)
         self.session.commit()
         self.session.refresh(version)
@@ -88,9 +82,9 @@ class TestObjektVersionModel(unittest.TestCase):
         self.assertEqual(version.objekt_id, self.objekt.id)
         self.assertEqual(version.user_id, self.user.id)
         self.assertEqual(version.version_id, "c" * 32)
-        self.assertEqual(version.size_bytes, 1024)
-        self.assertEqual(version.etag, "d41d8cd98f00b204e9800998ecf8427e")
-        self.assertEqual(version.content_type, "application/octet-stream")
+        self.assertIsNone(version.size_bytes)
+        self.assertIsNone(version.etag)
+        self.assertIsNone(version.content_type)
         self.assertFalse(version.delete_marker)
         self.assertIsNone(version.lock_mode)
         self.assertIsNone(version.retain_until)
@@ -144,8 +138,6 @@ class TestObjektVersionModel(unittest.TestCase):
     def test_delete_marker_and_lock_fields(self):
         version = self._version(
             version_id="d" * 32,
-            size_bytes=0,
-            etag="",
             delete_marker=True,
             lock_mode="COMPLIANCE",
             retain_until=1_704_067_200,
@@ -156,6 +148,9 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.refresh(version)
 
         self.assertTrue(version.delete_marker)
+        self.assertIsNone(version.size_bytes)
+        self.assertIsNone(version.etag)
+        self.assertIsNone(version.content_type)
         self.assertEqual(version.lock_mode, "COMPLIANCE")
         self.assertEqual(version.retain_until, 1_704_067_200)
         self.assertTrue(version.legal_hold)
