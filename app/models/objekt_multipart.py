@@ -79,10 +79,12 @@ class ObjektMultipart(Base):
 
     objekt_multipart_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objekts_multiparts",
+        lazy="raise",
     )
 
     objekt_multipart_user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="user_objekts_multiparts",
+        lazy="raise",
     )
 
     objekt_multipart_metadata: Mapped[list["ObjektMultipartMetadata"]] = relationship(  # noqa: E501, F821

@@ -115,20 +115,27 @@ class TestMultipartModel(unittest.TestCase):
         multipart = self._multipart()
         self.session.add(multipart)
         self.session.commit()
-        self.session.refresh(multipart)
 
-        self.assertEqual(
-            multipart.objekt_multipart_bucket.id,
-            self.bucket.id,
+        loaded = self.session.scalar(
+            select(ObjektMultipart)
+            .where(ObjektMultipart.id == multipart.id)
+            .options(selectinload(ObjektMultipart.objekt_multipart_bucket)),
         )
+
+        self.assertEqual(loaded.objekt_multipart_bucket.id, self.bucket.id)
 
     def test_relationship_back_to_user(self):
         multipart = self._multipart()
         self.session.add(multipart)
         self.session.commit()
-        self.session.refresh(multipart)
 
-        self.assertEqual(multipart.objekt_multipart_user.username, "alice")
+        loaded = self.session.scalar(
+            select(ObjektMultipart)
+            .where(ObjektMultipart.id == multipart.id)
+            .options(selectinload(ObjektMultipart.objekt_multipart_user)),
+        )
+
+        self.assertEqual(loaded.objekt_multipart_user.username, "alice")
 
     def test_bucket_relationship_to_multiparts(self):
         self.session.add(self._multipart(upload_id="a" * 32))
@@ -156,6 +163,30 @@ class TestMultipartModel(unittest.TestCase):
 
         with self.assertRaises(InvalidRequestError):
             _ = loaded.bucket_objekts_multiparts
+
+    def test_multipart_bucket_access_without_eager_load_raises(self):
+        multipart = self._multipart()
+        self.session.add(multipart)
+        self.session.commit()
+
+        loaded = self.session.scalar(
+            select(ObjektMultipart).where(ObjektMultipart.id == multipart.id),
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            _ = loaded.objekt_multipart_bucket
+
+    def test_multipart_user_access_without_eager_load_raises(self):
+        multipart = self._multipart()
+        self.session.add(multipart)
+        self.session.commit()
+
+        loaded = self.session.scalar(
+            select(ObjektMultipart).where(ObjektMultipart.id == multipart.id),
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            _ = loaded.objekt_multipart_user
 
     def test_bucket_delete_is_restricted(self):
         self.session.add(self._multipart())
