@@ -13,6 +13,10 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
+from app.constants import (  # noqa: E402
+    BUCKET_VERSIONING_DISABLED,
+    BUCKET_VERSIONING_ENABLED,
+)
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402, F401
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
@@ -53,8 +57,21 @@ class TestBucketModel(unittest.TestCase):
         self.assertIsNotNone(bucket.id)
         self.assertEqual(bucket.user_id, self.user.id)
         self.assertEqual(bucket.bucket_name, "photos")
+        self.assertEqual(bucket.versioning_status, BUCKET_VERSIONING_DISABLED)
         self.assertIsInstance(bucket.created_at, int)
         self.assertIsNone(bucket.updated_at)
+
+    def test_versioning_status_can_be_set(self):
+        bucket = Bucket(
+            user_id=self.user.id,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+        )
+        self.session.add(bucket)
+        self.session.commit()
+        self.session.refresh(bucket)
+
+        self.assertEqual(bucket.versioning_status, BUCKET_VERSIONING_ENABLED)
 
     def test_bucket_name_must_be_unique(self):
         self.session.add(Bucket(user_id=self.user.id, bucket_name="photos"))

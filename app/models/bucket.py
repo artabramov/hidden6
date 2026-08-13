@@ -7,9 +7,11 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.constants import BUCKET_VERSIONING_DISABLED
 from app.db.base import Base
 
 # NOTE (ADR-21): S3 authorization is owner-and-root (no IAM policies).
@@ -55,6 +57,13 @@ class Bucket(Base):
         String(63),
         nullable=False,
         unique=True,
+    )
+
+    versioning_status: Mapped[str] = mapped_column(
+        String(16),
+        nullable=False,
+        server_default=text(f"'{BUCKET_VERSIONING_DISABLED}'"),
+        index=True,
     )
 
     buckets_users: Mapped["User"] = relationship(  # noqa: F821
