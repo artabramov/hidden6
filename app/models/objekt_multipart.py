@@ -93,6 +93,12 @@ class ObjektMultipart(Base):
         lazy="raise",
     )
 
+    objekt_multipart_tags: Mapped[list["ObjektMultipartTag"]] = relationship(  # noqa: E501, F821
+        back_populates="objekt_multipart_tag_objekt_multipart",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
     __table_args__ = (
         {"sqlite_autoincrement": True},
     )
