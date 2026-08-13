@@ -1,4 +1,4 @@
-# tests/models/test_objekt_tag.py
+# tests/models/test_objekt_version_tag.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -18,15 +18,15 @@ from app.models.objekt import Objekt  # noqa: E402
 from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
 from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
-from app.models.objekt_tag import ObjektTag  # noqa: E402
-from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
+from app.models.objekt_tag import ObjektTag  # noqa: E402, F401
+from app.models.objekt_version import ObjektVersion  # noqa: E402
 from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
-from app.models.objekt_version_tag import ObjektVersionTag  # noqa: E402, F401
+from app.models.objekt_version_tag import ObjektVersionTag  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjektTagModel(unittest.TestCase):
+class TestObjektVersionTagModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -62,21 +62,37 @@ class TestObjektTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.objekt)
 
+        self.version = ObjektVersion(
+            objekt_id=self.objekt.id,
+            user_id=self.user.id,
+            version_id="a" * 32,
+            modified_at=1_704_067_200,
+            size_bytes=1,
+            etag="b" * 32,
+            content_type="text/plain",
+        )
+        self.session.add(self.version)
+        self.session.commit()
+        self.session.refresh(self.version)
+
     def tearDown(self):
         self.session.close()
         self.engine.dispose()
 
-    def _tag(self, **kwargs) -> ObjektTag:
+    def _tag(self, **kwargs) -> ObjektVersionTag:
         defaults = {
-            "objekt_id": self.objekt.id,
+            "objekt_version_id": self.version.id,
             "tag_key": "color",
             "tag_value": "red",
         }
         defaults.update(kwargs)
-        return ObjektTag(**defaults)
+        return ObjektVersionTag(**defaults)
 
     def test_tablename(self):
-        self.assertEqual(ObjektTag.__tablename__, "objekts_tags")
+        self.assertEqual(
+            ObjektVersionTag.__tablename__,
+            "objekts_versions_tags",
+        )
 
     def test_persists_required_fields(self):
         row = self._tag(tag_key="owner", tag_value="alice")
@@ -85,7 +101,7 @@ class TestObjektTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_id, self.objekt.id)
+        self.assertEqual(row.objekt_version_id, self.version.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -97,7 +113,7 @@ class TestObjektTagModel(unittest.TestCase):
 
         self.assertEqual(row.tag_value, "")
 
-    def test_tag_key_unique_per_objekt(self):
+    def test_tag_key_unique_per_version(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.commit()
 
@@ -105,13 +121,14 @@ class TestObjektTagModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_tag_key_allowed_on_different_objekts(self):
-        other = Objekt(
-            bucket_id=self.bucket.id,
+    def test_same_tag_key_allowed_on_different_versions(self):
+        other = ObjektVersion(
+            objekt_id=self.objekt.id,
             user_id=self.user.id,
-            object_key="b.txt",
+            version_id="b" * 32,
+            modified_at=1_704_067_200,
             size_bytes=2,
-            etag="d" * 32,
+            etag="c" * 32,
             content_type="text/plain",
         )
         self.session.add(other)
@@ -121,37 +138,43 @@ class TestObjektTagModel(unittest.TestCase):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(
             self._tag(
-                objekt_id=other.id,
+                objekt_version_id=other.id,
                 tag_key="color",
                 tag_value="blue",
             ),
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(ObjektTag)).all()
+        rows = self.session.scalars(select(ObjektVersionTag)).all()
         self.assertEqual(len(rows), 2)
 
-    def test_relationship_back_to_objekt(self):
+    def test_relationship_back_to_version(self):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
         self.session.refresh(row)
 
-        self.assertEqual(row.objekt_tag_objekt.id, self.objekt.id)
-        self.assertEqual(row.objekt_tag_objekt.object_key, "a.txt")
+        self.assertEqual(
+            row.objekt_version_tag_objekt_version.id,
+            self.version.id,
+        )
+        self.assertEqual(
+            row.objekt_version_tag_objekt_version.version_id,
+            "a" * 32,
+        )
 
-    def test_objekt_relationship_to_tags(self):
+    def test_version_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(self._tag(tag_key="owner", tag_value="alice"))
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt)
-            .where(Objekt.id == self.objekt.id)
-            .options(selectinload(Objekt.objekt_tags)),
+            select(ObjektVersion)
+            .where(ObjektVersion.id == self.version.id)
+            .options(selectinload(ObjektVersion.objekt_version_tags)),
         )
 
-        keys = sorted(item.tag_key for item in loaded.objekt_tags)
+        keys = sorted(item.tag_key for item in loaded.objekt_version_tags)
         self.assertEqual(keys, ["color", "owner"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -159,18 +182,18 @@ class TestObjektTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt).where(Objekt.id == self.objekt.id),
+            select(ObjektVersion).where(ObjektVersion.id == self.version.id),
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_tags
+            _ = loaded.objekt_version_tags
 
-    def test_cascade_delete_with_objekt(self):
+    def test_cascade_delete_with_version(self):
         self.session.add(self._tag())
         self.session.commit()
 
-        self.session.delete(self.objekt)
+        self.session.delete(self.version)
         self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektTag)).all()
+        remaining = self.session.scalars(select(ObjektVersionTag)).all()
         self.assertEqual(remaining, [])
