@@ -162,6 +162,21 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
             object_key="cat.png",
         )
 
+    async def test_delete_marker_raises(self):
+        bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        objekt = Objekt(
+            id=3,
+            bucket_id=7,
+            user_id=1,
+            object_key="gone.txt",
+            delete_marker=True,
+        )
+        repo = MagicMock()
+        repo.select = AsyncMock(return_value=objekt)
+
+        with self.assertRaises(S3ObjektNotFoundError):
+            await objekt_load(repo, bucket, "gone.txt", "/photos/gone.txt")
+
     async def test_missing_objekt_raises(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
         repo = MagicMock()
@@ -246,6 +261,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(objekt.size_bytes, 12)
         self.assertEqual(objekt.etag, "etag123")
         self.assertEqual(objekt.content_type, "image/png")
+        self.assertFalse(objekt.delete_marker)
 
     async def test_updates_existing_objekt(self):
         existing = Objekt(
@@ -265,6 +281,25 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         repo.insert.assert_not_awaited()
         repo.update.assert_awaited_once_with(existing)
         self.assertEqual(existing.user_id, 1)
+        self.assertEqual(existing.size_bytes, 12)
+        self.assertEqual(existing.etag, "etag123")
+        self.assertEqual(existing.content_type, "image/png")
+        self.assertFalse(existing.delete_marker)
+        self.assertIsInstance(existing.modified_at, int)
+
+    async def test_overwrite_clears_delete_marker(self):
+        existing = Objekt(
+            id=3,
+            bucket_id=7,
+            user_id=1,
+            object_key="2024/cat.png",
+            delete_marker=True,
+        )
+        repo = self._build_repo(existing)
+
+        await self._upsert(repo)
+
+        self.assertFalse(existing.delete_marker)
         self.assertEqual(existing.size_bytes, 12)
         self.assertEqual(existing.etag, "etag123")
         self.assertEqual(existing.content_type, "image/png")

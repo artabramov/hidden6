@@ -65,6 +65,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo.select_all.assert_awaited_once_with(
             Objekt,
             bucket_id=7,
+            delete_marker=False,
             order_by="object_key",
             order="asc",
             limit=1000,
@@ -101,6 +102,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo.select_all.assert_awaited_once_with(
             Objekt,
             bucket_id=7,
+            delete_marker=False,
             order_by="object_key",
             order="asc",
             limit=1000,

@@ -12,7 +12,7 @@ from app.models.objekt import Objekt  # noqa: E402
 from app.xml.render_objekt_list import render_objekt_list  # noqa: E402
 
 
-def _objekt(key: str, size: int = 10, etag: str = "abc", created_at: int = 1_704_067_200, updated_at=None) -> Objekt:
+def _objekt(key: str, size: int = 10, etag: str = "abc", modified_at: int = 1_704_067_200) -> Objekt:
     return Objekt(
         id=1,
         bucket_id=1,
@@ -21,8 +21,8 @@ def _objekt(key: str, size: int = 10, etag: str = "abc", created_at: int = 1_704
         size_bytes=size,
         etag=etag,
         content_type="application/octet-stream",
-        created_at=created_at,
-        updated_at=updated_at,
+        created_at=1_704_067_200,
+        modified_at=modified_at,
     )
 
 
@@ -44,7 +44,7 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertNotIn("<Contents>", xml)
 
     def test_render_single_object(self):
-        obj = _objekt("photo.jpg", size=1234, etag="deadbeef", created_at=1_704_067_200)
+        obj = _objekt("photo.jpg", size=1234, etag="deadbeef", modified_at=1_704_067_200)
         xml = render_objekt_list(
             bucket_name="photos",
             prefix="",
@@ -60,8 +60,8 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertIn("<KeyCount>1</KeyCount>", xml)
         self.assertIn("<IsTruncated>false</IsTruncated>", xml)
 
-    def test_uses_updated_at_for_last_modified_when_set(self):
-        obj = _objekt("file.txt", created_at=1_704_067_200, updated_at=1_704_153_600)
+    def test_uses_modified_at_for_last_modified(self):
+        obj = _objekt("file.txt", modified_at=1_704_153_600)
         xml = render_objekt_list(
             bucket_name="my-bucket",
             prefix="",
@@ -71,17 +71,6 @@ class TestRenderObjektList(unittest.TestCase):
 
         self.assertIn("<LastModified>2024-01-02T00:00:00.000Z</LastModified>", xml)
         self.assertNotIn("2024-01-01", xml)
-
-    def test_uses_created_at_when_updated_at_is_none(self):
-        obj = _objekt("file.txt", created_at=1_704_067_200, updated_at=None)
-        xml = render_objekt_list(
-            bucket_name="my-bucket",
-            prefix="",
-            max_keys=1000,
-            objekts=[obj],
-        )
-
-        self.assertIn("<LastModified>2024-01-01T00:00:00.000Z</LastModified>", xml)
 
     def test_is_truncated_when_result_equals_max_keys(self):
         objekts = [_objekt(f"file{i}.txt") for i in range(5)]

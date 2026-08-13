@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import os
+import time
 
 from app.constants import OBJEKT_KEY_MAX_BYTES
 from app.errors import (
@@ -83,9 +84,10 @@ async def objekt_load(
     resource: str,
 ) -> Objekt:
     """
-    Load the Objekt row for a key inside a bucket. A missing row is
-    reported as NoSuchKey — the same code S3 uses when the object
-    is absent from the store.
+    Load the Objekt row for a key inside a bucket. A missing row or a
+    current delete marker is reported as NoSuchKey — the same code S3
+    uses when GetObject / HeadObject address a key with no current
+    object bytes.
     """
     objekt = await repo.select(
         Objekt,
@@ -93,7 +95,7 @@ async def objekt_load(
         object_key=object_key,
     )
 
-    if objekt is None:
+    if objekt is None or objekt.delete_marker:
         raise S3ObjektNotFoundError(resource)
 
     return objekt
@@ -125,7 +127,8 @@ async def objekt_upsert(
 ) -> Objekt:
     """
     Insert the Objekt row for a new key or update the existing row when
-    the key is overwritten. Changes are flushed, not committed.
+    the key is overwritten. The current state becomes an object with a
+    payload (not a delete marker). Changes are flushed, not committed.
     """
     objekt = await repo.select(
         Objekt,
@@ -141,6 +144,7 @@ async def objekt_upsert(
             size_bytes=size_bytes,
             etag=etag,
             content_type=content_type,
+            delete_marker=False,
         )
         return await repo.insert(objekt)
 
@@ -148,5 +152,7 @@ async def objekt_upsert(
     objekt.size_bytes = size_bytes
     objekt.etag = etag
     objekt.content_type = content_type
+    objekt.delete_marker = False
+    objekt.modified_at = int(time.time())
 
     return await repo.update(objekt)

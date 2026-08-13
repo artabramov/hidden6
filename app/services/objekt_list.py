@@ -24,9 +24,10 @@ async def objekt_list(
     """
     List S3 objects in a bucket visible to the authenticated user.
 
-    Returns objects whose key starts with the given prefix, ordered
-    by key, up to max_keys results. The caller is authorized the same
-    way as for all other object operations.
+    Returns current objects whose key starts with the given prefix,
+    ordered by key, up to max_keys results. Delete markers are omitted,
+    matching ListObjects. The caller is authorized the same way as for
+    all other object operations.
     """
     log.info("msg=objekt_list bucket=%s prefix=%r", bucket_name, prefix)
 
@@ -36,6 +37,7 @@ async def objekt_list(
 
     filters: dict = {
         "bucket_id": bucket.id,
+        "delete_marker": False,
         "order_by": "object_key",
         "order": "asc",
         "limit": max_keys,

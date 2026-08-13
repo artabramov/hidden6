@@ -32,7 +32,7 @@ def render_objekt_list(
         f"<IsTruncated>{'true' if is_truncated else 'false'}</IsTruncated>",
     ]
     for objekt in objekts:
-        last_modified = datetime_format(objekt.updated_at or objekt.created_at)
+        last_modified = datetime_format(objekt.modified_at)
         parts.extend([
             "<Contents>",
             f"<Key>{escape(objekt.object_key)}</Key>",

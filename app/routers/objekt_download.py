@@ -48,7 +48,7 @@ _RESPONSES = {
 
 
 def _objekt_headers(objekt: Objekt) -> dict[str, str]:
-    last_modified = datetime_http(objekt.updated_at or objekt.created_at)
+    last_modified = datetime_http(objekt.modified_at)
     return {
         "Content-Length": str(objekt.size_bytes),
         "ETag": f'"{objekt.etag}"',
