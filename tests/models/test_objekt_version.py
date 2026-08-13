@@ -202,22 +202,31 @@ class TestObjektVersionModel(unittest.TestCase):
         with self.assertRaises(InvalidRequestError):
             _ = loaded.objekt_versions
 
-    def test_cascade_delete_with_objekt(self):
+    def test_objekt_delete_is_restricted(self):
         self.session.add(self._version(version_id="a" * 32))
         self.session.commit()
 
         self.session.delete(self.objekt)
-        self.session.commit()
+        with self.assertRaises(IntegrityError):
+            self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektVersion)).all()
-        self.assertEqual(remaining, [])
-
-    def test_cascade_delete_with_bucket(self):
+    def test_bucket_delete_is_restricted(self):
         self.session.add(self._version(version_id="a" * 32))
         self.session.commit()
 
         self.session.delete(self.bucket)
+        with self.assertRaises(IntegrityError):
+            self.session.commit()
+
+    def test_uploader_delete_is_restricted(self):
+        root = User(username="root", is_root=True)
+        self.session.add(root)
+        self.session.commit()
+        self.session.refresh(root)
+
+        self.session.add(self._version(version_id="a" * 32, user_id=root.id))
         self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektVersion)).all()
-        self.assertEqual(remaining, [])
+        self.session.delete(root)
+        with self.assertRaises(IntegrityError):
+            self.session.commit()

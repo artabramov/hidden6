@@ -45,14 +45,14 @@ class ObjektVersion(Base):
 
     objekt_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts.id", ondelete="CASCADE"),
+        ForeignKey("objekts.id"),
         nullable=False,
         index=True,
     )
 
     user_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id"),
         nullable=False,
         index=True,
     )
@@ -121,6 +121,12 @@ class ObjektVersion(Base):
     objekt_version_user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="user_objekts_versions",
         foreign_keys=[user_id],
+    )
+
+    objekt_version_metadata: Mapped[list["ObjektVersionMetadata"]] = relationship(  # noqa: E501, F821
+        back_populates="objekt_version_metadata_objekt_version",
+        cascade="all, delete-orphan",
+        lazy="raise",
     )
 
     __table_args__ = (
