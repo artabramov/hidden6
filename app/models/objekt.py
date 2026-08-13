@@ -190,6 +190,12 @@ class Objekt(Base):
         lazy="raise",
     )
 
+    objekt_tags: Mapped[list["ObjektTag"]] = relationship(  # noqa: F821
+        back_populates="objekt_tag_objekt",
+        cascade="all, delete-orphan",
+        lazy="raise",
+    )
+
     __table_args__ = (
         CheckConstraint(
             """
