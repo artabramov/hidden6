@@ -8,7 +8,6 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
 from app.errors import S3BucketNotFoundError, S3ObjektPartInvalidError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -18,7 +17,6 @@ from app.repositories.io import (
     concat,
     delete,
     get_filesize,
-    get_mimetype,
     isdir,
     rename,
     rmtree,
@@ -45,7 +43,8 @@ async def multipart_complete(
     Assemble the uploaded parts into a single object (S3
     CompleteMultipartUpload): concatenate the parts listed by the
     client, publish the result under the bucket directory, upsert the
-    Objekt row, and drop the upload with its staged parts.
+    Objekt row with the Content-Type stored at create time, and drop
+    the upload with its staged parts.
     """
     log.info("msg=multipart_complete upload_id=%s parts=%d", upload_id, len(parts))  # noqa: E501
 
@@ -86,7 +85,6 @@ async def multipart_complete(
                 raise S3ObjektPartInvalidError(resource)
 
         size_bytes = await get_filesize(staged_path)
-        content_type = await get_mimetype(staged_path)
 
         async with locks.lock_directory(bucket_path, LockType.WRITE):
             if not await isdir(bucket_path):
@@ -101,7 +99,7 @@ async def multipart_complete(
                 object_key=object_key,
                 size_bytes=size_bytes,
                 etag=etag_construct(part_hashes),
-                content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
+                content_type=multipart.content_type,
             )
             await repo.delete(multipart)
             await rename(staged_path, object_path)

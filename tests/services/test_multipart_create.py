@@ -10,6 +10,7 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
+from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
     S3ObjektKeyInvalidError,
@@ -55,12 +56,13 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self.mktree = self._patch("mktree", new_callable=AsyncMock)
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
 
-    async def _create(self):
+    async def _create(self, content_type=None):
         return await multipart_create(
             bucket_name="photos",
             object_key="2024/cat.png",
             user=self.user,
             session=self.session,
+            content_type=content_type,
         )
 
     async def test_registers_upload_and_stages_dir(self):
@@ -72,10 +74,16 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(multipart.bucket_id, 7)
         self.assertEqual(multipart.user_id, 1)
         self.assertEqual(multipart.object_key, "2024/cat.png")
+        self.assertEqual(multipart.content_type, OBJEKT_CONTENT_TYPE_DEFAULT)
         self.assertEqual(
             self.repo.insert.await_args.kwargs["commit"],
             True,
         )
+
+    async def test_stores_supplied_content_type(self):
+        multipart = await self._create(content_type="image/png")
+
+        self.assertEqual(multipart.content_type, "image/png")
 
     async def test_inaccessible_bucket_stops_before_staging(self):
         self.bucket_load.side_effect = S3BucketNotFoundError("/photos")

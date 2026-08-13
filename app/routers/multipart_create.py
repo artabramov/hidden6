@@ -105,6 +105,7 @@ async def multipart_create_router(
             object_key=object_key,
             user=user,
             session=session,
+            content_type=request.headers.get("content-type"),
         )
         return _xml_response(
             render_multipart_initiate(

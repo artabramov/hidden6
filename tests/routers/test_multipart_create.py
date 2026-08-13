@@ -58,10 +58,36 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
             object_key="2024/cat.png",
             user=user,
             session=session,
+            content_type=None,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.media_type, "application/xml")
         self.assertIn(b"<UploadId>beef</UploadId>", response.body)
+
+    async def test_passes_content_type_header(self):
+        multipart = MagicMock()
+        multipart.upload_id = "beef"
+        request = self._build_request()
+        request.headers = {"content-type": "image/png"}
+
+        with patch(
+            "app.routers.multipart_create.multipart_create",
+            new_callable=AsyncMock,
+            return_value=multipart,
+        ) as mock_service:
+            await multipart_create_router(
+                bucket_name="photos",
+                object_key="2024/cat.png",
+                request=request,
+                user=MagicMock(),
+                session=MagicMock(),
+                uploads="",
+            )
+
+        self.assertEqual(
+            mock_service.await_args.kwargs["content_type"],
+            "image/png",
+        )
 
     async def test_completes_upload(self):
         objekt = MagicMock()

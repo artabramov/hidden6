@@ -8,6 +8,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
+from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
 from app.models.objekt_multipart import ObjektMultipart
 from app.models.user import User
 from app.repositories.io import mktree, rmtree
@@ -23,10 +24,12 @@ async def multipart_create(
     object_key: str,
     user: User,
     session: AsyncSession,
+    content_type: str | None = None,
 ) -> ObjektMultipart:
     """
     Start a multipart upload (S3 CreateMultipartUpload): register the
-    upload for the bucket and key, and prepare the directory holding
+    upload for the bucket and key, store the Content-Type that will be
+    assigned to the assembled object, and prepare the directory holding
     its parts until the upload is completed or aborted.
     """
     log.info("msg=multipart_create bucket=%s key=%s", bucket_name, object_key)
@@ -47,6 +50,7 @@ async def multipart_create(
         user_id=user.id,
         upload_id=upload_id,
         object_key=object_key,
+        content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
     )
     try:
         await repo.insert(multipart, commit=True)

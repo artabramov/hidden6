@@ -78,6 +78,7 @@ class TestMultipartModel(unittest.TestCase):
         self.assertEqual(multipart.user_id, self.user.id)
         self.assertEqual(multipart.upload_id, "a" * 32)
         self.assertEqual(multipart.object_key, "album/a.jpg")
+        self.assertEqual(multipart.content_type, "application/octet-stream")
         self.assertIsInstance(multipart.created_at, int)
         self.assertIsNone(multipart.updated_at)
 
@@ -157,22 +158,18 @@ class TestMultipartModel(unittest.TestCase):
         with self.assertRaises(InvalidRequestError):
             _ = loaded.bucket_objekts_multiparts
 
-    def test_cascade_delete_with_bucket(self):
+    def test_bucket_delete_is_restricted(self):
         self.session.add(self._multipart())
         self.session.commit()
 
         self.session.delete(self.bucket)
-        self.session.commit()
+        with self.assertRaises(IntegrityError):
+            self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektMultipart)).all()
-        self.assertEqual(remaining, [])
-
-    def test_cascade_delete_with_user(self):
+    def test_user_delete_is_restricted(self):
         self.session.add(self._multipart())
         self.session.commit()
 
         self.session.delete(self.user)
-        self.session.commit()
-
-        remaining = self.session.scalars(select(ObjektMultipart)).all()
-        self.assertEqual(remaining, [])
+        with self.assertRaises(IntegrityError):
+            self.session.commit()

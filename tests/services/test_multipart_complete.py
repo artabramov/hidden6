@@ -58,6 +58,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             user_id=1,
             upload_id="beef",
             object_key="2024/cat.png",
+            content_type="image/png",
         )
         self.objekt = Objekt(
             id=3,
@@ -122,11 +123,6 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "concat",
             new_callable=AsyncMock,
             return_value=list(PART_HASHES),
-        )
-        self._patch(
-            "get_mimetype",
-            new_callable=AsyncMock,
-            return_value="image/png",
         )
         self.objekt_mkdir = self._patch(
             "objekt_mkdir",
@@ -194,6 +190,14 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             self.objekt_upsert.await_args.kwargs["etag"],
             "joined-2",
+        )
+
+    async def test_uses_stored_content_type(self):
+        await self._complete()
+
+        self.assertEqual(
+            self.objekt_upsert.await_args.kwargs["content_type"],
+            "image/png",
         )
 
     async def test_removes_staged_parts(self):
