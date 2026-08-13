@@ -54,6 +54,8 @@ class ObjektVersion(Base):
         index=True,
     )
 
+    # Unix timestamp when this version was moved to version history.
+    # This is internal data and is not exposed through the S3 API.
     created_at: Mapped[int] = mapped_column(
         Integer,
         nullable=False,

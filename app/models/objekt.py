@@ -86,6 +86,7 @@ class Objekt(Base):
     )
 
     # Unix timestamp when the object key was first created.
+    # This is internal data and is not exposed through the S3 API.
     created_at: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
