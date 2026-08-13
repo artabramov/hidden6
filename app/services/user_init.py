@@ -19,7 +19,7 @@ from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.user import User
 from app.models.user_key import UserKey
-from app.repositories.file import read
+from app.repositories.io import read
 from app.repositories.orm import ORMRepository
 from app.security.encryption import decrypt_passphrase, encrypt_string
 from app.security.randoms import generate_random_string

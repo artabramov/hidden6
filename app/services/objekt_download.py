@@ -10,7 +10,7 @@ from app.errors import S3ObjektNotFoundError
 from app.hooks import Events, hooks
 from app.models.objekt import Objekt
 from app.models.user import User
-from app.repositories.file import isfile
+from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
 from app.s3.objekt_dir import objekt_dir

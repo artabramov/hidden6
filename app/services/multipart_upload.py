@@ -14,7 +14,7 @@ from app.errors import (
 )
 from app.locks import LockType, locks
 from app.models.user import User
-from app.repositories.file import (
+from app.repositories.io import (
     AsyncReadable,
     get_file_hash,
     isdir,

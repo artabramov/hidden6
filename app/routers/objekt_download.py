@@ -10,7 +10,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.objekt import Objekt
 from app.models.user import User
-from app.repositories.file import iter_read
+from app.repositories.io import iter_read
 from app.s3.datetime_http import datetime_http
 from app.services.objekt_download import objekt_download
 

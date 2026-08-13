@@ -13,7 +13,7 @@ from app.errors import (
     S3ObjektPartOrderInvalidError,
     S3ObjektPartTooSmallError,
 )
-from app.repositories.file import get_filesize, isfile
+from app.repositories.io import get_filesize, isfile
 from app.schemas.multipart_complete import MultipartPart
 
 

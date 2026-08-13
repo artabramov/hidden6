@@ -8,7 +8,7 @@ from pathlib import Path
 from app.config import get_config
 from app.constants import WATCHDOG_HEARTBEAT_PATH
 from app.log import init_logging
-from app.repositories.file import isdir, isfile, ismount
+from app.repositories.io import isdir, isfile, ismount
 from app.runtime.cipherdir import cipherdir_unmount
 
 log = logging.getLogger(__name__)

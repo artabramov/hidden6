@@ -7,7 +7,7 @@ from app.config import get_config
 from app.errors import UnauthorizedError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.repositories.file import read
+from app.repositories.io import read
 from app.security.encryption import decrypt_passphrase
 
 log = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ import logging
 from app.config import get_config
 from app.errors import ServiceUnavailableError, BadGatewayError
 from app.runtime.cipherdir import is_cipherdir_created
-from app.repositories.file import isfile, ismount
+from app.repositories.io import isfile, ismount
 
 log = logging.getLogger(__name__)
 

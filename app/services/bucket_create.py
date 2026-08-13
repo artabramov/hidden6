@@ -14,7 +14,7 @@ from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.bucket import Bucket
 from app.models.user import User
-from app.repositories.file import isdir, isfile, mktree, rmdir
+from app.repositories.io import isdir, isfile, mktree, rmdir
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_dir import bucket_dir
 

@@ -1,4 +1,4 @@
-# tests/repositories/test_file.py
+# tests/repositories/test_io.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import hashlib
@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import FILE_CHUNK_SIZE_BYTES
-from app.repositories import file as rf
+from app.repositories import io as rf
 
 
 class TestFileRepository(unittest.IsolatedAsyncioTestCase):
@@ -23,7 +23,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     # --- _build_temp_path ---
 
-    @patch("app.repositories.file.uuid.uuid4")
+    @patch("app.repositories.io.uuid.uuid4")
     def test_build_temp_path(self, mock_uuid: MagicMock) -> None:
         mock_uuid.return_value = MagicMock(hex="deadbeef")
         p = rf._build_temp_path("/data/out.bin")
@@ -34,7 +34,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_mimetype_returns_none_when_open_raises(self):
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             side_effect=FileNotFoundError,
         ):
             self.assertIsNone(await rf.get_mimetype("/nope"))
@@ -46,10 +46,10 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         cm.__aenter__ = AsyncMock(return_value=mock_f)
         cm.__aexit__ = AsyncMock(return_value=None)
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.mimetypes.guess_type",
+            "app.repositories.io.mimetypes.guess_type",
             return_value=("text/plain", None),
         ):
             mt = await rf.get_mimetype("/x.txt")
@@ -70,10 +70,10 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(msg)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ):
             mt = await rf.get_mimetype("/p.png")
@@ -95,13 +95,13 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(msg)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch(
-            "app.repositories.file.filetype.guess",
+            "app.repositories.io.filetype.guess",
             return_value=ft_kind,
         ):
             mt = await rf.get_mimetype("/d.pdf")
@@ -121,16 +121,16 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(msg)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch(
-            "app.repositories.file.filetype.guess",
+            "app.repositories.io.filetype.guess",
             side_effect=TypeError("no"),
         ), patch(
-            "app.repositories.file.mimetypes.guess_type",
+            "app.repositories.io.mimetypes.guess_type",
             return_value=("text/plain", None),
         ):
             mt = await rf.get_mimetype("/z.txt")
@@ -138,14 +138,14 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_mimetype_returns_none_when_open_raises_permission(self):
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             side_effect=PermissionError,
         ):
             self.assertIsNone(await rf.get_mimetype("/forbidden"))
 
     async def test_get_mimetype_returns_none_when_open_raises_isadir(self):
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             side_effect=IsADirectoryError,
         ):
             self.assertIsNone(await rf.get_mimetype("/dir"))
@@ -158,10 +158,10 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         cm.__aexit__ = AsyncMock(return_value=None)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.mimetypes.guess_type",
+            "app.repositories.io.mimetypes.guess_type",
             return_value=(None, None),
         ):
             mt = await rf.get_mimetype("/x.unknown")
@@ -176,10 +176,10 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         cm.__aexit__ = AsyncMock(return_value=None)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.mimetypes.guess_type",
+            "app.repositories.io.mimetypes.guess_type",
             return_value=(" Text/Plain ", None),
         ):
             mt = await rf.get_mimetype("/x.txt")
@@ -199,16 +199,16 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(fn)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch(
-            "app.repositories.file.filetype.guess",
+            "app.repositories.io.filetype.guess",
             side_effect=ValueError("bad"),
         ), patch(
-            "app.repositories.file.mimetypes.guess_type",
+            "app.repositories.io.mimetypes.guess_type",
             return_value=(" Application/JSON ", None),
         ):
             mt = await rf.get_mimetype("/x.json")
@@ -230,23 +230,23 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(fn)
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch(
-            "app.repositories.file.filetype.guess",
+            "app.repositories.io.filetype.guess",
             return_value=ft_kind,
         ), patch(
-            "app.repositories.file.mimetypes.guess_type",
+            "app.repositories.io.mimetypes.guess_type",
             return_value=("image/jpeg", None),
         ):
             mt = await rf.get_mimetype("/x.jpg")
 
         self.assertEqual(mt, "image/jpeg")
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_normalizes_value(
         self,
         mock_cls: MagicMock,
@@ -259,7 +259,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(value, "text/plain")
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_octet_stream_returns_none(
         self,
         mock_cls: MagicMock,
@@ -272,7 +272,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(value)
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_returns_none_on_magic_exception(
         self,
         mock_cls: MagicMock,
@@ -283,7 +283,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(rf._detect_mime_with_magic(b"data"))
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_returns_none_when_from_buffer_empty_string(
         self,
         mock_cls: MagicMock,
@@ -294,7 +294,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(rf._detect_mime_with_magic(b"data"))
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_returns_none_when_from_buffer_none(
         self,
         mock_cls: MagicMock,
@@ -305,7 +305,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(rf._detect_mime_with_magic(b"data"))
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_returns_none_when_normalized_mime_empty(
         self,
         mock_cls: MagicMock,
@@ -316,7 +316,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(rf._detect_mime_with_magic(b"data"))
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_octet_stream_with_params_returns_none(
         self,
         mock_cls: MagicMock,
@@ -329,7 +329,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(rf._detect_mime_with_magic(b"data"))
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_returns_none_on_oserror_from_from_buffer(
         self,
         mock_cls: MagicMock,
@@ -346,7 +346,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         st = MagicMock()
         st.st_size = 12345
         with patch(
-            "app.repositories.file.aiofiles.os.stat",
+            "app.repositories.io.aiofiles.os.stat",
             new_callable=AsyncMock,
             return_value=st,
         ):
@@ -355,7 +355,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_isfile(self):
         with patch(
-            "app.repositories.file.aiofiles.ospath.isfile",
+            "app.repositories.io.aiofiles.ospath.isfile",
             new_callable=AsyncMock,
             return_value=True,
         ):
@@ -363,7 +363,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_isdir(self):
         with patch(
-            "app.repositories.file.aiofiles.ospath.isdir",
+            "app.repositories.io.aiofiles.ospath.isdir",
             new_callable=AsyncMock,
             return_value=False,
         ):
@@ -371,7 +371,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_listdir(self):
         with patch(
-            "app.repositories.file.aiofiles.os.listdir",
+            "app.repositories.io.aiofiles.os.listdir",
             new_callable=AsyncMock,
             return_value=["a", "b"],
         ):
@@ -379,7 +379,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_ismount(self):
         with patch(
-            "app.repositories.file.aiofiles.ospath.ismount",
+            "app.repositories.io.aiofiles.ospath.ismount",
             new_callable=AsyncMock,
             return_value=True,
         ):
@@ -461,7 +461,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return ["/data/sub/deep", "/data/sub"]
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
@@ -498,7 +498,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_rmdir(self):
         with patch(
-            "app.repositories.file.aiofiles.os.rmdir",
+            "app.repositories.io.aiofiles.os.rmdir",
             new_callable=AsyncMock,
         ) as rmd, patch.object(
             rf,
@@ -523,7 +523,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_rmtree_missing_directory_is_skipped(self):
         with patch(
-            "app.repositories.file.aiofiles.os.rmdir",
+            "app.repositories.io.aiofiles.os.rmdir",
             new_callable=AsyncMock,
         ) as rmd:
             await rf.rmtree("/data/missing")
@@ -537,7 +537,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
@@ -548,7 +548,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls[0][0], rf._touch_sync)
         self.assertEqual(calls[0][1], ("/data/x.flag",))
 
-    @patch("app.repositories.file.os.utime")
+    @patch("app.repositories.io.os.utime")
     @patch("builtins.open")
     def test_touch_sync(self, mock_open: MagicMock, mock_utime: MagicMock):
         rf._touch_sync("/tmp/file.txt")
@@ -565,7 +565,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ):
             await rf._fsync_directory("/data")
@@ -588,7 +588,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(fn)
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ):
             with self.assertRaises(OSError):
@@ -608,7 +608,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
@@ -627,7 +627,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             raise AssertionError(fn)
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
@@ -654,17 +654,17 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
             "_fsync_directory",
             new_callable=AsyncMock,
         ), patch(
-            "app.repositories.file.uuid.uuid4",
+            "app.repositories.io.uuid.uuid4",
             return_value=MagicMock(hex="abc"),
         ):
             await rf.write("/dir/out.bin", b"hello")
@@ -696,17 +696,17 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
             "_fsync_directory",
             new_callable=AsyncMock,
         ), patch(
-            "app.repositories.file.uuid.uuid4",
+            "app.repositories.io.uuid.uuid4",
             return_value=MagicMock(hex="u1"),
         ):
             await rf.upload(Src(), "/dst/a.dat")
@@ -741,17 +741,17 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             "iter_read",
             side_effect=fake_iter_read,
         ), patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
             "_fsync_directory",
             new_callable=AsyncMock,
         ), patch(
-            "app.repositories.file.uuid.uuid4",
+            "app.repositories.io.uuid.uuid4",
             return_value=MagicMock(hex="cp"),
         ):
             await rf.copy("/src/x", "/dst/y")
@@ -760,7 +760,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_rename_same_parent_one_fsync(self):
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             new_callable=AsyncMock,
         ) as tt, patch.object(
             rf,
@@ -773,7 +773,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     async def test_rename_different_parents_two_fsync(self):
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             new_callable=AsyncMock,
         ), patch.object(
             rf,
@@ -788,7 +788,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
@@ -804,7 +804,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
@@ -841,17 +841,17 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
             "_fsync_directory",
             new_callable=AsyncMock,
         ), patch(
-            "app.repositories.file.uuid.uuid4",
+            "app.repositories.io.uuid.uuid4",
             return_value=MagicMock(hex="bad"),
         ):
             with self.assertRaises(OSError):
@@ -879,17 +879,17 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
             return None
 
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ), patch(
-            "app.repositories.file.asyncio.to_thread",
+            "app.repositories.io.asyncio.to_thread",
             side_effect=fake_to_thread,
         ), patch.object(
             rf,
             "_fsync_directory",
             new_callable=AsyncMock,
         ), patch(
-            "app.repositories.file.uuid.uuid4",
+            "app.repositories.io.uuid.uuid4",
             return_value=MagicMock(hex="gone"),
         ):
             with self.assertRaises(OSError):
@@ -905,7 +905,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
         cm.__aexit__ = AsyncMock(return_value=None)
         out = []
         with patch(
-            "app.repositories.file.aiofiles.open",
+            "app.repositories.io.aiofiles.open",
             return_value=cm,
         ):
             async for ch in rf.iter_read("/p", chunk_size=2):
@@ -915,7 +915,7 @@ class TestFileRepository(unittest.IsolatedAsyncioTestCase):
 
     # --- _detect_mime_with_magic ---
 
-    @patch("app.repositories.file.magic.Magic")
+    @patch("app.repositories.io.magic.Magic")
     def test_detect_mime_with_magic_returns_none_on_exception(
         self,
         mock_cls: MagicMock,

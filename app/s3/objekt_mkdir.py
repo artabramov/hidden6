@@ -4,7 +4,7 @@
 import os
 
 from app.errors import S3ObjektKeyConflictError
-from app.repositories.file import isdir, mktree
+from app.repositories.io import isdir, mktree
 
 
 async def objekt_mkdir(object_path: str, resource: str) -> None:

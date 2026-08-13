@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_config
 from app.locks import LockType, locks
 from app.models.user import User
-from app.repositories.file import rmtree
+from app.repositories.io import rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
 from app.s3.multipart_load import multipart_load

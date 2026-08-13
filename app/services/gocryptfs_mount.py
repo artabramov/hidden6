@@ -9,7 +9,7 @@ from app.db.schema import create_all_tables
 from app.errors import UnauthorizedError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.repositories.file import isdir, mktree, read
+from app.repositories.io import isdir, mktree, read
 from app.runtime.cipherdir import cipherdir_mount, cipherdir_unmount
 from app.security.encryption import decrypt_passphrase
 

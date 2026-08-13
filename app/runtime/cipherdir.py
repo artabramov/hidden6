@@ -7,7 +7,7 @@ import os
 import tempfile
 
 from app.errors import InternalServerError
-from app.repositories.file import isdir, isfile, read
+from app.repositories.io import isdir, isfile, read
 
 log = logging.getLogger(__name__)
 

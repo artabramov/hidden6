@@ -9,7 +9,7 @@ from app.constants import GOCRYPTFS_PASSPHRASE_LENGTH
 from app.errors import BadGatewayError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.repositories.file import delete, isfile, write
+from app.repositories.io import delete, isfile, write
 from app.security.encryption import encrypt_passphrase, generate_fernet_key
 from app.security.randoms import generate_random_string
 from app.runtime.cipherdir import cipherdir_create

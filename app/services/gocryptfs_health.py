@@ -7,7 +7,7 @@ from pathlib import Path
 
 from app.config import get_config
 from app.constants import WATCHDOG_HEARTBEAT_PATH
-from app.repositories.file import ismount
+from app.repositories.io import ismount
 from app.runtime.cipherdir import is_cipherdir_created
 
 
