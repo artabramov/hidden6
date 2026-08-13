@@ -35,12 +35,12 @@ class ObjektMultipartMetadata(Base):
         index=True,
     )
 
-    metadata_key: Mapped[str] = mapped_column(
+    meta_key: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )
 
-    metadata_value: Mapped[str] = mapped_column(
+    meta_value: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
@@ -54,7 +54,7 @@ class ObjektMultipartMetadata(Base):
     __table_args__ = (
         UniqueConstraint(
             "objekt_multipart_id",
-            "metadata_key",
+            "meta_key",
             name="uq_objekts_multiparts_metadata_multipart_meta_key",
         ),
         {"sqlite_autoincrement": True},

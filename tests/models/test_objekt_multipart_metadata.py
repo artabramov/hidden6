@@ -69,8 +69,8 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
     def _metadata(self, **kwargs) -> ObjektMultipartMetadata:
         defaults = {
             "objekt_multipart_id": self.multipart.id,
-            "metadata_key": "x-amz-meta-color",
-            "metadata_value": "red",
+            "meta_key": "x-amz-meta-color",
+            "meta_value": "red",
         }
         defaults.update(kwargs)
         return ObjektMultipartMetadata(**defaults)
@@ -83,8 +83,8 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
 
     def test_persists_required_fields(self):
         row = self._metadata(
-            metadata_key="x-amz-meta-owner",
-            metadata_value="alice",
+            meta_key="x-amz-meta-owner",
+            meta_value="alice",
         )
         self.session.add(row)
         self.session.commit()
@@ -92,25 +92,25 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
 
         self.assertIsNotNone(row.id)
         self.assertEqual(row.objekt_multipart_id, self.multipart.id)
-        self.assertEqual(row.metadata_key, "x-amz-meta-owner")
-        self.assertEqual(row.metadata_value, "alice")
+        self.assertEqual(row.meta_key, "x-amz-meta-owner")
+        self.assertEqual(row.meta_value, "alice")
 
-    def test_metadata_key_unique_per_multipart(self):
+    def test_meta_key_unique_per_multipart(self):
         self.session.add(
-            self._metadata(metadata_key="x-amz-meta-color", metadata_value="red"),
+            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
         )
         self.session.commit()
 
         self.session.add(
             self._metadata(
-                metadata_key="x-amz-meta-color",
-                metadata_value="blue",
+                meta_key="x-amz-meta-color",
+                meta_value="blue",
             ),
         )
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_metadata_key_allowed_on_different_multiparts(self):
+    def test_same_meta_key_allowed_on_different_multiparts(self):
         other = ObjektMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
@@ -122,13 +122,13 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.refresh(other)
 
         self.session.add(
-            self._metadata(metadata_key="x-amz-meta-color", metadata_value="red"),
+            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
         )
         self.session.add(
             self._metadata(
                 objekt_multipart_id=other.id,
-                metadata_key="x-amz-meta-color",
-                metadata_value="blue",
+                meta_key="x-amz-meta-color",
+                meta_value="blue",
             ),
         )
         self.session.commit()
@@ -162,10 +162,10 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
 
     def test_multipart_relationship_to_metadata(self):
         self.session.add(
-            self._metadata(metadata_key="x-amz-meta-color", metadata_value="red"),
+            self._metadata(meta_key="x-amz-meta-color", meta_value="red"),
         )
         self.session.add(
-            self._metadata(metadata_key="Cache-Control", metadata_value="no-cache"),
+            self._metadata(meta_key="Cache-Control", meta_value="no-cache"),
         )
         self.session.commit()
 
@@ -176,7 +176,7 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         )
 
         keys = sorted(
-            item.metadata_key for item in loaded.objekt_multipart_metadata
+            item.meta_key for item in loaded.objekt_multipart_metadata
         )
         self.assertEqual(keys, ["Cache-Control", "x-amz-meta-color"])
 
