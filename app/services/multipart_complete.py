@@ -25,7 +25,7 @@ from app.repositories.io import (
 )
 from app.repositories.orm import ORMRepository
 from app.s3.bucket_load import bucket_load
-from app.s3.etag_construct import etag_construct
+from app.s3.etag import etag_construct
 from app.s3.multipart_load import multipart_load
 from app.s3.multipart_parts import multipart_parts
 from app.s3.objekt_dir import objekt_dir

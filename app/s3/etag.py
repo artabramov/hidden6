@@ -1,7 +1,17 @@
-# app/s3/etag_construct.py
+# app/s3/etag.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import hashlib
+
+
+def etag_normalize(value: str) -> str:
+    """
+    Reduce an ETag to the bare hash it stands for. S3 carries ETags
+    wrapped in quotes on the wire, and clients echo them back with the
+    quotes kept, dropped, or upper-cased, so a listed part matches a
+    stored one only after the quoting is stripped away.
+    """
+    return value.strip().strip('"').lower()
 
 
 def etag_construct(part_hashes: list[str]) -> str:

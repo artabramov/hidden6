@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 
 from pydantic import ValidationError
 
-from app.s3.etag_normalize import etag_normalize
+from app.s3.etag import etag_normalize
 from app.schemas.multipart_complete import MultipartPart
 
 
