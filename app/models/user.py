@@ -61,35 +61,26 @@ class User(Base):
 
     user_keys: Mapped[list["UserKey"]] = relationship(  # noqa: F821
         back_populates="user_key_user",
-        passive_deletes=True,
         lazy="raise",
     )
 
     user_buckets: Mapped[list["Bucket"]] = relationship(  # noqa: F821
         back_populates="bucket_user",
-        passive_deletes=True,
         lazy="raise",
     )
 
     user_objekts: Mapped[list["Objekt"]] = relationship(  # noqa: F821
         back_populates="objekt_user",
-        passive_deletes=True,
         lazy="raise",
     )
 
-    user_objekts_multiparts: Mapped[
-        list["ObjektMultipart"]  # noqa: F821
-    ] = relationship(
+    user_objekts_multiparts: Mapped[list["ObjektMultipart"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_user",
-        passive_deletes=True,
         lazy="raise",
     )
 
-    user_objekts_versions: Mapped[
-        list["ObjektVersion"]  # noqa: F821
-    ] = relationship(
+    user_objekts_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_version_user",
-        passive_deletes=True,
         lazy="raise",
     )
 

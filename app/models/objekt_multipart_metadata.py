@@ -48,6 +48,7 @@ class ObjektMultipartMetadata(Base):
     objekt_multipart_metadata_objekt_multipart: Mapped["ObjektMultipart"] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_metadata",
         foreign_keys=[objekt_multipart_id],
+        lazy="raise",
     )
 
     __table_args__ = (

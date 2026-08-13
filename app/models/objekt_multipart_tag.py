@@ -48,6 +48,7 @@ class ObjektMultipartTag(Base):
     objekt_multipart_tag_objekt_multipart: Mapped["ObjektMultipart"] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_tags",
         foreign_keys=[objekt_multipart_id],
+        lazy="raise",
     )
 
     __table_args__ = (

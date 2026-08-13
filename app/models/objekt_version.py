@@ -130,11 +130,13 @@ class ObjektVersion(Base):
     objekt_version_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
         back_populates="objekt_versions",
         foreign_keys=[objekt_id],
+        lazy="raise",
     )
 
     objekt_version_user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="user_objekts_versions",
         foreign_keys=[user_id],
+        lazy="raise",
     )
 
     objekt_version_metadata: Mapped[list["ObjektVersionMetadata"]] = relationship(  # noqa: E501, F821

@@ -47,6 +47,7 @@ class BucketTag(Base):
     bucket_tag_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_tags",
         foreign_keys=[bucket_id],
+        lazy="raise",
     )
 
     __table_args__ = (

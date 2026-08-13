@@ -48,6 +48,7 @@ class ObjektTag(Base):
     objekt_tag_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
         back_populates="objekt_tags",
         foreign_keys=[objekt_id],
+        lazy="raise",
     )
 
     __table_args__ = (

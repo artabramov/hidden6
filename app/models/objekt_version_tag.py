@@ -48,6 +48,7 @@ class ObjektVersionTag(Base):
     objekt_version_tag_objekt_version: Mapped["ObjektVersion"] = relationship(  # noqa: E501, F821
         back_populates="objekt_version_tags",
         foreign_keys=[objekt_version_id],
+        lazy="raise",
     )
 
     __table_args__ = (

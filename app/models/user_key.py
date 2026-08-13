@@ -69,6 +69,7 @@ class UserKey(Base):
 
     user_key_user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="user_keys",
+        lazy="raise",
     )
 
     __table_args__ = (

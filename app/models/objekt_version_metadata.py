@@ -48,6 +48,7 @@ class ObjektVersionMetadata(Base):
     objekt_version_metadata_objekt_version: Mapped["ObjektVersion"] = relationship(  # noqa: E501, F821
         back_populates="objekt_version_metadata",
         foreign_keys=[objekt_version_id],
+        lazy="raise",
     )
 
     __table_args__ = (

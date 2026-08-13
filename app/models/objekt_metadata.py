@@ -48,6 +48,7 @@ class ObjektMetadata(Base):
     objekt_metadata_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
         back_populates="objekt_metadata",
         foreign_keys=[objekt_id],
+        lazy="raise",
     )
 
     __table_args__ = (
