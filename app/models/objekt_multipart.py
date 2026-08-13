@@ -57,12 +57,6 @@ class ObjektMultipart(Base):
         default=lambda: int(time.time()),
     )
 
-    updated_at: Mapped[int | None] = mapped_column(
-        Integer,
-        nullable=True,
-        onupdate=lambda: int(time.time()),
-    )
-
     # S3 multipart upload identifier exposed to clients as UploadId.
     upload_id: Mapped[str] = mapped_column(
         String(32),

@@ -80,7 +80,6 @@ class TestMultipartModel(unittest.TestCase):
         self.assertEqual(multipart.object_key, "album/a.jpg")
         self.assertEqual(multipart.content_type, "application/octet-stream")
         self.assertIsInstance(multipart.created_at, int)
-        self.assertIsNone(multipart.updated_at)
 
     def test_upload_id_is_unique(self):
         self.session.add(self._multipart())
