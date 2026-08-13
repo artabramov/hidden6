@@ -15,25 +15,21 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 # NOTE (ADR-27): S3 versioning keeps the current object on the key path.
-# Current bytes remain under the bucket directory at the S3 object key,
+# Current object bytes remain under the bucket directory at the S3 key,
 # keeping a gocryptfs mount human-recoverable without the application.
-# Non-current versions are indexed in objekts_versions and stored flat
-# as versions/{bucket}/{version_id}. The objekts row represents the
-# current state of each key. When versioning replaces or deletes an
-# object, its previous metadata and bytes move into objekts_versions.
-# Bucket.versioning_status selects Disabled, Enabled, or Suspended;
-# version history is created only while Enabled.
+# Non-current versions are indexed in objekts_versions and stored
+# separately. The objekts row represents the current state of a key,
+# while objekts_versions stores its retained version history.
 
 
 class ObjektVersion(Base):
     """
     Non-current S3 object version or delete marker.
 
-    Current object state remains in objekts. When a current object
-    version becomes non-current, its metadata moves here and its bytes
-    move to versions/{bucket}/{version_id}. Delete markers are stored
-    as metadata-only version records and have no corresponding object
-    bytes.
+    Stores version-specific metadata for a previous state of an object
+    key. Object version bytes are stored separately from current object
+    bytes. Delete markers contain metadata only and have no corresponding
+    object bytes.
     """
 
     __tablename__ = "objekts_versions"
@@ -70,43 +66,58 @@ class ObjektVersion(Base):
         onupdate=lambda: int(time.time()),
     )
 
+    # S3 version identifier returned to clients as VersionId.
     version_id: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
         unique=True,
     )
 
+    # Size of the object version payload in bytes.
+    # NULL for delete markers, which have no object payload.
     size_bytes: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
 
+    # Entity tag of the object version.
+    # NULL for delete markers.
     etag: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
     )
 
+    # Media type stored with the object version.
+    # NULL for delete markers.
     content_type: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
 
+    # Whether this version record represents an S3 delete marker
+    # rather than an object version with a payload.
     delete_marker: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default=text("0"),
     )
 
+    # S3 Object Lock retention mode: GOVERNANCE or COMPLIANCE.
+    # NULL when no retention period is configured for this version.
     lock_mode: Mapped[str | None] = mapped_column(
         String(16),
         nullable=True,
     )
 
+    # Unix timestamp until which Object Lock retention protects
+    # this version. NULL when no retention period is configured.
     retain_until: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
 
+    # Whether an S3 Object Lock legal hold is active for this version.
+    # Unlike retention, a legal hold has no expiration time.
     legal_hold: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
