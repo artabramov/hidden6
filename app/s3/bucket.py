@@ -1,10 +1,17 @@
-# app/s3/bucket_dir.py
+# app/s3/bucket.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import os
 import re
 
-from app.errors import S3InvalidBucketNameError
+from app.errors import (
+    S3AccessDeniedError,
+    S3BucketNotFoundError,
+    S3InvalidBucketNameError,
+)
+from app.models.bucket import Bucket
+from app.models.user import User
+from app.repositories.orm import ORMRepository
 
 # AWS S3 bucket naming (DNS-compliant). The pattern also carries the
 # length limits, because a name is one leading character, up to 61 in
@@ -32,3 +39,23 @@ def bucket_dir(buckets_dir: str, bucket_name: str, resource: str) -> str:
         raise S3InvalidBucketNameError(resource)
 
     return os.path.join(buckets_dir, bucket_name)
+
+
+async def bucket_load(
+    repo: ORMRepository,
+    bucket_name: str,
+    user: User,
+    resource: str,
+) -> Bucket:
+    """
+    Load the bucket addressed by an object operation and authorize the
+    caller against it (ADR-21): the owner and root are allowed.
+    """
+    bucket = await repo.select(Bucket, bucket_name=bucket_name)
+
+    if bucket is None:
+        raise S3BucketNotFoundError(resource)
+    if not user.is_root and bucket.user_id != user.id:
+        raise S3AccessDeniedError(resource)
+
+    return bucket

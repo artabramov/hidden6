@@ -9,7 +9,7 @@ from app.hooks import Events, hooks
 from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.orm import ORMRepository
-from app.s3.bucket_load import bucket_load
+from app.s3.bucket import bucket_load
 
 log = logging.getLogger(__name__)
 

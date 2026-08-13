@@ -4,7 +4,7 @@
 import os
 
 from app.errors import S3ObjektKeyInvalidError
-from app.s3.bucket_dir import bucket_dir
+from app.s3.bucket import bucket_dir
 from app.s3.objekt_key_validate import objekt_key_validate
 
 # NOTE (ADR-24): S3 object keys map to nested filesystem paths.
