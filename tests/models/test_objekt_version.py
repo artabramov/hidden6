@@ -171,9 +171,9 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertEqual(version.objekts_versions_objekts.id, self.objekt.id)
+        self.assertEqual(version.objekt_version_objekt.id, self.objekt.id)
         self.assertEqual(
-            version.objekts_versions_objekts.object_key,
+            version.objekt_version_objekt.object_key,
             "a.txt",
         )
 
@@ -187,10 +187,10 @@ class TestObjektVersionModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Objekt)
             .where(Objekt.id == self.objekt.id)
-            .options(selectinload(Objekt.objekts_versions)),
+            .options(selectinload(Objekt.objekt_versions)),
         )
 
-        ids = sorted(v.version_id for v in loaded.objekts_versions)
+        ids = sorted(v.version_id for v in loaded.objekt_versions)
         self.assertEqual(ids, ["a" * 32, "b" * 32])
 
     def test_relationship_back_to_bucket(self):
@@ -199,7 +199,7 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertEqual(version.objekts_versions_buckets.id, self.bucket.id)
+        self.assertEqual(version.objekt_version_bucket.id, self.bucket.id)
 
     def test_relationship_back_to_user(self):
         version = self._version(version_id="f" * 32)
@@ -207,7 +207,7 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertEqual(version.objekts_versions_users.id, self.user.id)
+        self.assertEqual(version.objekt_version_user.id, self.user.id)
 
     def test_bucket_relationship_to_versions(self):
         other = Objekt(
@@ -250,7 +250,7 @@ class TestObjektVersionModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekts_versions
+            _ = loaded.objekt_versions
 
     def test_bucket_relationship_access_without_eager_load_raises(self):
         self.session.add(self._version(version_id="a" * 32))

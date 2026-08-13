@@ -71,12 +71,12 @@ class ObjektMultipart(Base):
         nullable=False,
     )
 
-    objekts_multiparts_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
+    objekt_multipart_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objekts_multiparts",
     )
 
-    objekts_multiparts_users: Mapped["User"] = relationship(  # noqa: F821
-        back_populates="objekts_multiparts",
+    objekt_multipart_user: Mapped["User"] = relationship(  # noqa: F821
+        back_populates="user_objekts_multiparts",
     )
 
     __table_args__ = (

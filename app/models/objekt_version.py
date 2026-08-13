@@ -125,18 +125,18 @@ class ObjektVersion(Base):
         server_default=text("0"),
     )
 
-    objekts_versions_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
+    objekt_version_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objekts_versions",
         foreign_keys=[bucket_id],
     )
 
-    objekts_versions_objekts: Mapped["Objekt"] = relationship(  # noqa: F821
-        back_populates="objekts_versions",
+    objekt_version_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
+        back_populates="objekt_versions",
         foreign_keys=[objekt_id],
     )
 
-    objekts_versions_users: Mapped["User"] = relationship(  # noqa: F821
-        back_populates="objekts_versions",
+    objekt_version_user: Mapped["User"] = relationship(  # noqa: F821
+        back_populates="user_objekts_versions",
         foreign_keys=[user_id],
     )
 

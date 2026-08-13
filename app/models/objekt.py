@@ -83,16 +83,16 @@ class Objekt(Base):
         server_default=text("'application/octet-stream'"),
     )
 
-    objekts_buckets: Mapped["Bucket"] = relationship(  # noqa: F821
+    objekt_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objekts",
     )
 
-    objekts_users: Mapped["User"] = relationship(  # noqa: F821
-        back_populates="objekts",
+    objekt_user: Mapped["User"] = relationship(  # noqa: F821
+        back_populates="user_objekts",
     )
 
-    objekts_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: F821
-        back_populates="objekts_versions_objekts",
+    objekt_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: F821
+        back_populates="objekt_version_objekt",
         foreign_keys="ObjektVersion.objekt_id",
         passive_deletes=True,
         lazy="raise",

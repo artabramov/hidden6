@@ -103,10 +103,10 @@ class TestBucketModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(User)
             .where(User.id == self.user.id)
-            .options(selectinload(User.buckets)),
+            .options(selectinload(User.user_buckets)),
         )
 
-        names = sorted(bucket.bucket_name for bucket in loaded.buckets)
+        names = sorted(bucket.bucket_name for bucket in loaded.user_buckets)
         self.assertEqual(names, ["docs", "photos"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -118,7 +118,7 @@ class TestBucketModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.buckets
+            _ = loaded.user_buckets
 
     def test_cascade_delete_with_user(self):
         self.session.add(Bucket(user_id=self.user.id, bucket_name="photos"))

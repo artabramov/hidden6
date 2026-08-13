@@ -14,6 +14,9 @@ set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
+from app.models.objekt import Objekt  # noqa: E402, F401
+from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
+from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402
 
@@ -84,18 +87,18 @@ class TestUserModel(unittest.TestCase):
             select(User)
             .where(User.id == user.id)
             .options(
-                selectinload(User.users_keys),
-                selectinload(User.buckets),
+                selectinload(User.user_keys),
+                selectinload(User.user_buckets),
             ),
         )
 
-        self.assertEqual(len(loaded.users_keys), 1)
-        self.assertEqual(len(loaded.buckets), 1)
+        self.assertEqual(len(loaded.user_keys), 1)
+        self.assertEqual(len(loaded.user_buckets), 1)
         self.assertEqual(
-            loaded.users_keys[0].access_key_id,
+            loaded.user_keys[0].access_key_id,
             "AKIAEXAMPLE000001",
         )
-        self.assertEqual(loaded.buckets[0].bucket_name, "photos")
+        self.assertEqual(loaded.user_buckets[0].bucket_name, "photos")
 
     def test_relationship_access_without_eager_load_raises(self):
         user = User(username="alice")
@@ -107,10 +110,10 @@ class TestUserModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.users_keys
+            _ = loaded.user_keys
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.buckets
+            _ = loaded.user_buckets
 
     def test_select_by_username(self):
         self.session.add(User(username="bob"))

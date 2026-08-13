@@ -116,7 +116,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.refresh(multipart)
 
         self.assertEqual(
-            multipart.objekts_multiparts_buckets.id,
+            multipart.objekt_multipart_bucket.id,
             self.bucket.id,
         )
 
@@ -126,7 +126,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(multipart)
 
-        self.assertEqual(multipart.objekts_multiparts_users.username, "alice")
+        self.assertEqual(multipart.objekt_multipart_user.username, "alice")
 
     def test_bucket_relationship_to_multiparts(self):
         self.session.add(self._multipart(upload_id="a" * 32))

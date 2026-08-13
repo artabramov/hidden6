@@ -13,6 +13,10 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
+from app.models.bucket import Bucket  # noqa: E402, F401
+from app.models.objekt import Objekt  # noqa: E402, F401
+from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
+from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402
 
@@ -93,8 +97,8 @@ class TestUserKeyModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(key)
 
-        self.assertEqual(key.users_keys_users.id, self.user.id)
-        self.assertEqual(key.users_keys_users.username, "alice")
+        self.assertEqual(key.user_key_user.id, self.user.id)
+        self.assertEqual(key.user_key_user.username, "alice")
 
     def test_cascade_delete_with_user(self):
         self.session.add(
