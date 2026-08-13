@@ -13,7 +13,7 @@ from app.models.user import User
 from app.repositories.io import mktree, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
-from app.s3.objekt_key_validate import objekt_key_validate
+from app.s3.objekt import objekt_key_validate
 
 log = logging.getLogger(__name__)
 
