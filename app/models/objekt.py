@@ -37,14 +37,14 @@ class Objekt(Base):
 
     bucket_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("buckets.id", ondelete="CASCADE"),
+        ForeignKey("buckets.id"),
         nullable=False,
         index=True,
     )
 
     user_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users.id"),
         nullable=False,
         index=True,
     )
@@ -67,34 +67,41 @@ class Objekt(Base):
         nullable=False,
     )
 
-    size_bytes: Mapped[int] = mapped_column(
+    size_bytes: Mapped[int | None] = mapped_column(
         Integer,
-        nullable=False,
+        nullable=True,
     )
 
-    etag: Mapped[str] = mapped_column(
+    etag: Mapped[str | None] = mapped_column(
         String(64),
-        nullable=False,
+        nullable=True,
     )
 
-    content_type: Mapped[str] = mapped_column(
+    content_type: Mapped[str | None] = mapped_column(
         String(255),
-        nullable=False,
-        server_default=text("'application/octet-stream'"),
+        nullable=True,
     )
 
     objekt_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objekts",
+        lazy="raise",
     )
 
     objekt_user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="user_objekts",
+        lazy="raise",
     )
 
-    objekt_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: F821
+    objekt_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_version_objekt",
         foreign_keys="ObjektVersion.objekt_id",
         passive_deletes=True,
+        lazy="raise",
+    )
+
+    objekt_metadata: Mapped[list["ObjektMetadata"]] = relationship(
+        back_populates="objekt_metadata_objekt",
+        cascade="all, delete-orphan",
         lazy="raise",
     )
 
