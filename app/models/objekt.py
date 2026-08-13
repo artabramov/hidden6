@@ -4,6 +4,8 @@
 import time
 
 from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
     ForeignKey,
     Integer,
     String,
@@ -22,10 +24,12 @@ from app.db.base import Base
 
 class Objekt(Base):
     """
-    S3 object metadata for a key inside a bucket. Object bytes live on
-    disk under the bucket directory; this row indexes size, ETag,
-    content type, and the uploading user for ListObjects / HeadObject /
-    GetObject / PutObject.
+    Current S3 state for an object key inside a bucket.
+
+    Stores metadata for the current object version or delete marker.
+    Object bytes live under the bucket directory at the S3 key when
+    the current state contains object data; delete markers have no
+    corresponding object bytes.
     """
 
     __tablename__ = "objekts"
@@ -49,6 +53,7 @@ class Objekt(Base):
         index=True,
     )
 
+    # Unix timestamp when the object key was first created.
     created_at: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
@@ -56,30 +61,79 @@ class Objekt(Base):
         default=lambda: int(time.time()),
     )
 
-    updated_at: Mapped[int | None] = mapped_column(
+    # Unix timestamp when the current S3 state was created.
+    # Corresponds to the S3 Last-Modified value.
+    modified_at: Mapped[int] = mapped_column(
         Integer,
-        nullable=True,
-        onupdate=lambda: int(time.time()),
+        nullable=False,
+        index=True,
+        default=lambda: int(time.time()),
     )
 
+    # S3 object key that uniquely identifies the object
+    # within its bucket.
     object_key: Mapped[str] = mapped_column(
         String(1024),
         nullable=False,
     )
 
+    # Size of the current object payload in bytes.
+    # NULL when the current state is a delete marker.
     size_bytes: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
     )
 
+    # Entity tag of the current object.
+    # NULL when the current state is a delete marker.
     etag: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
     )
 
+    # Media type stored with the current object.
+    # NULL when the current state is a delete marker.
     content_type: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
+    )
+
+    # S3 version identifier for the current state
+    # of this object key.
+    version_id: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+        unique=True,
+    )
+
+    # Whether the current state represents an S3 delete marker
+    # rather than an object version with stored bytes.
+    delete_marker: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("0"),
+    )
+
+    # S3 Object Lock retention mode: GOVERNANCE or COMPLIANCE.
+    # NULL when no retention period is configured for this version.
+    lock_mode: Mapped[str | None] = mapped_column(
+        String(16),
+        nullable=True,
+    )
+
+    # Unix timestamp until which Object Lock retention protects
+    # this version. NULL when no retention period is configured.
+    retain_until: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+
+    # Whether an S3 Object Lock legal hold is active
+    # for this version.
+    legal_hold: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("0"),
     )
 
     objekt_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
@@ -95,17 +149,63 @@ class Objekt(Base):
     objekt_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_version_objekt",
         foreign_keys="ObjektVersion.objekt_id",
-        passive_deletes=True,
         lazy="raise",
     )
 
-    objekt_metadata: Mapped[list["ObjektMetadata"]] = relationship(
+    objekt_metadata: Mapped[list["ObjektMetadata"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_metadata_objekt",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
     __table_args__ = (
+        CheckConstraint(
+            """
+            (
+                delete_marker = 0
+                AND size_bytes IS NOT NULL
+                AND etag IS NOT NULL
+                AND content_type IS NOT NULL
+            )
+            OR
+            (
+                delete_marker = 1
+                AND size_bytes IS NULL
+                AND etag IS NULL
+                AND content_type IS NULL
+            )
+            """,
+            name="ck_objekts_delete_marker_payload",
+        ),
+        CheckConstraint(
+            """
+            (
+                lock_mode IS NULL
+                AND retain_until IS NULL
+            )
+            OR
+            (
+                lock_mode IN ('GOVERNANCE', 'COMPLIANCE')
+                AND retain_until IS NOT NULL
+            )
+            """,
+            name="ck_objekts_object_lock_retention",
+        ),
+        CheckConstraint(
+            """
+            delete_marker = 0
+            OR (
+                lock_mode IS NULL
+                AND retain_until IS NULL
+                AND legal_hold = 0
+            )
+            """,
+            name="ck_objekts_delete_marker_object_lock",
+        ),
+        CheckConstraint(
+            "size_bytes IS NULL OR size_bytes >= 0",
+            name="ck_objekts_size_bytes_nonnegative",
+        ),
         UniqueConstraint(
             "bucket_id",
             "object_key",

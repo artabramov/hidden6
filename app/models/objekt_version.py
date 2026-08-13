@@ -5,6 +5,7 @@ import time
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     ForeignKey,
     Integer,
     String,
@@ -19,7 +20,7 @@ from app.db.base import Base
 # keeping a gocryptfs mount human-recoverable without the application.
 # Non-current versions are indexed in objekts_versions and stored
 # separately. The objekts row represents the current state of a key,
-# while versions stores its retained version history.
+# while objekts_versions stores its retained version history.
 
 
 class ObjektVersion(Base):
@@ -141,5 +142,52 @@ class ObjektVersion(Base):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            """
+            (
+                delete_marker = 0
+                AND size_bytes IS NOT NULL
+                AND etag IS NOT NULL
+                AND content_type IS NOT NULL
+            )
+            OR
+            (
+                delete_marker = 1
+                AND size_bytes IS NULL
+                AND etag IS NULL
+                AND content_type IS NULL
+            )
+            """,
+            name="ck_objekts_versions_delete_marker_payload",
+        ),
+        CheckConstraint(
+            """
+            (
+                lock_mode IS NULL
+                AND retain_until IS NULL
+            )
+            OR
+            (
+                lock_mode IN ('GOVERNANCE', 'COMPLIANCE')
+                AND retain_until IS NOT NULL
+            )
+            """,
+            name="ck_objekts_versions_object_lock_retention",
+        ),
+        CheckConstraint(
+            """
+            delete_marker = 0
+            OR (
+                lock_mode IS NULL
+                AND retain_until IS NULL
+                AND legal_hold = 0
+            )
+            """,
+            name="ck_objekts_versions_delete_marker_object_lock",
+        ),
+        CheckConstraint(
+            "size_bytes IS NULL OR size_bytes >= 0",
+            name="ck_objekts_versions_size_bytes_nonnegative",
+        ),
         {"sqlite_autoincrement": True},
     )
