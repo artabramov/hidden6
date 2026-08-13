@@ -65,7 +65,6 @@ class TestObjektVersionModel(unittest.TestCase):
             "bucket_id": self.bucket.id,
             "objekt_id": self.objekt.id,
             "user_id": self.user.id,
-            "object_key": self.objekt.object_key,
             "version_id": "a" * 32,
             "size_bytes": 1,
             "etag": "b" * 32,
@@ -90,12 +89,11 @@ class TestObjektVersionModel(unittest.TestCase):
         self.assertEqual(version.bucket_id, self.bucket.id)
         self.assertEqual(version.objekt_id, self.objekt.id)
         self.assertEqual(version.user_id, self.user.id)
-        self.assertEqual(version.object_key, "a.txt")
         self.assertEqual(version.version_id, "c" * 32)
         self.assertEqual(version.size_bytes, 1024)
         self.assertEqual(version.etag, "d41d8cd98f00b204e9800998ecf8427e")
         self.assertEqual(version.content_type, "application/octet-stream")
-        self.assertFalse(version.is_deleted)
+        self.assertFalse(version.delete_marker)
         self.assertIsNone(version.lock_mode)
         self.assertIsNone(version.retain_until)
         self.assertFalse(version.legal_hold)
@@ -138,7 +136,6 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.add(
             self._version(
                 objekt_id=other.id,
-                object_key="other.txt",
                 version_id="a" * 32,
                 etag="c" * 32,
             ),
@@ -146,12 +143,12 @@ class TestObjektVersionModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_deleted_and_lock_fields(self):
+    def test_delete_marker_and_lock_fields(self):
         version = self._version(
             version_id="d" * 32,
             size_bytes=0,
             etag="",
-            is_deleted=True,
+            delete_marker=True,
             lock_mode="COMPLIANCE",
             retain_until=1_704_067_200,
             legal_hold=True,
@@ -160,7 +157,7 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertTrue(version.is_deleted)
+        self.assertTrue(version.delete_marker)
         self.assertEqual(version.lock_mode, "COMPLIANCE")
         self.assertEqual(version.retain_until, 1_704_067_200)
         self.assertTrue(version.legal_hold)
@@ -225,7 +222,6 @@ class TestObjektVersionModel(unittest.TestCase):
         self.session.add(
             self._version(
                 objekt_id=other.id,
-                object_key="b.txt",
                 version_id="b" * 32,
                 etag="b" * 32,
             ),
@@ -238,8 +234,8 @@ class TestObjektVersionModel(unittest.TestCase):
             .options(selectinload(Bucket.bucket_objekts_versions)),
         )
 
-        keys = sorted(v.object_key for v in loaded.bucket_objekts_versions)
-        self.assertEqual(keys, ["a.txt", "b.txt"])
+        ids = sorted(v.version_id for v in loaded.bucket_objekts_versions)
+        self.assertEqual(ids, ["a" * 32, "b" * 32])
 
     def test_relationship_access_without_eager_load_raises(self):
         self.session.add(self._version(version_id="a" * 32))

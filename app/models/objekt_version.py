@@ -77,12 +77,6 @@ class ObjektVersion(Base):
         onupdate=lambda: int(time.time()),
     )
 
-    object_key: Mapped[str] = mapped_column(
-        String(1024),
-        nullable=False,
-        index=True,
-    )
-
     version_id: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
@@ -107,11 +101,10 @@ class ObjektVersion(Base):
         server_default=text("'application/octet-stream'"),
     )
 
-    is_deleted: Mapped[bool] = mapped_column(
+    delete_marker: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default=text("0"),
-        index=True,
     )
 
     lock_mode: Mapped[str | None] = mapped_column(
