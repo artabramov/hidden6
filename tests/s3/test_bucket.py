@@ -37,6 +37,18 @@ class TestBucketNameValidate(unittest.TestCase):
     def test_accepts_shortest_name(self):
         self.assertIsNone(bucket_name_validate("abc", "/abc"))
 
+    def test_accepts_hyphenated_name(self):
+        self.assertIsNone(bucket_name_validate("my-bucket", "/my-bucket"))
+
+    def test_accepts_name_with_period(self):
+        self.assertIsNone(bucket_name_validate("my.bucket", "/my.bucket"))
+
+    def test_accepts_name_with_digits(self):
+        self.assertIsNone(bucket_name_validate("bucket123", "/bucket123"))
+
+    def test_accepts_mixed_hyphen_period_digits(self):
+        self.assertIsNone(bucket_name_validate("a1-b2.c3", "/a1-b2.c3"))
+
     def test_accepts_dashes_and_periods(self):
         self.assertIsNone(
             bucket_name_validate("my-bucket.1", "/my-bucket.1"),
@@ -60,12 +72,23 @@ class TestBucketNameValidate(unittest.TestCase):
 
     def test_rejects_underscore(self):
         self._assert_rejects("Bad_Name")
+        self._assert_rejects("_bucket")
 
     def test_rejects_leading_dash(self):
         self._assert_rejects("-bucket")
 
+    def test_rejects_trailing_dash(self):
+        self._assert_rejects("bucket-")
+
+    def test_rejects_leading_period(self):
+        self._assert_rejects(".bucket")
+
+    def test_rejects_trailing_period(self):
+        self._assert_rejects("bucket.")
+
     def test_rejects_adjacent_periods(self):
         self._assert_rejects("my..bucket")
+        self._assert_rejects("bucket..name")
 
     def test_rejects_period_next_to_dash(self):
         self._assert_rejects("my.-bucket")
@@ -73,6 +96,18 @@ class TestBucketNameValidate(unittest.TestCase):
 
     def test_rejects_ip_address(self):
         self._assert_rejects("192.168.1.1")
+
+    def test_rejects_reserved_prefixes(self):
+        self._assert_rejects("xn--example")
+        self._assert_rejects("sthree-example")
+        self._assert_rejects("amzn-s3-demo-example")
+
+    def test_rejects_reserved_suffixes(self):
+        self._assert_rejects("example-s3alias")
+        self._assert_rejects("example--ol-s3")
+        self._assert_rejects("example.mrap")
+        self._assert_rejects("example--x-s3")
+        self._assert_rejects("example--table-s3")
 
 
 class TestBucketPath(unittest.TestCase):
