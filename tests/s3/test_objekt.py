@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import OBJEKT_KEY_MAX_BYTES
 from app.errors import S3InvalidBucketNameError, S3ObjektKeyInvalidError
-from app.s3.objekt import objekt_dir, objekt_key_validate
+from app.s3.objekt import objekt_key_validate
+from app.s3.paths import objekt_path
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -73,9 +74,9 @@ class TestObjektKeyValidate(unittest.TestCase):
         self._assert_rejects("photos/../../etc/passwd")
 
 
-class TestObjektDir(unittest.TestCase):
+class TestObjektPath(unittest.TestCase):
     def test_resolves_flat_key(self):
-        bucket_path, object_path = objekt_dir(
+        bucket_path, object_path = objekt_path(
             "/mnt/buckets",
             "photos",
             "cat.png",
@@ -86,7 +87,7 @@ class TestObjektDir(unittest.TestCase):
         self.assertEqual(object_path, "/mnt/buckets/photos/cat.png")
 
     def test_resolves_nested_key(self):
-        bucket_path, object_path = objekt_dir(
+        bucket_path, object_path = objekt_path(
             "/mnt/buckets",
             "photos",
             "2024/summer/cat.png",
@@ -101,7 +102,7 @@ class TestObjektDir(unittest.TestCase):
 
     def test_resolves_key_at_max_length(self):
         key = "a" * OBJEKT_KEY_MAX_BYTES
-        _, object_path = objekt_dir(
+        _, object_path = objekt_path(
             "/mnt/buckets",
             "photos",
             key,
@@ -112,7 +113,7 @@ class TestObjektDir(unittest.TestCase):
 
     def test_rejects_invalid_bucket_name(self):
         with self.assertRaises(S3InvalidBucketNameError):
-            objekt_dir(
+            objekt_path(
                 "/mnt/buckets",
                 "Bad_Name",
                 "cat.png",
@@ -121,7 +122,7 @@ class TestObjektDir(unittest.TestCase):
 
     def test_rejects_key_escaping_the_bucket(self):
         with self.assertRaises(S3ObjektKeyInvalidError):
-            objekt_dir(
+            objekt_path(
                 "/mnt/buckets",
                 "photos",
                 "../videos/cat.png",
@@ -130,7 +131,7 @@ class TestObjektDir(unittest.TestCase):
 
     def test_rejects_key_resolving_to_the_bucket(self):
         with self.assertRaises(S3ObjektKeyInvalidError):
-            objekt_dir(
+            objekt_path(
                 "/mnt/buckets",
                 "photos",
                 "2024/..",

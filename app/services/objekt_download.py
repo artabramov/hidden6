@@ -13,7 +13,8 @@ from app.models.user import User
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
-from app.s3.objekt import objekt_dir, objekt_load
+from app.s3.objekt import objekt_load
+from app.s3.paths import objekt_path
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ async def objekt_download(
 
     log.info("msg=objekt_download resource=%s", resource)
 
-    _bucket_path, object_path = objekt_dir(
+    _bucket_path, object_path = objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         object_key,

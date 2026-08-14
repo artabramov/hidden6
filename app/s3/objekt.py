@@ -15,7 +15,7 @@ from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_default_object_lock, bucket_dir
+from app.s3.bucket import bucket_default_object_lock
 
 # Segments that cannot be mapped onto a filesystem path. Empty rejects
 # an empty key, a leading or trailing slash, and repeated slashes.
@@ -46,35 +46,6 @@ def objekt_key_validate(object_key: str, resource: str) -> None:
 
     if any(part in _FORBIDDEN_SEGMENTS for part in object_key.split("/")):
         raise S3ObjektKeyInvalidError(resource)
-
-
-def objekt_dir(
-    buckets_dir: str,
-    bucket_name: str,
-    object_key: str,
-    resource: str,
-) -> tuple[str, str]:
-    """
-    Resolve a validated object key to its bucket directory and
-    filesystem path. The bucket name is validated before it reaches
-    storage, where it becomes a directory of its own.
-
-    Raises:
-        S3InvalidBucketNameError: Bucket name is not valid.
-        S3ObjektKeyInvalidError: Key is not a valid object key.
-    """
-    objekt_key_validate(object_key, resource)
-
-    bucket_path = bucket_dir(buckets_dir, bucket_name, resource)
-    object_path = os.path.normpath(os.path.join(bucket_path, object_key))
-
-    if object_path == bucket_path:
-        raise S3ObjektKeyInvalidError(resource)
-
-    if os.path.commonpath([bucket_path, object_path]) != bucket_path:
-        raise S3ObjektKeyInvalidError(resource)
-
-    return bucket_path, object_path
 
 
 async def objekt_load(

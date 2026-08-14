@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +14,7 @@ from app.repositories.io import mktree, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.objekt import objekt_key_validate
+from app.s3.paths import multipart_path
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ async def multipart_create(
     bucket = await bucket_load(repo, bucket_name, user, resource)
 
     upload_id = uuid.uuid4().hex
-    upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
+    upload_dir = multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
     await mktree(upload_dir)
 
     multipart = ObjektMultipart(

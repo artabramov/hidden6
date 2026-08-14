@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock
 
 from app.errors import S3InvalidBucketNameError
-from app.s3.bucket import bucket_dir
+from app.s3.paths import bucket_path
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -24,31 +24,31 @@ from app.s3.bucket import bucket_default_object_lock, bucket_load  # noqa: E402
 load_all_models()
 
 
-class TestBucketDir(unittest.TestCase):
+class TestBucketPath(unittest.TestCase):
     def _assert_rejects(self, bucket_name):
         resource = f"/{bucket_name}"
 
         with self.assertRaises(S3InvalidBucketNameError) as ctx:
-            bucket_dir("/mnt/buckets", bucket_name, resource)
+            bucket_path("/mnt/buckets", bucket_name, resource)
 
         self.assertEqual(ctx.exception.resource, resource)
 
     def test_resolves_shortest_name(self):
         self.assertEqual(
-            bucket_dir("/mnt/buckets", "abc", "/abc"),
+            bucket_path("/mnt/buckets", "abc", "/abc"),
             "/mnt/buckets/abc",
         )
 
     def test_resolves_dashes_and_periods(self):
         self.assertEqual(
-            bucket_dir("/mnt/buckets", "my-bucket.1", "/my-bucket.1"),
+            bucket_path("/mnt/buckets", "my-bucket.1", "/my-bucket.1"),
             "/mnt/buckets/my-bucket.1",
         )
 
     def test_resolves_longest_name(self):
         name = "a" * 63
         self.assertEqual(
-            bucket_dir("/mnt/buckets", name, f"/{name}"),
+            bucket_path("/mnt/buckets", name, f"/{name}"),
             f"/mnt/buckets/{name}",
         )
 

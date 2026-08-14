@@ -16,7 +16,7 @@ from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.io import isdir, isfile, mktree, rmdir
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_dir
+from app.s3.paths import bucket_path as resolve_bucket_path
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ async def bucket_create(
     config = get_config()
     resource = f"/{bucket_name}"
 
-    bucket_path = bucket_dir(
+    bucket_path = resolve_bucket_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         resource
