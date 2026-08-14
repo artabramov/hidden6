@@ -6,17 +6,21 @@ import re
 from app.constants import OBJEKT_KEY_MAX_BYTES
 from app.errors import S3InvalidBucketNameError, S3ObjektKeyInvalidError
 
-# AWS S3 general-purpose bucket naming (DNS-compliant). The pattern
-# also carries the length limits, because a name is one leading
-# character, up to 61 in the middle, and one trailing character.
+# General-purpose S3 bucket name syntax, including the 3–63 character
+# length limit and the requirement for alphanumeric boundary characters.
 _BUCKET_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$")
+
+# IPv4-like names are reserved and cannot be used as S3 bucket names.
 _IP_ADDRESS_RE = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
 
+# Prefixes and suffixes reserved by S3 for other bucket or access
+# point namespaces.
 _BUCKET_RESERVED_PREFIXES = (
     "xn--",
     "sthree-",
     "amzn-s3-demo-",
 )
+
 _BUCKET_RESERVED_SUFFIXES = (
     "-s3alias",
     "--ol-s3",
@@ -25,8 +29,9 @@ _BUCKET_RESERVED_SUFFIXES = (
     "--table-s3",
 )
 
-# Segments that cannot be mapped onto a filesystem path. Empty rejects
-# an empty key, a leading or trailing slash, and repeated slashes.
+# Path segments that cannot be represented safely by the filesystem
+# mapping. An empty segment also rejects empty keys, leading or trailing
+# slashes, and repeated slashes.
 _FORBIDDEN_SEGMENTS = frozenset({"", ".", ".."})
 
 # NOTE (ADR-24): S3 object keys map to nested filesystem paths.
@@ -42,12 +47,14 @@ def bucket_name_validate(
     resource: str,
 ) -> None:
     """
-    Reject a name that is not a valid general-purpose S3 bucket name
-    before it reaches storage, where the name becomes a directory of
-    its own.
+    Validate a general-purpose S3 bucket name.
+
+    Enforces the S3 naming syntax, reserved namespace restrictions,
+    and names that resemble IPv4 addresses before the bucket name is
+    used as a storage directory.
 
     Raises:
-        S3InvalidBucketNameError: Name is not a valid bucket name.
+        S3InvalidBucketNameError: Bucket name violates S3 naming rules.
     """
     if not _BUCKET_NAME_RE.fullmatch(bucket_name):
         raise S3InvalidBucketNameError(resource)
@@ -67,16 +74,15 @@ def bucket_name_validate(
 
 def objekt_key_validate(object_key: str, resource: str) -> None:
     """
-    Reject an object key that cannot be stored as a path relative to
-    the bucket directory: oversized, containing a null byte, or containing
-    an empty, dot, or double-dot path segment.
+    Validate an S3 object key for the filesystem-backed namespace.
 
-    S3 permits a broader object-key namespace, but relative and ambiguous
-    path segments are rejected because object keys map directly to
-    filesystem paths.
+    The key must fit within the S3 UTF-8 byte limit and must not contain
+    null bytes or path segments that cannot be mapped safely to the
+    filesystem. This intentionally makes the accepted key namespace
+    narrower than S3 itself.
 
     Raises:
-        S3ObjektKeyInvalidError: Key is not a valid object key.
+        S3ObjektKeyInvalidError: Object key cannot be represented safely.
     """
     try:
         object_key_bytes = object_key.encode("utf-8")
