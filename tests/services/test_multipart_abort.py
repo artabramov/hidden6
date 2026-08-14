@@ -52,9 +52,15 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
 
         self.repo = MagicMock()
         self.repo.delete = AsyncMock()
+        self.repo.commit = AsyncMock()
+        self.repo.rollback = AsyncMock()
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
+        self._patch(
+            "uuid.uuid4",
+            return_value=MagicMock(hex="cafebabe"),
+        )
         self.bucket_load = self._patch(
             "bucket_load",
             new_callable=AsyncMock,
@@ -65,6 +71,16 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
+        self.parts_delete = self._patch(
+            "multipart_parts_delete",
+            new_callable=AsyncMock,
+        )
+        self.isdir = self._patch(
+            "isdir",
+            new_callable=AsyncMock,
+            return_value=True,
+        )
+        self.rename = self._patch("rename", new_callable=AsyncMock)
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
 
         lock_context = AsyncMock()
@@ -84,18 +100,33 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             upload_id="beef",
         )
 
-    async def test_drops_upload_and_staged_parts(self):
+    async def test_renames_then_drops_parts_and_upload(self):
         await self._abort()
 
-        self.repo.delete.assert_awaited_once_with(
-            self.multipart,
-            commit=True,
-        )
-        self.rmtree.assert_awaited_once_with("/mnt/tmp/beef")
+        cleanup = "/mnt/tmp/.beef.aborted.cafebabe"
         self.lock.assert_called_once_with(
             "/mnt/tmp/beef",
             LockType.WRITE,
         )
+        self.rename.assert_awaited_once_with("/mnt/tmp/beef", cleanup)
+        self.parts_delete.assert_awaited_once_with(
+            self.repo,
+            self.multipart,
+        )
+        self.repo.delete.assert_awaited_once_with(self.multipart)
+        self.repo.commit.assert_awaited_once()
+        self.rmtree.assert_awaited_once_with(cleanup)
+
+    async def test_missing_upload_dir_still_drops_db_rows(self):
+        self.isdir.return_value = False
+
+        await self._abort()
+
+        self.rename.assert_not_awaited()
+        self.parts_delete.assert_awaited_once()
+        self.repo.delete.assert_awaited_once_with(self.multipart)
+        self.repo.commit.assert_awaited_once()
+        self.rmtree.assert_not_awaited()
 
     async def test_failed_cleanup_is_logged(self):
         self.rmtree.side_effect = OSError("busy")
@@ -103,6 +134,16 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         await self._abort()
 
         self.log.exception.assert_called_once()
+        self.repo.commit.assert_awaited_once()
+
+    async def test_db_failure_after_rename_rolls_back(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._abort()
+
+        self.repo.rollback.assert_awaited_once()
+        self.rmtree.assert_not_awaited()
 
     async def test_inaccessible_bucket_raises(self):
         self.bucket_load.side_effect = S3BucketNotFoundError()

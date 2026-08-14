@@ -55,8 +55,12 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         lock_context.__aenter__.return_value = None
         lock_context.__aexit__.return_value = None
 
+        self.repo = MagicMock()
+        self.repo.rollback = AsyncMock()
+
         self._patch("get_config", return_value=config)
-        self._patch("ORMRepository", return_value=MagicMock())
+        self._patch("ORMRepository", return_value=self.repo)
+        self._patch("uuid.uuid4", return_value=MagicMock(hex="deadbeef"))
         self.bucket_load = self._patch(
             "bucket_load",
             new_callable=AsyncMock,
@@ -77,10 +81,21 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             return_value=lock_context,
         )
         self.upload = self._patch("upload", new_callable=AsyncMock)
-        self._patch(
+        self.rename = self._patch("rename", new_callable=AsyncMock)
+        self.delete = self._patch("delete", new_callable=AsyncMock)
+        self.get_file_hash = self._patch(
             "get_file_hash",
             new_callable=AsyncMock,
             return_value=PART_HASH,
+        )
+        self.get_filesize = self._patch(
+            "get_filesize",
+            new_callable=AsyncMock,
+            return_value=1024,
+        )
+        self.part_upsert = self._patch(
+            "multipart_part_upsert",
+            new_callable=AsyncMock,
         )
 
     async def _upload(self, part_number=1):
@@ -94,14 +109,55 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             body=MagicMock(),
         )
 
-    async def test_stores_part_and_returns_etag(self):
+    async def test_stores_part_indexes_row_and_returns_etag(self):
         etag = await self._upload()
 
         part = "/mnt/tmp/beef/1.part"
+        temp = "/mnt/tmp/beef/.1.deadbeef.part.tmp"
         self.upload.assert_awaited_once()
-        self.assertEqual(self.upload.await_args.args[1], part)
+        self.assertEqual(self.upload.await_args.args[1], temp)
+        self.get_file_hash.assert_awaited_once_with(temp)
+        self.get_filesize.assert_awaited_once_with(temp)
+        self.rename.assert_awaited_once_with(temp, part)
+        self.part_upsert.assert_awaited_once_with(
+            repo=self.repo,
+            multipart=self.multipart,
+            part_number=1,
+            size_bytes=1024,
+            etag=PART_HASH,
+        )
         self.lock.assert_called_once_with(part, LockType.WRITE)
         self.assertEqual(etag, PART_HASH)
+
+    async def test_reupload_uses_same_part_path(self):
+        await self._upload(part_number=2)
+        await self._upload(part_number=2)
+
+        part = "/mnt/tmp/beef/2.part"
+        self.assertEqual(
+            [call.args[0] for call in self.lock.call_args_list],
+            [part, part],
+        )
+        self.assertEqual(self.part_upsert.await_count, 2)
+
+    async def test_failed_temp_upload_does_not_index_or_publish(self):
+        self.upload.side_effect = RuntimeError("disk full")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        self.rename.assert_not_awaited()
+        self.part_upsert.assert_not_awaited()
+        self.delete.assert_awaited_once()
+
+    async def test_failed_db_update_after_publish_does_not_succeed(self):
+        self.part_upsert.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        self.rename.assert_awaited_once()
+        self.repo.rollback.assert_awaited_once()
 
     async def test_rejects_part_number_out_of_range(self):
         with self.assertRaises(S3ObjektPartNumberInvalidError):
@@ -111,6 +167,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             await self._upload(part_number=10001)
 
         self.upload.assert_not_awaited()
+        self.part_upsert.assert_not_awaited()
 
     async def test_unknown_upload_raises(self):
         self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
@@ -127,12 +184,6 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             await self._upload()
 
         self.upload.assert_not_awaited()
-
-    async def test_failed_upload_keeps_the_stored_part(self):
-        self.upload.side_effect = RuntimeError("disk full")
-
-        with self.assertRaises(RuntimeError):
-            await self._upload()
 
     async def test_invalid_key_stops_before_storage(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:

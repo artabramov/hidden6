@@ -24,7 +24,11 @@ from app.repositories.io import (
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.etag import etag_construct
-from app.s3.multipart import multipart_load, multipart_parts
+from app.s3.multipart import (
+    multipart_load,
+    multipart_parts,
+    multipart_parts_delete,
+)
 from app.s3.objekt import objekt_dir, objekt_mkdir, objekt_upsert
 from app.schemas.multipart_complete import MultipartPart
 
@@ -41,10 +45,11 @@ async def multipart_complete(
 ) -> Objekt:
     """
     Assemble the uploaded parts into a single object (S3
-    CompleteMultipartUpload): concatenate the parts listed by the
-    client, publish the result under the bucket directory, upsert the
-    Objekt row with the Content-Type stored at create time, and drop
-    the upload with its staged parts.
+    CompleteMultipartUpload): resolve the client-listed parts against
+    ObjektMultipartPart rows, concatenate exactly those staged files,
+    publish the result under the bucket directory, upsert the Objekt
+    row with the Content-Type stored at create time, and drop the
+    upload together with its part index rows.
     """
     log.info("msg=multipart_complete upload_id=%s parts=%d", upload_id, len(parts))  # noqa: E501
 
@@ -72,17 +77,23 @@ async def multipart_complete(
     staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
 
     try:
-        # The lock keeps an abort or a part upload from changing the
-        # parts between their validation and the assembly. A part
-        # replaced before the lock was taken is still caught by the
-        # ETag comparison below.
-        async with locks.lock_directory(upload_dir, LockType.READ):
-            part_paths = await multipart_parts(upload_dir, parts, resource)
-            part_hashes = await concat(part_paths, staged_path)
+        # WRITE excludes concurrent UploadPart and Abort while parts
+        # are resolved and assembled. Stored ETags validate the request
+        # before any bytes are concatenated.
+        async with locks.lock_directory(upload_dir, LockType.WRITE):
+            part_paths, part_hashes = await multipart_parts(
+                repo=repo,
+                multipart=multipart,
+                upload_dir=upload_dir,
+                parts=parts,
+                resource=resource,
+            )
 
-        for part, part_hash in zip(parts, part_hashes):
-            if part.etag != part_hash:
-                raise S3ObjektPartInvalidError(resource)
+            for part, stored_etag in zip(parts, part_hashes):
+                if part.etag != stored_etag:
+                    raise S3ObjektPartInvalidError(resource)
+
+            await concat(part_paths, staged_path)
 
         size_bytes = await get_filesize(staged_path)
 
@@ -101,6 +112,9 @@ async def multipart_complete(
                 etag=etag_construct(part_hashes),
                 content_type=multipart.content_type,
             )
+            # Parts have no ON DELETE CASCADE; clear them before the
+            # parent upload row, then publish and commit together.
+            await multipart_parts_delete(repo, multipart)
             await repo.delete(multipart)
             await rename(staged_path, object_path)
             await repo.commit()
@@ -110,7 +124,7 @@ async def multipart_complete(
         await delete(staged_path)
         raise
 
-    # The upload is already finished, so parts left behind by a failed
+    # The object is already published, so parts left behind by a failed
     # cleanup are logged instead of failing the request.
     try:
         await rmtree(upload_dir)

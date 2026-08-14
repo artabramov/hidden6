@@ -3,16 +3,17 @@
 
 import logging
 import os
+import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.locks import LockType, locks
 from app.models.user import User
-from app.repositories.io import rmtree
+from app.repositories.io import isdir, rename, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
-from app.s3.multipart import multipart_load
+from app.s3.multipart import multipart_load, multipart_parts_delete
 from app.s3.objekt import objekt_key_validate
 
 log = logging.getLogger(__name__)
@@ -26,8 +27,10 @@ async def multipart_abort(
     upload_id: str,
 ) -> None:
     """
-    Abort a multipart upload (S3 AbortMultipartUpload): drop the
-    upload together with every part staged for it.
+    Abort a multipart upload (S3 AbortMultipartUpload): move the
+    staging directory aside, drop every ObjektMultipartPart row and the
+    parent upload, then remove the renamed directory. Parts have no
+    ON DELETE CASCADE, so they are deleted explicitly.
     """
     log.info("msg=multipart_abort upload_id=%s", upload_id)
 
@@ -45,17 +48,35 @@ async def multipart_abort(
         resource=resource,
     )
 
-    await repo.delete(multipart, commit=True)
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
+    cleanup_dir = None
 
-    # The upload is already dropped, so parts left behind by a failed
-    # cleanup are logged instead of failing the request. The lock keeps
-    # the cleanup from pulling the parts out from under an assembly or
-    # a part upload that is already running.
     try:
         async with locks.lock_directory(upload_dir, LockType.WRITE):
-            await rmtree(upload_dir)
-    except OSError:
-        log.exception("msg=multipart_cleanup_failed path=%s", upload_dir)
+            # Rename first so concurrent UploadPart cannot publish into
+            # the active path after the DB rows are gone.
+            if await isdir(upload_dir):
+                cleanup_dir = os.path.join(
+                    config.MOUNTPOINT_TMP_DIR,
+                    f".{upload_id}.aborted.{uuid.uuid4().hex}",
+                )
+                await rename(upload_dir, cleanup_dir)
+
+            await multipart_parts_delete(repo, multipart)
+            await repo.delete(multipart)
+            await repo.commit()
+
+    except Exception:
+        await repo.rollback()
+        raise
+
+    if cleanup_dir is not None:
+        try:
+            await rmtree(cleanup_dir)
+        except OSError:
+            log.exception(
+                "msg=multipart_cleanup_failed path=%s",
+                cleanup_dir,
+            )
 
     log.info("msg=multipart_aborted upload_id=%s", upload_id)

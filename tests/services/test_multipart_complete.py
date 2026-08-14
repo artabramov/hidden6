@@ -99,10 +99,17 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.multipart_parts = self._patch(
             "multipart_parts",
             new_callable=AsyncMock,
-            return_value=[
-                "/mnt/tmp/beef/1.part",
-                "/mnt/tmp/beef/2.part",
-            ],
+            return_value=(
+                [
+                    "/mnt/tmp/beef/1.part",
+                    "/mnt/tmp/beef/2.part",
+                ],
+                list(PART_HASHES),
+            ),
+        )
+        self.parts_delete = self._patch(
+            "multipart_parts_delete",
+            new_callable=AsyncMock,
         )
         self._patch("etag_construct", return_value="joined-2")
         self.lock = self._patch(
@@ -138,11 +145,12 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
         self.emit = self._patch("hooks.emit", new_callable=AsyncMock)
 
-    def _build_parts(self, hashes=None):
+    def _build_parts(self, hashes=None, numbers=None):
         hashes = hashes or PART_HASHES
+        numbers = numbers or list(range(1, len(hashes) + 1))
         return [
             MultipartPart(part_number=number, etag=value)
-            for number, value in enumerate(hashes, start=1)
+            for number, value in zip(numbers, hashes)
         ]
 
     async def _complete(self, parts=None):
@@ -158,6 +166,11 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
     async def test_assembles_parts_into_object(self):
         objekt = await self._complete()
 
+        self.multipart_parts.assert_awaited_once()
+        kwargs = self.multipart_parts.await_args.kwargs
+        self.assertIs(kwargs["repo"], self.repo)
+        self.assertIs(kwargs["multipart"], self.multipart)
+        self.assertEqual(kwargs["upload_dir"], "/mnt/tmp/beef")
         self.concat.assert_awaited_once_with(
             [
                 "/mnt/tmp/beef/1.part",
@@ -168,13 +181,17 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             self.lock.call_args_list,
             [
-                call("/mnt/tmp/beef", LockType.READ),
+                call("/mnt/tmp/beef", LockType.WRITE),
                 call("/mnt/buckets/photos", LockType.WRITE),
             ],
         )
         self.rename.assert_awaited_once_with(
             "/mnt/tmp/staged",
             "/mnt/buckets/photos/2024/cat.png",
+        )
+        self.parts_delete.assert_awaited_once_with(
+            self.repo,
+            self.multipart,
         )
         self.repo.delete.assert_awaited_once_with(self.multipart)
         self.repo.commit.assert_awaited_once()
@@ -184,7 +201,28 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             objekt,
         )
 
-    async def test_stores_multipart_etag(self):
+    async def test_concatenates_only_client_listed_parts(self):
+        self.multipart_parts.return_value = (
+            [
+                "/mnt/tmp/beef/1.part",
+                "/mnt/tmp/beef/8.part",
+            ],
+            list(PART_HASHES),
+        )
+
+        await self._complete(
+            parts=self._build_parts(numbers=[1, 8]),
+        )
+
+        self.concat.assert_awaited_once_with(
+            [
+                "/mnt/tmp/beef/1.part",
+                "/mnt/tmp/beef/8.part",
+            ],
+            "/mnt/tmp/staged",
+        )
+
+    async def test_stores_multipart_etag_from_stored_part_etags(self):
         await self._complete()
 
         self.assertEqual(
@@ -222,6 +260,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             await self._complete()
 
         self.concat.assert_not_awaited()
+        self.parts_delete.assert_not_awaited()
 
     async def test_missing_bucket_dir_cleans_staged_file(self):
         self.isdir.return_value = False
@@ -241,6 +280,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3ObjektPartInvalidError):
             await self._complete(parts)
 
+        self.concat.assert_not_awaited()
         self.repo.rollback.assert_awaited_once()
         self.delete.assert_awaited_once_with("/mnt/tmp/staged")
         self.rename.assert_not_awaited()

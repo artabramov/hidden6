@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import os
+import time
 
 from app.constants import (
     OBJEKT_PART_NUMBER_MAX,
@@ -16,7 +17,8 @@ from app.errors import (
 )
 from app.models.bucket import Bucket
 from app.models.objekt_multipart import ObjektMultipart
-from app.repositories.io import get_filesize, isfile
+from app.models.objekt_multipart_part import ObjektMultipartPart
+from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.schemas.multipart_complete import MultipartPart
 
@@ -46,19 +48,101 @@ async def multipart_load(
     return multipart
 
 
+async def multipart_part_upsert(
+    repo: ORMRepository,
+    multipart: ObjektMultipart,
+    part_number: int,
+    size_bytes: int,
+    etag: str,
+) -> ObjektMultipartPart:
+    """
+    Insert or replace the ObjektMultipartPart row for one part number.
+    The staged part file must already exist when this is called.
+    Changes are committed so a successful UploadPart always leaves a
+    durable index row.
+    """
+    existing = await repo.select(
+        ObjektMultipartPart,
+        objekt_multipart_id=multipart.id,
+        part_number=part_number,
+    )
+    modified_at = int(time.time())
+
+    if existing is None:
+        return await repo.insert(
+            ObjektMultipartPart(
+                objekt_multipart_id=multipart.id,
+                part_number=part_number,
+                size_bytes=size_bytes,
+                etag=etag,
+                modified_at=modified_at,
+            ),
+            commit=True,
+        )
+
+    existing.size_bytes = size_bytes
+    existing.etag = etag
+    existing.modified_at = modified_at
+    return await repo.update(existing, commit=True)
+
+
+async def multipart_parts_list(
+    repo: ORMRepository,
+    multipart: ObjektMultipart,
+    *,
+    part_number_marker: int | None = None,
+    max_parts: int | None = None,
+) -> list[ObjektMultipartPart]:
+    """
+    Return uploaded parts for a multipart upload ordered by part
+    number. Optional marker and limit support a future ListParts API.
+    """
+    filters: dict = {
+        "objekt_multipart_id": multipart.id,
+        "order_by": "part_number",
+        "order": "asc",
+    }
+    if part_number_marker is not None:
+        filters["part_number__gt"] = part_number_marker
+    if max_parts is not None:
+        filters["limit"] = max_parts
+
+    return await repo.select_all(ObjektMultipartPart, **filters)
+
+
+async def multipart_parts_delete(
+    repo: ORMRepository,
+    multipart: ObjektMultipart,
+) -> None:
+    """
+    Delete every ObjektMultipartPart row for an upload. The parts FK
+    has no ON DELETE CASCADE, so callers must clear parts before the
+    parent ObjektMultipart row. Changes are flushed, not committed.
+    """
+    rows = await multipart_parts_list(repo, multipart)
+    for row in rows:
+        await repo.delete(row, flush=False)
+    await repo.flush()
+
+
 async def multipart_parts(
+    repo: ORMRepository,
+    multipart: ObjektMultipart,
     upload_dir: str,
     parts: list[MultipartPart],
     resource: str,
-) -> list[str]:
+) -> tuple[list[str], list[str]]:
     """
-    Map the parts listed by the client onto the files staged for the
-    upload. Parts are listed in ascending order, every listed part has
-    been uploaded, and every part but the last one is at least the
-    minimum part size, otherwise the object cannot be assembled.
+    Resolve the parts listed by the client against ObjektMultipartPart
+    rows and staged files. Parts must be listed in ascending order,
+    every listed part must have been uploaded, and every part but the
+    last must be at least the minimum part size. Returns the staged
+    paths and stored ETags in client order.
     """
     previous = 0
     paths: list[str] = []
+    etags: list[str] = []
+    sizes: list[int] = []
 
     for part in parts:
         if part.part_number <= previous:
@@ -67,15 +151,25 @@ async def multipart_parts(
             raise S3ObjektPartNumberInvalidError(resource)
 
         previous = part.part_number
-        path = os.path.join(upload_dir, f"{part.part_number}.part")
 
+        row = await repo.select(
+            ObjektMultipartPart,
+            objekt_multipart_id=multipart.id,
+            part_number=part.part_number,
+        )
+        if row is None:
+            raise S3ObjektPartInvalidError(resource)
+
+        path = os.path.join(upload_dir, f"{part.part_number}.part")
         if not await isfile(path):
             raise S3ObjektPartInvalidError(resource)
 
         paths.append(path)
+        etags.append(row.etag)
+        sizes.append(row.size_bytes)
 
-    for path in paths[:-1]:
-        if await get_filesize(path) < OBJEKT_PART_SIZE_MIN_BYTES:
+    for size_bytes in sizes[:-1]:
+        if size_bytes < OBJEKT_PART_SIZE_MIN_BYTES:
             raise S3ObjektPartTooSmallError(resource)
 
-    return paths
+    return paths, etags

@@ -19,7 +19,14 @@ from app.errors import (  # noqa: E402
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
-from app.s3.multipart import multipart_load, multipart_parts  # noqa: E402
+from app.models.objekt_multipart_part import ObjektMultipartPart  # noqa: E402
+from app.s3.multipart import (  # noqa: E402
+    multipart_load,
+    multipart_part_upsert,
+    multipart_parts,
+    multipart_parts_delete,
+    multipart_parts_list,
+)
 from app.schemas.multipart_complete import MultipartPart  # noqa: E402
 
 load_all_models()
@@ -71,6 +78,109 @@ class TestMultipartLoad(unittest.IsolatedAsyncioTestCase):
             await self._load()
 
 
+class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.multipart = ObjektMultipart(
+            id=5,
+            bucket_id=7,
+            user_id=1,
+            upload_id="beef",
+            object_key="2024/cat.png",
+        )
+        self.repo = MagicMock()
+        self.repo.select = AsyncMock(return_value=None)
+        self.repo.insert = AsyncMock(side_effect=lambda obj, **kwargs: obj)
+        self.repo.update = AsyncMock(side_effect=lambda obj, **kwargs: obj)
+
+    async def test_inserts_new_part_row(self):
+        with patch("app.s3.multipart.time.time", return_value=1_000_000):
+            row = await multipart_part_upsert(
+                repo=self.repo,
+                multipart=self.multipart,
+                part_number=1,
+                size_bytes=1024,
+                etag="abc",
+            )
+
+        self.repo.insert.assert_awaited_once()
+        self.assertEqual(row.objekt_multipart_id, 5)
+        self.assertEqual(row.part_number, 1)
+        self.assertEqual(row.size_bytes, 1024)
+        self.assertEqual(row.etag, "abc")
+        self.assertEqual(row.modified_at, 1_000_000)
+        self.assertEqual(self.repo.insert.await_args.kwargs["commit"], True)
+
+    async def test_updates_existing_part_row(self):
+        existing = ObjektMultipartPart(
+            id=9,
+            objekt_multipart_id=5,
+            part_number=1,
+            size_bytes=10,
+            etag="old",
+            modified_at=1,
+        )
+        self.repo.select = AsyncMock(return_value=existing)
+
+        with patch("app.s3.multipart.time.time", return_value=2_000_000):
+            row = await multipart_part_upsert(
+                repo=self.repo,
+                multipart=self.multipart,
+                part_number=1,
+                size_bytes=2048,
+                etag="new",
+            )
+
+        self.repo.insert.assert_not_awaited()
+        self.repo.update.assert_awaited_once_with(existing, commit=True)
+        self.assertIs(row, existing)
+        self.assertEqual(existing.size_bytes, 2048)
+        self.assertEqual(existing.etag, "new")
+        self.assertEqual(existing.modified_at, 2_000_000)
+
+
+class TestMultipartPartsList(unittest.IsolatedAsyncioTestCase):
+    async def test_lists_parts_ordered_with_pagination(self):
+        multipart = ObjektMultipart(id=5, upload_id="beef", object_key="a")
+        repo = MagicMock()
+        repo.select_all = AsyncMock(return_value=[])
+
+        await multipart_parts_list(
+            repo,
+            multipart,
+            part_number_marker=2,
+            max_parts=1000,
+        )
+
+        repo.select_all.assert_awaited_once_with(
+            ObjektMultipartPart,
+            objekt_multipart_id=5,
+            order_by="part_number",
+            order="asc",
+            part_number__gt=2,
+            limit=1000,
+        )
+
+
+class TestMultipartPartsDelete(unittest.IsolatedAsyncioTestCase):
+    async def test_deletes_every_part_row(self):
+        multipart = ObjektMultipart(id=5, upload_id="beef", object_key="a")
+        rows = [
+            ObjektMultipartPart(id=1, part_number=1),
+            ObjektMultipartPart(id=2, part_number=3),
+        ]
+        repo = MagicMock()
+        repo.select_all = AsyncMock(return_value=rows)
+        repo.delete = AsyncMock()
+        repo.flush = AsyncMock()
+
+        await multipart_parts_delete(repo, multipart)
+
+        self.assertEqual(repo.delete.await_count, 2)
+        repo.delete.assert_any_await(rows[0], flush=False)
+        repo.delete.assert_any_await(rows[1], flush=False)
+        repo.flush.assert_awaited_once()
+
+
 class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
     def _patch(self, target, **kwargs):
         patcher = patch(f"app.s3.multipart.{target}", **kwargs)
@@ -79,37 +189,69 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
         return mock
 
     def setUp(self):
+        self.multipart = ObjektMultipart(
+            id=5,
+            bucket_id=7,
+            user_id=1,
+            upload_id="beef",
+            object_key="2024/cat.png",
+        )
+        self.repo = MagicMock()
         self.isfile = self._patch(
             "isfile",
             new_callable=AsyncMock,
             return_value=True,
         )
-        self.get_filesize = self._patch(
-            "get_filesize",
-            new_callable=AsyncMock,
-            return_value=1024 * 1024 * 6,
-        )
 
-    def _build_parts(self, numbers):
+        async def _select(_cls, **filters):
+            number = filters["part_number"]
+            return ObjektMultipartPart(
+                id=number,
+                objekt_multipart_id=5,
+                part_number=number,
+                size_bytes=1024 * 1024 * 6,
+                etag=f"etag-{number}",
+            )
+
+        self.repo.select = AsyncMock(side_effect=_select)
+
+    def _build_parts(self, numbers, etags=None):
+        etags = etags or [f"etag-{number}" for number in numbers]
         return [
-            MultipartPart(part_number=number, etag="aaa")
-            for number in numbers
+            MultipartPart(part_number=number, etag=etag)
+            for number, etag in zip(numbers, etags)
         ]
 
     async def _resolve(self, numbers=(1, 2)):
         return await multipart_parts(
+            self.repo,
+            self.multipart,
             "/mnt/tmp/beef",
             self._build_parts(numbers),
             "/photos/2024/cat.png",
         )
 
-    async def test_maps_parts_onto_staged_files(self):
-        paths = await self._resolve()
+    async def test_maps_parts_onto_rows_and_staged_files(self):
+        paths, etags = await self._resolve()
 
         self.assertEqual(
             paths,
             ["/mnt/tmp/beef/1.part", "/mnt/tmp/beef/2.part"],
         )
+        self.assertEqual(etags, ["etag-1", "etag-2"])
+
+    async def test_accepts_noncontiguous_ascending_parts(self):
+        paths, etags = await self._resolve(numbers=(1, 3, 8))
+
+        self.assertEqual(
+            paths,
+            [
+                "/mnt/tmp/beef/1.part",
+                "/mnt/tmp/beef/3.part",
+                "/mnt/tmp/beef/8.part",
+            ],
+        )
+        self.assertEqual(etags, ["etag-1", "etag-3", "etag-8"])
 
     async def test_rejects_unordered_parts(self):
         with self.assertRaises(S3ObjektPartOrderInvalidError):
@@ -123,21 +265,64 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3ObjektPartNumberInvalidError):
             await self._resolve(numbers=(10001,))
 
-    async def test_rejects_missing_part(self):
+    async def test_rejects_missing_part_row(self):
+        self.repo.select = AsyncMock(return_value=None)
+
+        with self.assertRaises(S3ObjektPartInvalidError):
+            await self._resolve()
+
+    async def test_rejects_missing_staged_file(self):
         self.isfile.return_value = False
 
         with self.assertRaises(S3ObjektPartInvalidError):
             await self._resolve()
 
     async def test_rejects_small_leading_part(self):
-        self.get_filesize.return_value = 1024
+        async def _select(_cls, **filters):
+            number = filters["part_number"]
+            return ObjektMultipartPart(
+                id=number,
+                objekt_multipart_id=5,
+                part_number=number,
+                size_bytes=1024,
+                etag=f"etag-{number}",
+            )
+
+        self.repo.select = AsyncMock(side_effect=_select)
 
         with self.assertRaises(S3ObjektPartTooSmallError):
             await self._resolve()
 
     async def test_last_part_may_be_small(self):
-        self.get_filesize.return_value = 1024
+        async def _select(_cls, **filters):
+            return ObjektMultipartPart(
+                id=1,
+                objekt_multipart_id=5,
+                part_number=1,
+                size_bytes=1024,
+                etag="etag-1",
+            )
 
-        paths = await self._resolve(numbers=(1,))
+        self.repo.select = AsyncMock(side_effect=_select)
+
+        paths, etags = await self._resolve(numbers=(1,))
 
         self.assertEqual(paths, ["/mnt/tmp/beef/1.part"])
+        self.assertEqual(etags, ["etag-1"])
+
+    async def test_small_non_final_part_rejected_with_large_final(self):
+        async def _select(_cls, **filters):
+            number = filters["part_number"]
+            size = 1024 if number == 1 else 1024 * 1024 * 6
+            return ObjektMultipartPart(
+                id=number,
+                objekt_multipart_id=5,
+                part_number=number,
+                size_bytes=size,
+                etag=f"etag-{number}",
+            )
+
+        self.repo.select = AsyncMock(side_effect=_select)
+
+        with self.assertRaises(S3ObjektPartTooSmallError):
+            await self._resolve(numbers=(1, 2))
