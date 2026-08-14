@@ -36,6 +36,10 @@ PART_HASHES = [
     hashlib.md5(b"second").hexdigest(),
 ]
 
+OBJECT_PATH = "/mnt/buckets/photos/2024/cat.png"
+OBJECT_BACKUP = "/mnt/buckets/photos/2024/.cat.png.bakhex.object.bak"
+CLEANUP_DIR = "/mnt/tmp/.beef.completed.done"
+
 
 class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
     def _patch(self, target, **kwargs):
@@ -127,6 +131,11 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=True,
         )
+        self.isfile = self._patch(
+            "isfile",
+            new_callable=AsyncMock,
+            return_value=False,
+        )
         self.get_filesize = self._patch(
             "get_filesize",
             new_callable=AsyncMock,
@@ -157,6 +166,13 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         return [
             MultipartPart(part_number=number, etag=value)
             for number, value in zip(numbers, hashes)
+        ]
+
+    def _existing_object_uuids(self):
+        self.uuid.side_effect = [
+            MagicMock(hex="staged"),
+            MagicMock(hex="bakhex"),
+            MagicMock(hex="done"),
         ]
 
     async def _complete(self, parts=None):
@@ -190,14 +206,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             self.rename.await_args_list,
             [
-                call(
-                    "/mnt/tmp/staged",
-                    "/mnt/buckets/photos/2024/cat.png",
-                ),
-                call(
-                    "/mnt/tmp/beef",
-                    "/mnt/tmp/.beef.completed.done",
-                ),
+                call("/mnt/tmp/staged", OBJECT_PATH),
+                call("/mnt/tmp/beef", CLEANUP_DIR),
             ],
         )
         self.parts_delete.assert_awaited_once_with(
@@ -206,14 +216,30 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         )
         self.repo.delete.assert_awaited_once_with(self.multipart)
         self.repo.commit.assert_awaited_once()
-        self.rmtree.assert_awaited_once_with(
-            "/mnt/tmp/.beef.completed.done",
-        )
+        self.rmtree.assert_awaited_once_with(CLEANUP_DIR)
+        self.delete.assert_not_awaited()
         self.assertIs(objekt, self.objekt)
         self.emit.assert_awaited_once_with(
             Events.OBJEKT_UPLOADED,
             objekt,
         )
+
+    async def test_existing_object_backed_up_until_commit(self):
+        self.isfile.return_value = True
+        self._existing_object_uuids()
+
+        await self._complete()
+
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(OBJECT_PATH, OBJECT_BACKUP),
+                call("/mnt/tmp/staged", OBJECT_PATH),
+                call("/mnt/tmp/beef", CLEANUP_DIR),
+            ],
+        )
+        self.delete.assert_awaited_once_with(OBJECT_BACKUP)
+        self.rmtree.assert_awaited_once_with(CLEANUP_DIR)
 
     async def test_holds_multipart_lock_across_commit(self):
         hold = {"multipart": False, "bucket": False}
@@ -234,18 +260,16 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             async def __aenter__(self):
                 hold["bucket"] = True
                 events.append("bucket_enter")
-                self.assertTrue(hold["multipart"])
+                if not hold["multipart"]:
+                    raise AssertionError("multipart lock released early")
                 return None
 
             async def __aexit__(self, *args):
                 hold["bucket"] = False
                 events.append("bucket_exit")
-                self.assertTrue(hold["multipart"])
-                return None
-
-            def assertTrue(self, value):
-                if not value:
+                if not hold["multipart"]:
                     raise AssertionError("multipart lock released early")
+                return None
 
         def _lock(path, _type):
             if path == "/mnt/tmp/beef":
@@ -256,7 +280,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         async def _commit():
             events.append("commit")
-            self.assertTrue(hold["multipart"])
+            if not hold["multipart"]:
+                raise AssertionError("multipart lock released before commit")
 
         self.repo.commit = AsyncMock(side_effect=_commit)
 
@@ -332,19 +357,82 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.assertIs(objekt, self.objekt)
         self.repo.commit.assert_awaited_once()
 
-    async def test_db_failure_after_tombstone_restores_upload_dir(self):
+    async def test_backup_cleanup_failure_is_logged(self):
+        self.isfile.return_value = True
+        self._existing_object_uuids()
+        self.delete.side_effect = OSError("busy")
+
+        objekt = await self._complete()
+
+        self.assertIs(objekt, self.objekt)
+        self.log.exception.assert_called()
+        self.assertIn(
+            "multipart_object_backup_cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.repo.commit.assert_awaited_once()
+
+    async def test_db_failure_new_object_deletes_published_path(self):
         self.repo.commit.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
             await self._complete()
 
-        cleanup = "/mnt/tmp/.beef.completed.done"
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(OBJECT_PATH)
         self.assertEqual(
             self.rename.await_args_list[-1],
-            call(cleanup, "/mnt/tmp/beef"),
+            call(CLEANUP_DIR, "/mnt/tmp/beef"),
         )
-        self.repo.rollback.assert_awaited_once()
         self.rmtree.assert_not_awaited()
+        self.assertEqual(
+            self.lock.call_args_list,
+            [
+                call("/mnt/tmp/beef", LockType.WRITE),
+                call("/mnt/buckets/photos", LockType.WRITE),
+                call("/mnt/buckets/photos", LockType.WRITE),
+            ],
+        )
+
+    async def test_db_failure_existing_object_restores_backup(self):
+        self.isfile.return_value = True
+        self._existing_object_uuids()
+        self.repo.commit.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.repo.rollback.assert_awaited_once()
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(OBJECT_PATH, OBJECT_BACKUP),
+                call("/mnt/tmp/staged", OBJECT_PATH),
+                call("/mnt/tmp/beef", CLEANUP_DIR),
+                call(OBJECT_BACKUP, OBJECT_PATH),
+                call(CLEANUP_DIR, "/mnt/tmp/beef"),
+            ],
+        )
+        self.delete.assert_not_awaited()
+        self.rmtree.assert_not_awaited()
+
+    async def test_restore_continues_after_object_failure(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.delete.side_effect = OSError("busy")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._complete()
+
+        self.assertEqual(str(cm.exception), "db down")
+        self.assertEqual(
+            self.rename.await_args_list[-1],
+            call(CLEANUP_DIR, "/mnt/tmp/beef"),
+        )
+        self.log.exception.assert_called()
+        self.assertIn(
+            "state=published_object",
+            self.log.exception.call_args.args[0],
+        )
 
     async def test_restore_failure_after_tombstone_is_logged(self):
         self.repo.commit.side_effect = RuntimeError("db down")
@@ -357,10 +445,34 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             await self._complete()
 
-        self.log.exception.assert_called()
+        self.delete.assert_awaited_once_with(OBJECT_PATH)
         self.assertIn(
-            "multipart_complete_integrity_failed",
+            "state=multipart_tombstone",
             self.log.exception.call_args.args[0],
+        )
+
+    async def test_object_backup_restore_failure_is_logged(self):
+        self.isfile.return_value = True
+        self._existing_object_uuids()
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.rename.side_effect = [
+            None,
+            None,
+            None,
+            OSError("busy"),
+            None,
+        ]
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.assertIn(
+            "state=object_backup",
+            self.log.exception.call_args_list[0].args[0],
+        )
+        self.assertEqual(
+            self.rename.await_args_list[-1],
+            call(CLEANUP_DIR, "/mnt/tmp/beef"),
         )
 
     async def test_invalid_parts_stop_before_assembly(self):
