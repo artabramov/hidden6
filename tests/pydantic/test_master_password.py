@@ -1,9 +1,9 @@
-# tests/validators/test_master_password.py
+# tests/pydantic/test_master_password.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
 
-from app.validators.master_password import validate_master_password
+from app.pydantic.master_password import validate_master_password
 
 
 class TestValidateMasterPassword(unittest.TestCase):

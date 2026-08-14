@@ -3,7 +3,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.validators.master_password import validate_master_password
+from app.pydantic.master_password import validate_master_password
 
 
 class GocryptfsRotateRequest(BaseModel):

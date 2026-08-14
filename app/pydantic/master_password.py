@@ -1,4 +1,4 @@
-# app/validators/master_password.py
+# app/pydantic/master_password.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 
