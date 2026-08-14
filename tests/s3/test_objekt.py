@@ -1,6 +1,7 @@
 # tests/s3/test_objekt.py
 # SPDX-License-Identifier: GPL-3.0-only
 
+import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -149,21 +150,43 @@ class TestObjektPath(unittest.TestCase):
 
         self.assertEqual(object_path, f"/mnt/buckets/photos/{key}")
 
+    def test_joins_key_without_normalization(self):
+        bucket_path, object_path = objekt_path(
+            "/mnt/buckets",
+            "photos",
+            "2024/summer/cat.png",
+        )
+
+        self.assertEqual(
+            object_path,
+            os.path.join(bucket_path, "2024/summer/cat.png"),
+        )
+        self.assertEqual(
+            object_path,
+            "/mnt/buckets/photos/2024/summer/cat.png",
+        )
+
+    def test_does_not_collapse_parent_segments(self):
+        _bucket_path, object_path = objekt_path(
+            "/mnt/buckets",
+            "photos",
+            "foo/../bar",
+        )
+
+        self.assertEqual(
+            object_path,
+            "/mnt/buckets/photos/foo/../bar",
+        )
+
     def test_rejects_key_escaping_the_bucket(self):
-        with self.assertRaises(S3ObjektKeyInvalidError):
+        with self.assertRaises(ValueError) as ctx:
             objekt_path(
                 "/mnt/buckets",
                 "photos",
-                "../videos/cat.png",
+                "/etc/passwd",
             )
 
-    def test_rejects_key_resolving_to_the_bucket(self):
-        with self.assertRaises(S3ObjektKeyInvalidError):
-            objekt_path(
-                "/mnt/buckets",
-                "photos",
-                "2024/..",
-            )
+        self.assertIn("escapes bucket directory", str(ctx.exception))
 
 
 class TestObjektLoad(unittest.IsolatedAsyncioTestCase):

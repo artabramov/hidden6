@@ -3,15 +3,13 @@
 
 import os
 
-from app.errors import S3ObjektKeyInvalidError
-
 
 def bucket_path(
     buckets_dir: str,
     bucket_name: str,
 ) -> str:
     """
-    Resolve a bucket name to the directory holding its objects.
+    Filesystem path of a bucket directory under the buckets root.
     """
     return os.path.join(buckets_dir, bucket_name)
 
@@ -22,23 +20,22 @@ def objekt_path(
     object_key: str,
 ) -> tuple[str, str]:
     """
-    Resolve an object key to its bucket directory and filesystem path.
+    Filesystem paths of a bucket directory and an object stored under
+    its validated S3 key.
 
     Raises:
-        S3ObjektKeyInvalidError: Key escapes the bucket directory.
+        ValueError: Resolved object path is outside its bucket directory.
     """
     resolved_bucket = bucket_path(buckets_dir, bucket_name)
-    resolved_object = os.path.normpath(
-        os.path.join(resolved_bucket, object_key),
-    )
+    resolved_object = os.path.join(resolved_bucket, object_key)
 
     if resolved_object == resolved_bucket:
-        raise S3ObjektKeyInvalidError(f"/{bucket_name}/{object_key}")
+        raise ValueError("Object path resolves to bucket directory")
 
     if os.path.commonpath(
         [resolved_bucket, resolved_object],
     ) != resolved_bucket:
-        raise S3ObjektKeyInvalidError(f"/{bucket_name}/{object_key}")
+        raise ValueError("Object path escapes bucket directory")
 
     return resolved_bucket, resolved_object
 
@@ -48,8 +45,7 @@ def multipart_path(
     upload_id: str,
 ) -> str:
     """
-    Directory holding staged parts for one multipart upload. The
-    upload_id is the leaf name under the shared temporary mount.
+    Filesystem path of the staging directory for a multipart upload.
     """
     return os.path.join(tmp_dir, upload_id)
 
@@ -59,20 +55,17 @@ def multipart_part_path(
     part_number: int,
 ) -> str:
     """
-    Final staged file for one multipart part number inside its
-    upload directory.
+    Filesystem path of a staged multipart upload part.
     """
     return os.path.join(upload_dir, f"{part_number}.part")
 
 
 def version_path(
     versions_dir: str,
-    bucket_id: int | str,
+    bucket_id: int,
     version_id: str,
 ) -> str:
     """
-    Filesystem path for a non-current object version payload. Current
-    object bytes stay on the key path (ADR-27); retained versions live
-    under versions_dir grouped by bucket id.
+    Filesystem path of a retained non-current object version.
     """
     return os.path.join(versions_dir, str(bucket_id), version_id)
