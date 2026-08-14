@@ -38,6 +38,15 @@ class ObjektMultipartPart(Base):
         index=True,
     )
 
+    # Unix timestamp corresponding to the S3 LastModified value
+    # returned for this uploaded part.
+    modified_at: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True,
+        default=lambda: int(time.time()),
+    )
+
     # S3 part number supplied by the client.
     part_number: Mapped[int] = mapped_column(
         Integer,
@@ -55,15 +64,6 @@ class ObjektMultipartPart(Base):
     etag: Mapped[str] = mapped_column(
         String(64),
         nullable=False,
-    )
-
-    # Unix timestamp corresponding to the S3 LastModified value
-    # returned for this uploaded part.
-    modified_at: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        index=True,
-        default=lambda: int(time.time()),
     )
 
     objekt_multipart_part_objekt_multipart: Mapped["ObjektMultipart"] = relationship(  # noqa: E501, F821
