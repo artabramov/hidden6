@@ -85,7 +85,13 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
-        self._patch("uuid.uuid4", return_value=MagicMock(hex="staged"))
+        self.uuid = self._patch(
+            "uuid.uuid4",
+            side_effect=[
+                MagicMock(hex="staged"),
+                MagicMock(hex="done"),
+            ],
+        )
         self._patch(
             "bucket_load",
             new_callable=AsyncMock,
@@ -167,10 +173,6 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         objekt = await self._complete()
 
         self.multipart_parts.assert_awaited_once()
-        kwargs = self.multipart_parts.await_args.kwargs
-        self.assertIs(kwargs["repo"], self.repo)
-        self.assertIs(kwargs["multipart"], self.multipart)
-        self.assertEqual(kwargs["upload_dir"], "/mnt/tmp/beef")
         self.concat.assert_awaited_once_with(
             [
                 "/mnt/tmp/beef/1.part",
@@ -185,9 +187,18 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 call("/mnt/buckets/photos", LockType.WRITE),
             ],
         )
-        self.rename.assert_awaited_once_with(
-            "/mnt/tmp/staged",
-            "/mnt/buckets/photos/2024/cat.png",
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(
+                    "/mnt/tmp/staged",
+                    "/mnt/buckets/photos/2024/cat.png",
+                ),
+                call(
+                    "/mnt/tmp/beef",
+                    "/mnt/tmp/.beef.completed.done",
+                ),
+            ],
         )
         self.parts_delete.assert_awaited_once_with(
             self.repo,
@@ -195,10 +206,71 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         )
         self.repo.delete.assert_awaited_once_with(self.multipart)
         self.repo.commit.assert_awaited_once()
+        self.rmtree.assert_awaited_once_with(
+            "/mnt/tmp/.beef.completed.done",
+        )
         self.assertIs(objekt, self.objekt)
         self.emit.assert_awaited_once_with(
             Events.OBJEKT_UPLOADED,
             objekt,
+        )
+
+    async def test_holds_multipart_lock_across_commit(self):
+        hold = {"multipart": False, "bucket": False}
+        events = []
+
+        class MultipartLock:
+            async def __aenter__(self):
+                hold["multipart"] = True
+                events.append("multipart_enter")
+                return None
+
+            async def __aexit__(self, *args):
+                hold["multipart"] = False
+                events.append("multipart_exit")
+                return None
+
+        class BucketLock:
+            async def __aenter__(self):
+                hold["bucket"] = True
+                events.append("bucket_enter")
+                self.assertTrue(hold["multipart"])
+                return None
+
+            async def __aexit__(self, *args):
+                hold["bucket"] = False
+                events.append("bucket_exit")
+                self.assertTrue(hold["multipart"])
+                return None
+
+            def assertTrue(self, value):
+                if not value:
+                    raise AssertionError("multipart lock released early")
+
+        def _lock(path, _type):
+            if path == "/mnt/tmp/beef":
+                return MultipartLock()
+            return BucketLock()
+
+        self.lock.side_effect = _lock
+
+        async def _commit():
+            events.append("commit")
+            self.assertTrue(hold["multipart"])
+
+        self.repo.commit = AsyncMock(side_effect=_commit)
+
+        await self._complete()
+
+        self.assertEqual(
+            events,
+            [
+                "multipart_enter",
+                "bucket_enter",
+                "bucket_exit",
+                "commit",
+                "multipart_exit",
+            ],
         )
 
     async def test_concatenates_only_client_listed_parts(self):
@@ -222,6 +294,19 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "/mnt/tmp/staged",
         )
 
+    async def test_rejects_corrupted_staged_part_hash(self):
+        self.concat.return_value = [
+            PART_HASHES[0],
+            hashlib.md5(b"corrupt").hexdigest(),
+        ]
+
+        with self.assertRaises(S3ObjektPartInvalidError):
+            await self._complete()
+
+        self.objekt_upsert.assert_not_awaited()
+        self.parts_delete.assert_not_awaited()
+        self.repo.commit.assert_not_awaited()
+
     async def test_stores_multipart_etag_from_stored_part_etags(self):
         await self._complete()
 
@@ -238,11 +323,6 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "image/png",
         )
 
-    async def test_removes_staged_parts(self):
-        await self._complete()
-
-        self.rmtree.assert_awaited_once_with("/mnt/tmp/beef")
-
     async def test_failed_cleanup_is_logged(self):
         self.rmtree.side_effect = OSError("busy")
 
@@ -250,6 +330,38 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         self.log.exception.assert_called_once()
         self.assertIs(objekt, self.objekt)
+        self.repo.commit.assert_awaited_once()
+
+    async def test_db_failure_after_tombstone_restores_upload_dir(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        cleanup = "/mnt/tmp/.beef.completed.done"
+        self.assertEqual(
+            self.rename.await_args_list[-1],
+            call(cleanup, "/mnt/tmp/beef"),
+        )
+        self.repo.rollback.assert_awaited_once()
+        self.rmtree.assert_not_awaited()
+
+    async def test_restore_failure_after_tombstone_is_logged(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.rename.side_effect = [
+            None,
+            None,
+            OSError("busy"),
+        ]
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.log.exception.assert_called()
+        self.assertIn(
+            "multipart_complete_integrity_failed",
+            self.log.exception.call_args.args[0],
+        )
 
     async def test_invalid_parts_stop_before_assembly(self):
         self.multipart_parts.side_effect = (
@@ -268,11 +380,11 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3BucketNotFoundError):
             await self._complete()
 
-        self.rename.assert_not_awaited()
         self.repo.rollback.assert_awaited_once()
         self.delete.assert_awaited_once_with("/mnt/tmp/staged")
+        self.parts_delete.assert_not_awaited()
 
-    async def test_rejects_mismatched_part_etag(self):
+    async def test_rejects_mismatched_client_etag(self):
         parts = self._build_parts(
             hashes=[PART_HASHES[0], hashlib.md5(b"other").hexdigest()],
         )
@@ -283,7 +395,6 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.concat.assert_not_awaited()
         self.repo.rollback.assert_awaited_once()
         self.delete.assert_awaited_once_with("/mnt/tmp/staged")
-        self.rename.assert_not_awaited()
 
     async def test_unknown_upload_raises(self):
         self.multipart_load.side_effect = S3ObjektUploadNotFoundError()

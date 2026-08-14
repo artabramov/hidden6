@@ -21,6 +21,7 @@ from app.repositories.io import (
     get_file_hash,
     get_filesize,
     isdir,
+    isfile,
     rename,
     upload,
 )
@@ -44,8 +45,8 @@ async def multipart_upload(
     """
     Store one part of a multipart upload (S3 UploadPart) and return
     its ETag. Bytes are staged on disk first; the ObjektMultipartPart
-    row is written only after the final part file exists. Uploading the
-    same part number again replaces both the staged file and the row.
+    row is written only after the final part file exists. A re-upload
+    keeps the previous part file until the database update commits.
     """
     log.info("msg=multipart_upload upload_id=%s part=%d", upload_id, part_number)  # noqa: E501
 
@@ -76,35 +77,82 @@ async def multipart_upload(
     # Serialize re-uploads of the same part number. Different part
     # numbers use different paths and may proceed in parallel.
     async with locks.lock_file(part, LockType.WRITE):
+        token = uuid.uuid4().hex
         temp_part = os.path.join(
             upload_dir,
-            f".{part_number}.{uuid.uuid4().hex}.part.tmp",
+            f".{part_number}.{token}.part.tmp",
         )
+        backup_part = None
+        published = False
+
         try:
-            # Stage the body into a temporary file, measure it, then
-            # publish the final part path. A failed upload leaves any
-            # previously published part file in place.
             await upload(body, temp_part)
             etag = await get_file_hash(temp_part)
             size_bytes = await get_filesize(temp_part)
-            await rename(temp_part, part)
-        except Exception:
-            await delete(temp_part)
-            raise
 
-        # Index the part only after the final file exists. A failed
-        # commit leaves an orphan staged file rather than a row that
-        # points at missing bytes.
-        try:
-            await multipart_part_upsert(
-                repo=repo,
-                multipart=multipart,
-                part_number=part_number,
-                size_bytes=size_bytes,
-                etag=etag,
-            )
+            # Re-upload: move the previous bytes aside so a failed DB
+            # commit can restore them. First upload publishes directly.
+            if await isfile(part):
+                backup_part = os.path.join(
+                    upload_dir,
+                    f".{part_number}.{token}.part.bak",
+                )
+                await rename(part, backup_part)
+
+            await rename(temp_part, part)
+            published = True
+            temp_part = None
+
+            try:
+                await multipart_part_upsert(
+                    repo=repo,
+                    multipart=multipart,
+                    part_number=part_number,
+                    size_bytes=size_bytes,
+                    etag=etag,
+                )
+            except Exception:
+                await repo.rollback()
+                if backup_part is not None:
+                    try:
+                        await rename(backup_part, part)
+                        backup_part = None
+                    except Exception:
+                        log.exception(
+                            "msg=multipart_part_integrity_failed "
+                            "part=%s backup=%s",
+                            part,
+                            backup_part,
+                        )
+                raise
+
+            if backup_part is not None:
+                try:
+                    await delete(backup_part)
+                except Exception:
+                    log.exception(
+                        "msg=multipart_part_backup_cleanup_failed "
+                        "backup=%s",
+                        backup_part,
+                    )
+                backup_part = None
+
         except Exception:
-            await repo.rollback()
+            if temp_part is not None:
+                await delete(temp_part)
+            # Restore previous bytes only when the new part never became
+            # the published file. After a published re-upload, restore
+            # is handled above around the DB commit.
+            if not published and backup_part is not None:
+                try:
+                    await rename(backup_part, part)
+                except Exception:
+                    log.exception(
+                        "msg=multipart_part_integrity_failed "
+                        "part=%s backup=%s",
+                        part,
+                        backup_part,
+                    )
             raise
 
     log.info("msg=multipart_uploaded upload_id=%s part=%d", upload_id, part_number)  # noqa: E501

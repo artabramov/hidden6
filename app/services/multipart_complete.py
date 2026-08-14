@@ -45,11 +45,9 @@ async def multipart_complete(
 ) -> Objekt:
     """
     Assemble the uploaded parts into a single object (S3
-    CompleteMultipartUpload): resolve the client-listed parts against
-    ObjektMultipartPart rows, concatenate exactly those staged files,
-    publish the result under the bucket directory, upsert the Objekt
-    row with the Content-Type stored at create time, and drop the
-    upload together with its part index rows.
+    CompleteMultipartUpload). The multipart directory WRITE lock is
+    held until the upload row is committed away so UploadPart cannot
+    interleave after validation.
     """
     log.info("msg=multipart_complete upload_id=%s parts=%d", upload_id, len(parts))  # noqa: E501
 
@@ -75,13 +73,14 @@ async def multipart_complete(
 
     upload_dir = os.path.join(config.MOUNTPOINT_TMP_DIR, upload_id)
     staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
+    cleanup_dir = None
+    objekt = None
 
     try:
-        # WRITE excludes concurrent UploadPart and Abort while parts
-        # are resolved and assembled. Stored ETags validate the request
-        # before any bytes are concatenated.
+        # Lock order: multipart upload dir, then bucket dir. The
+        # multipart WRITE lock stays held through publish and commit.
         async with locks.lock_directory(upload_dir, LockType.WRITE):
-            part_paths, part_hashes = await multipart_parts(
+            part_paths, stored_etags = await multipart_parts(
                 repo=repo,
                 multipart=multipart,
                 upload_dir=upload_dir,
@@ -89,47 +88,70 @@ async def multipart_complete(
                 resource=resource,
             )
 
-            for part, stored_etag in zip(parts, part_hashes):
+            for part, stored_etag in zip(parts, stored_etags):
                 if part.etag != stored_etag:
                     raise S3ObjektPartInvalidError(resource)
 
-            await concat(part_paths, staged_path)
+            actual_hashes = await concat(part_paths, staged_path)
+            for stored_etag, actual_hash in zip(stored_etags, actual_hashes):
+                if stored_etag != actual_hash:
+                    raise S3ObjektPartInvalidError(resource)
 
-        size_bytes = await get_filesize(staged_path)
+            size_bytes = await get_filesize(staged_path)
 
-        async with locks.lock_directory(bucket_path, LockType.WRITE):
-            if not await isdir(bucket_path):
-                raise S3BucketNotFoundError(resource)
+            async with locks.lock_directory(bucket_path, LockType.WRITE):
+                if not await isdir(bucket_path):
+                    raise S3BucketNotFoundError(resource)
 
-            await objekt_mkdir(object_path, resource)
+                await objekt_mkdir(object_path, resource)
 
-            objekt = await objekt_upsert(
-                repo=repo,
-                bucket=bucket,
-                user=user,
-                object_key=object_key,
-                size_bytes=size_bytes,
-                etag=etag_construct(part_hashes),
-                content_type=multipart.content_type,
+                objekt = await objekt_upsert(
+                    repo=repo,
+                    bucket=bucket,
+                    user=user,
+                    object_key=object_key,
+                    size_bytes=size_bytes,
+                    etag=etag_construct(stored_etags),
+                    content_type=multipart.content_type,
+                )
+                await rename(staged_path, object_path)
+
+            cleanup_dir = os.path.join(
+                config.MOUNTPOINT_TMP_DIR,
+                f".{upload_id}.completed.{uuid.uuid4().hex}",
             )
+            await rename(upload_dir, cleanup_dir)
+
             # Parts have no ON DELETE CASCADE; clear them before the
-            # parent upload row, then publish and commit together.
+            # parent upload row, then commit.
             await multipart_parts_delete(repo, multipart)
             await repo.delete(multipart)
-            await rename(staged_path, object_path)
             await repo.commit()
 
     except Exception:
         await repo.rollback()
+        if cleanup_dir is not None:
+            try:
+                await rename(cleanup_dir, upload_dir)
+                cleanup_dir = None
+            except Exception:
+                log.exception(
+                    "msg=multipart_complete_integrity_failed "
+                    "upload_dir=%s cleanup=%s",
+                    upload_dir,
+                    cleanup_dir,
+                )
         await delete(staged_path)
         raise
 
-    # The object is already published, so parts left behind by a failed
-    # cleanup are logged instead of failing the request.
-    try:
-        await rmtree(upload_dir)
-    except OSError:
-        log.exception("msg=multipart_cleanup_failed path=%s", upload_dir)
+    if cleanup_dir is not None:
+        try:
+            await rmtree(cleanup_dir)
+        except OSError:
+            log.exception(
+                "msg=multipart_cleanup_failed path=%s",
+                cleanup_dir,
+            )
 
     log.info("msg=multipart_completed bucket=%s key=%s", bucket_name, object_key)  # noqa: E501
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)

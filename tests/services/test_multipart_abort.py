@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from tests.helpers import set_minimal_app_config_env
 
@@ -136,13 +136,35 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.log.exception.assert_called_once()
         self.repo.commit.assert_awaited_once()
 
-    async def test_db_failure_after_rename_rolls_back(self):
+    async def test_db_failure_after_rename_restores_upload_dir(self):
         self.repo.commit.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
             await self._abort()
 
+        cleanup = "/mnt/tmp/.beef.aborted.cafebabe"
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call("/mnt/tmp/beef", cleanup),
+                call(cleanup, "/mnt/tmp/beef"),
+            ],
+        )
         self.repo.rollback.assert_awaited_once()
+        self.rmtree.assert_not_awaited()
+
+    async def test_restore_failure_is_logged(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.rename.side_effect = [None, OSError("busy")]
+
+        with self.assertRaises(RuntimeError):
+            await self._abort()
+
+        self.log.exception.assert_called()
+        self.assertIn(
+            "multipart_abort_integrity_failed",
+            self.log.exception.call_args.args[0],
+        )
         self.rmtree.assert_not_awaited()
 
     async def test_inaccessible_bucket_raises(self):

@@ -29,8 +29,8 @@ async def multipart_abort(
     """
     Abort a multipart upload (S3 AbortMultipartUpload): move the
     staging directory aside, drop every ObjektMultipartPart row and the
-    parent upload, then remove the renamed directory. Parts have no
-    ON DELETE CASCADE, so they are deleted explicitly.
+    parent upload, then remove the renamed directory. A failed commit
+    restores the active upload directory when possible.
     """
     log.info("msg=multipart_abort upload_id=%s", upload_id)
 
@@ -68,6 +68,17 @@ async def multipart_abort(
 
     except Exception:
         await repo.rollback()
+        if cleanup_dir is not None:
+            try:
+                await rename(cleanup_dir, upload_dir)
+                cleanup_dir = None
+            except Exception:
+                log.exception(
+                    "msg=multipart_abort_integrity_failed "
+                    "upload_dir=%s cleanup=%s",
+                    upload_dir,
+                    cleanup_dir,
+                )
         raise
 
     if cleanup_dir is not None:

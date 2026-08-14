@@ -3,7 +3,7 @@
 
 import hashlib
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from tests.helpers import set_minimal_app_config_env
 
@@ -37,7 +37,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         return mock
 
     def setUp(self):
-        self._patch("log")
+        self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.multipart = ObjektMultipart(
@@ -76,6 +76,11 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=True,
         )
+        self.isfile = self._patch(
+            "isfile",
+            new_callable=AsyncMock,
+            return_value=False,
+        )
         self.lock = self._patch(
             "locks.lock_file",
             return_value=lock_context,
@@ -109,7 +114,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             body=MagicMock(),
         )
 
-    async def test_stores_part_indexes_row_and_returns_etag(self):
+    async def test_first_upload_publishes_and_indexes(self):
         etag = await self._upload()
 
         part = "/mnt/tmp/beef/1.part"
@@ -129,16 +134,70 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.lock.assert_called_once_with(part, LockType.WRITE)
         self.assertEqual(etag, PART_HASH)
 
-    async def test_reupload_uses_same_part_path(self):
-        await self._upload(part_number=2)
+    async def test_reupload_backs_up_previous_bytes(self):
+        self.isfile.return_value = True
+
         await self._upload(part_number=2)
 
         part = "/mnt/tmp/beef/2.part"
+        temp = "/mnt/tmp/beef/.2.deadbeef.part.tmp"
+        backup = "/mnt/tmp/beef/.2.deadbeef.part.bak"
         self.assertEqual(
-            [call.args[0] for call in self.lock.call_args_list],
-            [part, part],
+            self.rename.await_args_list,
+            [
+                call(part, backup),
+                call(temp, part),
+            ],
         )
-        self.assertEqual(self.part_upsert.await_count, 2)
+        self.delete.assert_awaited_once_with(backup)
+        self.part_upsert.assert_awaited_once()
+
+    async def test_reupload_db_failure_restores_previous_part(self):
+        self.isfile.return_value = True
+        self.part_upsert.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload(part_number=2)
+
+        part = "/mnt/tmp/beef/2.part"
+        temp = "/mnt/tmp/beef/.2.deadbeef.part.tmp"
+        backup = "/mnt/tmp/beef/.2.deadbeef.part.bak"
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(part, backup),
+                call(temp, part),
+                call(backup, part),
+            ],
+        )
+        self.repo.rollback.assert_awaited_once()
+
+    async def test_reupload_restore_failure_is_logged(self):
+        self.isfile.return_value = True
+        self.part_upsert.side_effect = RuntimeError("db down")
+        self.rename.side_effect = [
+            None,
+            None,
+            OSError("busy"),
+        ]
+
+        with self.assertRaises(RuntimeError):
+            await self._upload(part_number=2)
+
+        self.log.exception.assert_called()
+        self.assertIn(
+            "multipart_part_integrity_failed",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_different_part_numbers_use_distinct_locks(self):
+        await self._upload(part_number=1)
+        await self._upload(part_number=2)
+
+        self.assertEqual(
+            [c.args[0] for c in self.lock.call_args_list],
+            ["/mnt/tmp/beef/1.part", "/mnt/tmp/beef/2.part"],
+        )
 
     async def test_failed_temp_upload_does_not_index_or_publish(self):
         self.upload.side_effect = RuntimeError("disk full")
@@ -150,7 +209,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.part_upsert.assert_not_awaited()
         self.delete.assert_awaited_once()
 
-    async def test_failed_db_update_after_publish_does_not_succeed(self):
+    async def test_first_upload_db_failure_leaves_orphan_file(self):
         self.part_upsert.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
@@ -158,6 +217,8 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
         self.rename.assert_awaited_once()
         self.repo.rollback.assert_awaited_once()
+        # Published part must not be deleted: orphan file > false DB row.
+        self.delete.assert_not_awaited()
 
     async def test_rejects_part_number_out_of_range(self):
         with self.assertRaises(S3ObjektPartNumberInvalidError):
