@@ -5,9 +5,9 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import OBJEKT_KEY_MAX_BYTES
-from app.errors import S3InvalidBucketNameError, S3ObjektKeyInvalidError
-from app.s3.objekt import objekt_key_validate
+from app.errors import S3ObjektKeyInvalidError
 from app.s3.paths import objekt_path
+from app.s3.validation import objekt_key_validate
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -80,7 +80,6 @@ class TestObjektPath(unittest.TestCase):
             "/mnt/buckets",
             "photos",
             "cat.png",
-            "/photos/cat.png",
         )
 
         self.assertEqual(bucket_path, "/mnt/buckets/photos")
@@ -91,7 +90,6 @@ class TestObjektPath(unittest.TestCase):
             "/mnt/buckets",
             "photos",
             "2024/summer/cat.png",
-            "/photos/2024/summer/cat.png",
         )
 
         self.assertEqual(bucket_path, "/mnt/buckets/photos")
@@ -106,19 +104,9 @@ class TestObjektPath(unittest.TestCase):
             "/mnt/buckets",
             "photos",
             key,
-            f"/photos/{key}",
         )
 
         self.assertEqual(object_path, f"/mnt/buckets/photos/{key}")
-
-    def test_rejects_invalid_bucket_name(self):
-        with self.assertRaises(S3InvalidBucketNameError):
-            objekt_path(
-                "/mnt/buckets",
-                "Bad_Name",
-                "cat.png",
-                "/Bad_Name/cat.png",
-            )
 
     def test_rejects_key_escaping_the_bucket(self):
         with self.assertRaises(S3ObjektKeyInvalidError):
@@ -126,7 +114,6 @@ class TestObjektPath(unittest.TestCase):
                 "/mnt/buckets",
                 "photos",
                 "../videos/cat.png",
-                "/photos/../videos/cat.png",
             )
 
     def test_rejects_key_resolving_to_the_bucket(self):
@@ -135,7 +122,6 @@ class TestObjektPath(unittest.TestCase):
                 "/mnt/buckets",
                 "photos",
                 "2024/..",
-                "/photos/2024/..",
             )
 
 

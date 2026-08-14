@@ -14,8 +14,8 @@ from app.repositories.io import isdir, rename, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.multipart import multipart_load, multipart_parts_delete
-from app.s3.objekt import objekt_key_validate
 from app.s3.paths import multipart_path
+from app.s3.validation import objekt_key_validate
 
 log = logging.getLogger(__name__)
 

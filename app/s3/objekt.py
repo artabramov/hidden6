@@ -4,10 +4,8 @@
 import os
 import time
 
-from app.constants import OBJEKT_KEY_MAX_BYTES
 from app.errors import (
     S3ObjektKeyConflictError,
-    S3ObjektKeyInvalidError,
     S3ObjektNotFoundError,
 )
 from app.models.bucket import Bucket
@@ -16,36 +14,6 @@ from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_default_object_lock
-
-# Segments that cannot be mapped onto a filesystem path. Empty rejects
-# an empty key, a leading or trailing slash, and repeated slashes.
-_FORBIDDEN_SEGMENTS = frozenset({"", ".", ".."})
-
-# NOTE (ADR-24): S3 object keys map to nested filesystem paths.
-# A key is stored as a path relative to the bucket directory, so the
-# key photos/2024/cat.png becomes a file in nested directories that
-# are created on upload. Because directories and files share one
-# namespace on disk, a key colliding with a stored object is rejected
-# instead of being flattened into a single filename.
-
-
-def objekt_key_validate(object_key: str, resource: str) -> None:
-    """
-    Reject an object key that cannot be stored as a path relative to
-    the bucket directory: oversized, holding a null byte, or carrying a
-    segment that is empty, a dot, or a double dot.
-
-    Raises:
-        S3ObjektKeyInvalidError: Key is not a valid object key.
-    """
-    if len(object_key.encode("utf-8")) > OBJEKT_KEY_MAX_BYTES:
-        raise S3ObjektKeyInvalidError(resource)
-
-    if "\x00" in object_key:
-        raise S3ObjektKeyInvalidError(resource)
-
-    if any(part in _FORBIDDEN_SEGMENTS for part in object_key.split("/")):
-        raise S3ObjektKeyInvalidError(resource)
 
 
 async def objekt_load(

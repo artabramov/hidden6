@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from app.errors import S3InvalidBucketNameError
 from app.s3.paths import bucket_path
+from app.s3.validation import bucket_name_validate
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -24,33 +25,26 @@ from app.s3.bucket import bucket_default_object_lock, bucket_load  # noqa: E402
 load_all_models()
 
 
-class TestBucketPath(unittest.TestCase):
+class TestBucketNameValidate(unittest.TestCase):
     def _assert_rejects(self, bucket_name):
         resource = f"/{bucket_name}"
 
         with self.assertRaises(S3InvalidBucketNameError) as ctx:
-            bucket_path("/mnt/buckets", bucket_name, resource)
+            bucket_name_validate(bucket_name, resource)
 
         self.assertEqual(ctx.exception.resource, resource)
 
-    def test_resolves_shortest_name(self):
-        self.assertEqual(
-            bucket_path("/mnt/buckets", "abc", "/abc"),
-            "/mnt/buckets/abc",
+    def test_accepts_shortest_name(self):
+        self.assertIsNone(bucket_name_validate("abc", "/abc"))
+
+    def test_accepts_dashes_and_periods(self):
+        self.assertIsNone(
+            bucket_name_validate("my-bucket.1", "/my-bucket.1"),
         )
 
-    def test_resolves_dashes_and_periods(self):
-        self.assertEqual(
-            bucket_path("/mnt/buckets", "my-bucket.1", "/my-bucket.1"),
-            "/mnt/buckets/my-bucket.1",
-        )
-
-    def test_resolves_longest_name(self):
+    def test_accepts_longest_name(self):
         name = "a" * 63
-        self.assertEqual(
-            bucket_path("/mnt/buckets", name, f"/{name}"),
-            f"/mnt/buckets/{name}",
-        )
+        self.assertIsNone(bucket_name_validate(name, f"/{name}"))
 
     def test_rejects_empty_name(self):
         self._assert_rejects("")
@@ -79,6 +73,27 @@ class TestBucketPath(unittest.TestCase):
 
     def test_rejects_ip_address(self):
         self._assert_rejects("192.168.1.1")
+
+
+class TestBucketPath(unittest.TestCase):
+    def test_resolves_shortest_name(self):
+        self.assertEqual(
+            bucket_path("/mnt/buckets", "abc"),
+            "/mnt/buckets/abc",
+        )
+
+    def test_resolves_dashes_and_periods(self):
+        self.assertEqual(
+            bucket_path("/mnt/buckets", "my-bucket.1"),
+            "/mnt/buckets/my-bucket.1",
+        )
+
+    def test_resolves_longest_name(self):
+        name = "a" * 63
+        self.assertEqual(
+            bucket_path("/mnt/buckets", name),
+            f"/mnt/buckets/{name}",
+        )
 
 
 class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
