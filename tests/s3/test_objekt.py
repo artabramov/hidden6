@@ -89,6 +89,9 @@ class TestObjektKeyValidate(unittest.TestCase):
     def test_rejects_null_byte(self):
         self._assert_rejects("cat\x00.png")
 
+    def test_rejects_surrogate_code_point(self):
+        self._assert_rejects("cat\ud800.png")
+
     def test_rejects_leading_slash(self):
         self._assert_rejects("/cat.png")
         self._assert_rejects("/foo")

@@ -68,17 +68,22 @@ def bucket_name_validate(
 def objekt_key_validate(object_key: str, resource: str) -> None:
     """
     Reject an object key that cannot be stored as a path relative to
-    the bucket directory: oversized, holding a null byte, or carrying a
-    segment that is empty, a dot, or a double dot.
+    the bucket directory: oversized, containing a null byte, or containing
+    an empty, dot, or double-dot path segment.
 
-    S3 permits a broader object-key namespace, but relative and
-    ambiguous path segments are rejected because object keys map
-    directly to filesystem paths.
+    S3 permits a broader object-key namespace, but relative and ambiguous
+    path segments are rejected because object keys map directly to
+    filesystem paths.
 
     Raises:
         S3ObjektKeyInvalidError: Key is not a valid object key.
     """
-    if len(object_key.encode("utf-8")) > OBJEKT_KEY_MAX_BYTES:
+    try:
+        object_key_bytes = object_key.encode("utf-8")
+    except UnicodeEncodeError as exc:
+        raise S3ObjektKeyInvalidError(resource) from exc
+
+    if len(object_key_bytes) > OBJEKT_KEY_MAX_BYTES:
         raise S3ObjektKeyInvalidError(resource)
 
     if "\x00" in object_key:
