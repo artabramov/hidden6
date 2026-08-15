@@ -58,8 +58,6 @@ async def multipart_part_upsert(
     """
     Insert or replace the ObjektMultipartPart row for one part number.
     The staged part file must already exist when this is called.
-    Changes are committed so a successful UploadPart always leaves a
-    durable index row.
     """
     existing = await repo.select(
         ObjektMultipartPart,
@@ -77,13 +75,12 @@ async def multipart_part_upsert(
                 etag=etag,
                 modified_at=modified_at,
             ),
-            commit=True,
         )
 
     existing.size_bytes = size_bytes
     existing.etag = etag
     existing.modified_at = modified_at
-    return await repo.update(existing, commit=True)
+    return await repo.update(existing)
 
 
 async def multipart_parts_list(
@@ -117,7 +114,7 @@ async def multipart_parts_delete(
     """
     Delete every ObjektMultipartPart row for an upload. The parts FK
     has no ON DELETE CASCADE, so callers must clear parts before the
-    parent ObjektMultipart row. Changes are flushed, not committed.
+    parent ObjektMultipart row.
     """
     rows = await multipart_parts_list(repo, multipart)
     for row in rows:

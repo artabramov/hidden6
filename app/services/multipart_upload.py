@@ -111,6 +111,7 @@ async def multipart_upload(
                     size_bytes=size_bytes,
                     etag=etag,
                 )
+                await repo.commit()
             except Exception:
                 await repo.rollback()
                 if backup_part is not None:

@@ -68,8 +68,7 @@ async def objekt_upsert(
     Insert the Objekt row for a new key or update the existing row when
     the key is overwritten. The current state becomes an object with a
     payload (not a delete marker). Bucket default Object Lock retention
-    is applied to the new current state. Changes are flushed, not
-    committed.
+    is applied to the new current state.
     """
     lock_mode, retain_until = bucket_default_object_lock(bucket)
 

@@ -91,6 +91,7 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
         self.repo.select = AsyncMock(return_value=None)
         self.repo.insert = AsyncMock(side_effect=lambda obj, **kwargs: obj)
         self.repo.update = AsyncMock(side_effect=lambda obj, **kwargs: obj)
+        self.repo.commit = AsyncMock()
 
     async def test_inserts_new_part_row(self):
         with patch("app.s3.multipart.time.time", return_value=1_000_000):
@@ -108,7 +109,8 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(row.size_bytes, 1024)
         self.assertEqual(row.etag, "abc")
         self.assertEqual(row.modified_at, 1_000_000)
-        self.assertEqual(self.repo.insert.await_args.kwargs["commit"], True)
+        self.assertNotIn("commit", self.repo.insert.await_args.kwargs)
+        self.repo.commit.assert_not_called()
 
     async def test_updates_existing_part_row(self):
         existing = ObjektMultipartPart(
@@ -131,7 +133,8 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
             )
 
         self.repo.insert.assert_not_awaited()
-        self.repo.update.assert_awaited_once_with(existing, commit=True)
+        self.repo.update.assert_awaited_once_with(existing)
+        self.repo.commit.assert_not_called()
         self.assertIs(row, existing)
         self.assertEqual(existing.size_bytes, 2048)
         self.assertEqual(existing.etag, "new")

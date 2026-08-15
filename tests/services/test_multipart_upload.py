@@ -57,6 +57,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
         self.repo = MagicMock()
         self.repo.rollback = AsyncMock()
+        self.repo.commit = AsyncMock()
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
@@ -131,6 +132,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             size_bytes=1024,
             etag=PART_HASH,
         )
+        self.repo.commit.assert_awaited_once()
         self.lock.assert_called_once_with(part, LockType.WRITE)
         self.assertEqual(etag, PART_HASH)
 
@@ -151,6 +153,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         )
         self.delete.assert_awaited_once_with(backup)
         self.part_upsert.assert_awaited_once()
+        self.repo.commit.assert_awaited_once()
 
     async def test_reupload_db_failure_restores_previous_part(self):
         self.isfile.return_value = True
@@ -171,6 +174,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             ],
         )
         self.repo.rollback.assert_awaited_once()
+        self.repo.commit.assert_not_awaited()
 
     async def test_reupload_restore_failure_is_logged(self):
         self.isfile.return_value = True
@@ -217,6 +221,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
         self.rename.assert_awaited_once()
         self.repo.rollback.assert_awaited_once()
+        self.repo.commit.assert_not_awaited()
         # Published part must not be deleted: orphan file > false DB row.
         self.delete.assert_not_awaited()
 
