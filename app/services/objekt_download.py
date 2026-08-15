@@ -14,7 +14,7 @@ from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.objekt import objekt_load
-from app.s3.paths import objekt_path
+from app.s3.paths import resolve_objekt_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
 log = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ async def objekt_download(
     validate_bucket_name(bucket_name, resource)
     validate_objekt_key(object_key, resource)
 
-    _bucket_path, object_path = objekt_path(
+    _bucket_path, object_path = resolve_objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         object_key,

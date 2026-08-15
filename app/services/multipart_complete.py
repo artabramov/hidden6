@@ -31,7 +31,7 @@ from app.s3.multipart import (
     multipart_parts_delete,
 )
 from app.s3.objekt import objekt_mkdir, objekt_upsert
-from app.s3.paths import resolve_multipart_path, objekt_path
+from app.s3.paths import resolve_multipart_path, resolve_objekt_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 from app.schemas.multipart_complete import MultipartPart
 
@@ -60,7 +60,7 @@ async def multipart_complete(
     validate_bucket_name(bucket_name, resource)
     validate_objekt_key(object_key, resource)
 
-    bucket_path, object_path = objekt_path(
+    bucket_path, object_path = resolve_objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         object_key,

@@ -14,7 +14,7 @@ def bucket_path(
     return os.path.join(buckets_dir, bucket_name)
 
 
-def objekt_path(
+def resolve_objekt_path(
     buckets_dir: str,
     bucket_name: str,
     object_key: str,
