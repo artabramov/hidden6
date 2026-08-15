@@ -31,7 +31,7 @@ from app.s3.multipart import (
     multipart_parts_delete,
 )
 from app.s3.objekt import objekt_mkdir, objekt_upsert
-from app.s3.paths import multipart_path, objekt_path
+from app.s3.paths import resolve_multipart_path, objekt_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 from app.schemas.multipart_complete import MultipartPart
 
@@ -77,7 +77,7 @@ async def multipart_complete(
         resource=resource,
     )
 
-    upload_dir = multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
+    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
     staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
     cleanup_dir = None
     object_backup = None

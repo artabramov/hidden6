@@ -40,7 +40,7 @@ def objekt_path(
     return resolved_bucket, resolved_object
 
 
-def multipart_path(
+def resolve_multipart_path(
     tmp_dir: str,
     upload_id: str,
 ) -> str:

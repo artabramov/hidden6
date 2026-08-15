@@ -7,7 +7,7 @@ import unittest
 from app.s3.paths import (
     bucket_path,
     resolve_multipart_part_path,
-    multipart_path,
+    resolve_multipart_path,
     objekt_path,
     resolve_staged_path,
     resolve_version_path,
@@ -50,7 +50,7 @@ class TestObjektPath(unittest.TestCase):
 class TestMultipartPath(unittest.TestCase):
     def test_resolves_upload_dir(self):
         self.assertEqual(
-            multipart_path("/mnt/tmp", "beef"),
+            resolve_multipart_path("/mnt/tmp", "beef"),
             "/mnt/tmp/beef",
         )
 

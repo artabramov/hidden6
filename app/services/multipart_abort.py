@@ -14,7 +14,7 @@ from app.repositories.io import isdir, rename, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.multipart import multipart_load, multipart_parts_delete
-from app.s3.paths import multipart_path
+from app.s3.paths import resolve_multipart_path
 from app.s3.validation import validate_objekt_key
 
 log = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ async def multipart_abort(
         resource=resource,
     )
 
-    upload_dir = multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
+    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
     cleanup_dir = None
 
     try:
