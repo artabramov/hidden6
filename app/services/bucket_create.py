@@ -16,7 +16,7 @@ from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.io import isdir, isfile, mktree, rmdir
 from app.repositories.orm import ORMRepository
-from app.s3.paths import bucket_path as resolve_bucket_path
+from app.s3.paths import resolve_bucket_path
 from app.s3.validation import validate_bucket_name
 
 log = logging.getLogger(__name__)

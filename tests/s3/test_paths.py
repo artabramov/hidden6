@@ -5,7 +5,7 @@ import os
 import unittest
 
 from app.s3.paths import (
-    bucket_path,
+    resolve_bucket_path,
     resolve_multipart_part_path,
     resolve_multipart_path,
     resolve_objekt_path,
@@ -17,7 +17,7 @@ from app.s3.paths import (
 class TestBucketPath(unittest.TestCase):
     def test_resolves_bucket_directory(self):
         self.assertEqual(
-            bucket_path("/mnt/buckets", "photos"),
+            resolve_bucket_path("/mnt/buckets", "photos"),
             "/mnt/buckets/photos",
         )
 

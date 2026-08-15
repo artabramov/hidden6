@@ -4,7 +4,7 @@
 import os
 
 
-def bucket_path(
+def resolve_bucket_path(
     buckets_dir: str,
     bucket_name: str,
 ) -> str:
@@ -26,7 +26,7 @@ def resolve_objekt_path(
     Raises:
         ValueError: Resolved object path is outside its bucket directory.
     """
-    resolved_bucket = bucket_path(buckets_dir, bucket_name)
+    resolved_bucket = resolve_bucket_path(buckets_dir, bucket_name)
     resolved_object = os.path.join(resolved_bucket, object_key)
 
     if resolved_object == resolved_bucket:

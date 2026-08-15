@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock
 
 from app.errors import S3InvalidBucketNameError
-from app.s3.paths import bucket_path
+from app.s3.paths import resolve_bucket_path
 from app.s3.validation import validate_bucket_name
 from tests.helpers import set_minimal_app_config_env
 
@@ -113,20 +113,20 @@ class TestBucketNameValidate(unittest.TestCase):
 class TestBucketPath(unittest.TestCase):
     def test_resolves_shortest_name(self):
         self.assertEqual(
-            bucket_path("/mnt/buckets", "abc"),
+            resolve_bucket_path("/mnt/buckets", "abc"),
             "/mnt/buckets/abc",
         )
 
     def test_resolves_dashes_and_periods(self):
         self.assertEqual(
-            bucket_path("/mnt/buckets", "my-bucket.1"),
+            resolve_bucket_path("/mnt/buckets", "my-bucket.1"),
             "/mnt/buckets/my-bucket.1",
         )
 
     def test_resolves_longest_name(self):
         name = "a" * 63
         self.assertEqual(
-            bucket_path("/mnt/buckets", name),
+            resolve_bucket_path("/mnt/buckets", name),
             f"/mnt/buckets/{name}",
         )
 
