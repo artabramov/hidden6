@@ -442,6 +442,124 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
                 )
 
         self.log.exception.assert_called_once()
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_rollback_fails(self):
+        config = MagicMock()
+        config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
+        lock_ctx = self._build_lock_context()
+        repo = MagicMock()
+        repo.select = AsyncMock(return_value=None)
+        repo.insert = AsyncMock(side_effect=IntegrityError("", "", Exception()))
+        repo.rollback = AsyncMock(side_effect=RuntimeError("session closed"))
+
+        with (
+            patch(
+                "app.services.bucket_create.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.bucket_create.locks.lock_directory",
+                return_value=lock_ctx,
+            ),
+            patch(
+                "app.services.bucket_create.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_create.isdir",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.isfile",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.mktree",
+                new_callable=AsyncMock,
+            ) as mktree_mock,
+            patch(
+                "app.services.bucket_create.rmdir",
+                new_callable=AsyncMock,
+            ) as rmdir_mock,
+        ):
+            with self.assertRaises(IntegrityError):
+                await bucket_create(
+                    bucket_name="photos",
+                    user=self.user,
+                    session=self.session,
+                )
+
+        repo.rollback.assert_awaited_once()
+        mktree_mock.assert_not_awaited()
+        rmdir_mock.assert_not_awaited()
+        self.log.exception.assert_called_once()
+        self.assertIn(
+            "msg=rollback_failed",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_rollback_and_cleans_dir_when_both_fail_after_mktree(self):
+        config = MagicMock()
+        config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
+        lock_ctx = self._build_lock_context()
+        repo = MagicMock()
+        repo.select = AsyncMock(return_value=None)
+        repo.insert = AsyncMock(side_effect=lambda obj, **kwargs: obj)
+        repo.commit = AsyncMock(side_effect=RuntimeError("db down"))
+        repo.rollback = AsyncMock(side_effect=RuntimeError("session closed"))
+
+        with (
+            patch(
+                "app.services.bucket_create.get_config",
+                return_value=config,
+            ),
+            patch(
+                "app.services.bucket_create.locks.lock_directory",
+                return_value=lock_ctx,
+            ),
+            patch(
+                "app.services.bucket_create.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_create.isdir",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.isfile",
+                new_callable=AsyncMock,
+                return_value=False,
+            ),
+            patch(
+                "app.services.bucket_create.mktree",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "app.services.bucket_create.rmdir",
+                new_callable=AsyncMock,
+            ) as rmdir_mock,
+        ):
+            with self.assertRaises(RuntimeError) as cm:
+                await bucket_create(
+                    bucket_name="photos",
+                    user=self.user,
+                    session=self.session,
+                )
+
+        self.assertEqual(str(cm.exception), "db down")
+        rmdir_mock.assert_awaited_once_with("/mnt/buckets/photos")
+        self.log.exception.assert_called_once()
+        self.assertIn(
+            "msg=rollback_failed",
+            self.log.exception.call_args.args[0],
+        )
 
     async def test_invalid_bucket_name_stops_before_storage(self):
         repo = MagicMock()
