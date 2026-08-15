@@ -53,10 +53,9 @@ async def multipart_complete(
     interleave after validation. When an existing object is overwritten,
     its bytes stay on a same-directory backup until commit succeeds.
     """
-    log.info("msg=multipart_complete upload_id=%s parts=%d", upload_id, len(parts))  # noqa: E501
-
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
+
     validate_bucket_name(bucket_name, resource)
     validate_objekt_key(objekt_key, resource)
 

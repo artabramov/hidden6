@@ -32,10 +32,9 @@ async def multipart_create(
     assigned to the assembled object, and prepare the directory holding
     its parts until the upload is completed or aborted.
     """
-    log.info("msg=multipart_create bucket=%s key=%s", bucket_name, objekt_key)
-
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
+
     validate_objekt_key(objekt_key, resource)
 
     repo = ORMRepository(session)

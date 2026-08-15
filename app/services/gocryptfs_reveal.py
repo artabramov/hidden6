@@ -18,7 +18,6 @@ async def gocryptfs_reveal(master_password: str) -> str:
     Decrypt and return the stored gocryptfs passphrase using the
     provided master password.
     """
-    log.info("msg=gocryptfs_reveal_started")
     config = get_config()
 
     async with locks.lock_directory(

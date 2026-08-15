@@ -22,7 +22,6 @@ async def gocryptfs_rotate(
     passphrase by decrypting it with the current password,
     re-encrypting it with the new password, and persisting it.
     """
-    log.info("msg=gocryptfs_rotate_started")
     config = get_config()
 
     async with locks.lock_directory(

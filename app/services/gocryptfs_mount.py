@@ -27,7 +27,6 @@ async def gocryptfs_mount(master_password: str) -> None:
     creating ORM tables if missing, and checking database integrity.
     If a post-mount step fails, the mount is rolled back.
     """
-    log.info("msg=gocryptfs_mount_started")
     config = get_config()
 
     async with locks.lock_directory(

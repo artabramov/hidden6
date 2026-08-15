@@ -49,10 +49,9 @@ async def multipart_upload(
     row is written only after the final part file exists. A re-upload
     keeps the previous part file until the database update commits.
     """
-    log.info("msg=multipart_upload upload_id=%s part=%d", upload_id, part_number)  # noqa: E501
-
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
+
     validate_objekt_key(objekt_key, resource)
 
     if part_number < 1 or part_number > OBJEKT_PART_NUMBER_MAX:

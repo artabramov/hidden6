@@ -22,7 +22,6 @@ async def gocryptfs_unmount(
     against the stored passphrase and unmounting the gocryptfs
     filesystem.
     """
-    log.info("msg=gocryptfs_unmount_started")
     config = get_config()
 
     async with locks.lock_directory(

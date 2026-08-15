@@ -39,7 +39,6 @@ async def gocryptfs_init(master_password: str) -> None:
     function performs best-effort cleanup of artifacts created during
     the current attempt.
     """
-    log.info("msg=gocryptfs_initialization_started")
     config = get_config()
 
     if await isfile(config.FERNET_ENCRYPTION_KEY_PATH):

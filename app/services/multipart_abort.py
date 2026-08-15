@@ -33,10 +33,9 @@ async def multipart_abort(
     parent upload, then remove the renamed directory. A failed commit
     restores the active upload directory when possible.
     """
-    log.info("msg=multipart_abort upload_id=%s", upload_id)
-
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
+
     validate_objekt_key(objekt_key, resource)
 
     repo = ORMRepository(session)
