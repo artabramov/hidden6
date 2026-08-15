@@ -33,10 +33,10 @@ log = logging.getLogger(__name__)
 
 
 async def objekt_upload(
-    bucket_name: str,
-    object_key: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
+    objekt_key: str,
     body: AsyncReadable,
 ) -> Objekt:
     """
@@ -48,19 +48,19 @@ async def objekt_upload(
     same key is overwritten and assigned to the current user.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{object_key}"
+    resource = f"/{bucket_name}/{objekt_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_objekt_key(object_key, resource)
+    validate_objekt_key(objekt_key, resource)
 
     bucket_path, object_path = resolve_objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
-        object_key,
+        objekt_key,
     )
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
     staged_path = resolve_staged_path(
         config.MOUNTPOINT_TMP_DIR,
@@ -88,8 +88,8 @@ async def objekt_upload(
             objekt = await objekt_upsert(
                 repo=repo,
                 bucket=bucket,
-                user=user,
-                object_key=object_key,
+                user=current_user,
+                object_key=objekt_key,
                 size_bytes=size_bytes,
                 etag=etag,
                 content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
@@ -113,7 +113,7 @@ async def objekt_upload(
             log.exception(
                 "msg=rollback_failed bucket=%s object_key=%s",
                 bucket_name,
-                object_key,
+                objekt_key,
             )
 
         try:

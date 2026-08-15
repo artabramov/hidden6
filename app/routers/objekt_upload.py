@@ -113,10 +113,10 @@ async def objekt_upload_router(
         )
 
     objekt = await objekt_upload(
-        bucket_name=bucket_name,
-        object_key=object_key,
-        user=current_user,
         session=session,
+        current_user=current_user,
+        bucket_name=bucket_name,
+        objekt_key=object_key,
         body=body,
     )
     return Response(

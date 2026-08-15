@@ -111,10 +111,10 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def _upload(self, key="2024/cat.png"):
         return await objekt_upload(
-            bucket_name="photos",
-            object_key=key,
-            user=self.user,
             session=self.session,
+            current_user=self.user,
+            bucket_name="photos",
+            objekt_key=key,
             body=self.body,
         )
 
