@@ -14,8 +14,8 @@ log = logging.getLogger(__name__)
 
 
 async def bucket_list(
-    user: User,
     session: AsyncSession,
+    current_user: User,
 ) -> list[Bucket]:
     """
     List S3 buckets visible to the authenticated user.
@@ -28,8 +28,8 @@ async def bucket_list(
         "order": "asc",
     }
 
-    if not user.is_root:
-        filters["user_id"] = user.id
+    if not current_user.is_root:
+        filters["user_id"] = current_user.id
 
     repo = ORMRepository(session)
     buckets = await repo.select_all(Bucket, **filters)

@@ -40,8 +40,8 @@ router = APIRouter(include_in_schema=False)
     summary="List S3 buckets.",
 )
 async def bucket_list_router(
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
 ) -> Response:
     """
     Lists buckets visible to the authenticated user. Non-root users
@@ -51,12 +51,13 @@ async def bucket_list_router(
     `BUCKET_LISTED` — hook executed after the bucket list is retrieved.
     """
     buckets = await bucket_list(
-        user=user,
         session=session,
+        current_user=current_user,
     )
+
     return Response(
         content=render_bucket_list(
-            owner=user,
+            owner=current_user,
             buckets=buckets,
         ),
         status_code=status.HTTP_200_OK,

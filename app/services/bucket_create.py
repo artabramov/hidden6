@@ -23,9 +23,9 @@ log = logging.getLogger(__name__)
 
 
 async def bucket_create(
-    bucket_name: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
 ) -> Bucket:
     """
     Create an S3 bucket for the specified user.
@@ -49,7 +49,7 @@ async def bucket_create(
         existing = await repo.select(Bucket, bucket_name=bucket_name)
 
         if existing is not None:
-            if existing.user_id == user.id:
+            if existing.user_id == current_user.id:
                 raise S3BucketAlreadyOwnedByYouError(resource)
 
             raise S3BucketAlreadyExistsError(resource)
@@ -63,7 +63,7 @@ async def bucket_create(
         try:
             directory_created = False
 
-            bucket = Bucket(user_id=user.id, bucket_name=bucket_name)
+            bucket = Bucket(user_id=current_user.id, bucket_name=bucket_name)
             await repo.insert(bucket)
 
             await mktree(bucket_path)

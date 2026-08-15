@@ -11,9 +11,12 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
+from app.db.engine import load_all_models  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.routers.bucket_list import bucket_list_router  # noqa: E402
+
+load_all_models()
 
 
 class TestBucketListRouter(unittest.IsolatedAsyncioTestCase):
@@ -34,13 +37,13 @@ class TestBucketListRouter(unittest.IsolatedAsyncioTestCase):
             return_value=buckets,
         ) as mock_service:
             response = await bucket_list_router(
-                user=user,
                 session=session,
+                current_user=user,
             )
 
         mock_service.assert_awaited_once_with(
-            user=user,
             session=session,
+            current_user=user,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.media_type, "application/xml")
@@ -60,8 +63,8 @@ class TestBucketListRouter(unittest.IsolatedAsyncioTestCase):
             return_value=[],
         ):
             response = await bucket_list_router(
-                user=user,
                 session=session,
+                current_user=user,
             )
 
         body = response.body.decode()

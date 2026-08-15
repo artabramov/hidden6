@@ -55,8 +55,8 @@ router = APIRouter(include_in_schema=False)
 )
 async def bucket_create_router(
     bucket_name: str,
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
 ) -> Response:
     """
     Create an S3 bucket for the authenticated user.
@@ -67,10 +67,11 @@ async def bucket_create_router(
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
     await bucket_create(
-        bucket_name=bucket_name,
-        user=user,
         session=session,
+        current_user=current_user,
+        bucket_name=bucket_name,
     )
+
     return Response(
         status_code=status.HTTP_200_OK,
         headers={"Location": f"/{bucket_name}"},

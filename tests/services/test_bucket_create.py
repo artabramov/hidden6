@@ -84,9 +84,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             bucket = await bucket_create(
-                bucket_name="photos",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
             )
 
         lock_mock.assert_called_once_with(
@@ -126,9 +126,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3BucketAlreadyOwnedByYouError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
     async def test_already_exists_for_other_user(self):
@@ -155,9 +155,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3BucketAlreadyExistsError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
     async def test_orphan_dir_raises(self):
@@ -188,9 +188,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3BucketAlreadyExistsError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         repo.insert.assert_not_called()
@@ -228,9 +228,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3BucketAlreadyExistsError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         repo.insert.assert_not_called()
@@ -278,9 +278,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(IntegrityError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         repo.rollback.assert_awaited_once()
@@ -331,9 +331,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(OSError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         repo.rollback.assert_awaited_once()
@@ -383,9 +383,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(RuntimeError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         repo.rollback.assert_awaited_once()
@@ -436,9 +436,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(RuntimeError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         self.log.exception.assert_called_once()
@@ -490,9 +490,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(IntegrityError):
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         repo.rollback.assert_awaited_once()
@@ -548,9 +548,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(RuntimeError) as cm:
                 await bucket_create(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
         self.assertEqual(str(cm.exception), "db down")
@@ -577,9 +577,9 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3InvalidBucketNameError) as cm:
                 await bucket_create(
-                    bucket_name="Bad_Name",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="Bad_Name",
                 )
 
         self.assertEqual(cm.exception.resource, "/Bad_Name")

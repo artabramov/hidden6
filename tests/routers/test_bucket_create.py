@@ -27,14 +27,14 @@ class TestBucketCreateRouter(unittest.IsolatedAsyncioTestCase):
         ) as mock_service:
             response = await bucket_create_router(
                 bucket_name="photos",
-                user=user,
                 session=session,
+                current_user=user,
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            user=user,
             session=session,
+            current_user=user,
+            bucket_name="photos",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.headers["Location"], "/photos")

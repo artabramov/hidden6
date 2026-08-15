@@ -43,7 +43,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as emit_mock,
         ):
-            result = await bucket_list(user=user, session=self.session)
+            result = await bucket_list(session=self.session, current_user=user)
 
         repo.select_all.assert_awaited_once_with(
             Bucket,
@@ -73,7 +73,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as emit_mock,
         ):
-            result = await bucket_list(user=user, session=self.session)
+            result = await bucket_list(session=self.session, current_user=user)
 
         repo.select_all.assert_awaited_once_with(
             Bucket,
@@ -98,7 +98,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as emit_mock,
         ):
-            result = await bucket_list(user=user, session=self.session)
+            result = await bucket_list(session=self.session, current_user=user)
 
         self.assertEqual(result, [])
         emit_mock.assert_awaited_once_with(Events.BUCKET_LISTED, [])
