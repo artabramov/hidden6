@@ -16,10 +16,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
-# NOTE (ADR-23): S3 object names do not collide with Python builtins.
-# The ORM model for S3 objects is named Objekt (table objekts) so local
-# names never shadow the builtin object. Wire protocol names such as
-# PutObject and object key remain S3-native.
+# NOTE (ADR-23): S3 objects follow the objekt naming convention.
+# S3 objects are named "objekt" throughout the internal codebase,
+# including models, variables, functions, modules, and database tables,
+# so project-local names never shadow the builtin object. Wire protocol
+# names such as PutObject and object key remain S3-native.
 
 
 class Objekt(Base):
