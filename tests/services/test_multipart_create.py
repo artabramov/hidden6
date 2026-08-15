@@ -33,7 +33,6 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         return mock
 
     def setUp(self):
-        self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")

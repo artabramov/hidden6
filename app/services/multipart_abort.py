@@ -89,5 +89,3 @@ async def multipart_abort(
                 "msg=multipart_cleanup_failed path=%s",
                 cleanup_dir,
             )
-
-    log.info("msg=multipart_aborted upload_id=%s", upload_id)

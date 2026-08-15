@@ -155,5 +155,4 @@ async def multipart_upload(
                     )
             raise
 
-    log.info("msg=multipart_uploaded upload_id=%s part=%d", upload_id, part_number)  # noqa: E501
     return etag

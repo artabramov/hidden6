@@ -38,7 +38,5 @@ async def gocryptfs_reveal(master_password: str) -> str:
 
         passphrase_plain = passphrase.decode("utf-8")
 
-    log.info("msg=gocryptfs_revealed")
     await hooks.emit(Events.GOCRYPTFS_REVEALED)
-
     return passphrase_plain

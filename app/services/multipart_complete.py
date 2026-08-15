@@ -217,7 +217,5 @@ async def multipart_complete(
                 cleanup_dir,
             )
 
-    log.info("msg=multipart_completed bucket=%s key=%s", bucket_name, objekt_key)  # noqa: E501
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
-
     return objekt

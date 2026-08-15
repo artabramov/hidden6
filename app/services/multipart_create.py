@@ -1,7 +1,6 @@
 # app/services/multipart_create.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-import logging
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,8 +14,6 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.paths import resolve_multipart_path
 from app.s3.validation import validate_objekt_key
-
-log = logging.getLogger(__name__)
 
 
 async def multipart_create(
@@ -58,5 +55,4 @@ async def multipart_create(
         await rmtree(upload_dir)
         raise
 
-    log.info("msg=multipart_created bucket=%s key=%s upload_id=%s", bucket_name, objekt_key, upload_id)  # noqa: E501
     return multipart

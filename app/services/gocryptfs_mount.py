@@ -79,5 +79,4 @@ async def gocryptfs_mount(master_password: str) -> None:
 
             raise
 
-    log.info("msg=gocryptfs_mounted")
     await hooks.emit(Events.GOCRYPTFS_MOUNTED)

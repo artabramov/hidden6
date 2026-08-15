@@ -50,5 +50,4 @@ async def gocryptfs_rotate(
             passphrase_encrypted_changed,
         )
 
-    log.info("msg=gocryptfs_rotated")
     await hooks.emit(Events.GOCRYPTFS_ROTATED)

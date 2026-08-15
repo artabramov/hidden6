@@ -50,5 +50,4 @@ async def gocryptfs_unmount(
 
         await cipherdir_unmount(mountpoint=config.INSTALL_MOUNTPOINT)
 
-    log.info("msg=gocryptfs_unmounted")
     await hooks.emit(Events.GOCRYPTFS_UNMOUNTED)
