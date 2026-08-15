@@ -80,10 +80,10 @@ async def multipart_abort_router(
         raise S3NotImplementedError(resource)
 
     await multipart_abort(
-        bucket_name=bucket_name,
-        object_key=object_key,
-        user=current_user,
         session=session,
+        current_user=current_user,
+        bucket_name=bucket_name,
+        objekt_key=object_key,
         upload_id=upload_id,
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

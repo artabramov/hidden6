@@ -35,10 +35,10 @@ class TestMultipartAbortRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=user,
             session=session,
+            current_user=user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
             upload_id="beef",
         )
         self.assertEqual(

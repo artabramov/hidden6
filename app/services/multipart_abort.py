@@ -21,10 +21,10 @@ log = logging.getLogger(__name__)
 
 
 async def multipart_abort(
-    bucket_name: str,
-    object_key: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
+    objekt_key: str,
     upload_id: str,
 ) -> None:
     """
@@ -36,15 +36,15 @@ async def multipart_abort(
     log.info("msg=multipart_abort upload_id=%s", upload_id)
 
     config = get_config()
-    resource = f"/{bucket_name}/{object_key}"
-    validate_objekt_key(object_key, resource)
+    resource = f"/{bucket_name}/{objekt_key}"
+    validate_objekt_key(objekt_key, resource)
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, current_user, resource)
     multipart = await multipart_load(
         repo=repo,
         bucket=bucket,
-        object_key=object_key,
+        object_key=objekt_key,
         upload_id=upload_id,
         resource=resource,
     )
