@@ -28,7 +28,7 @@ from app.repositories.io import (
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.multipart import multipart_load, multipart_part_upsert
-from app.s3.paths import multipart_part_path, multipart_path
+from app.s3.paths import resolve_multipart_part_path, multipart_path
 from app.s3.validation import validate_objekt_key
 
 log = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ async def multipart_upload(
     )
 
     upload_dir = multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
-    part = multipart_part_path(upload_dir, part_number)
+    part = resolve_multipart_part_path(upload_dir, part_number)
 
     if not await isdir(upload_dir):
         raise S3ObjektUploadNotFoundError(resource)

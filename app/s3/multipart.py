@@ -19,7 +19,7 @@ from app.models.objekt_multipart import ObjektMultipart
 from app.models.objekt_multipart_part import ObjektMultipartPart
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
-from app.s3.paths import multipart_part_path
+from app.s3.paths import resolve_multipart_part_path
 from app.schemas.multipart_complete import MultipartPart
 
 
@@ -160,7 +160,7 @@ async def multipart_parts(
         if row is None:
             raise S3ObjektPartInvalidError(resource)
 
-        path = multipart_part_path(upload_dir, part.part_number)
+        path = resolve_multipart_part_path(upload_dir, part.part_number)
         if not await isfile(path):
             raise S3ObjektPartInvalidError(resource)
 

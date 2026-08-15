@@ -50,7 +50,7 @@ def multipart_path(
     return os.path.join(tmp_dir, upload_id)
 
 
-def multipart_part_path(
+def resolve_multipart_part_path(
     upload_dir: str,
     part_number: int,
 ) -> str:
