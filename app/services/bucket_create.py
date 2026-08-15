@@ -37,6 +37,7 @@ async def bucket_create(
     """
     config = get_config()
     resource = f"/{bucket_name}"
+
     validate_bucket_name(bucket_name, resource)
 
     bucket_path = resolve_bucket_path(

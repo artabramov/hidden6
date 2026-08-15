@@ -22,14 +22,9 @@ load_all_models()
 
 class TestObjektList(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.log_patcher = patch("app.services.objekt_list.log")
-        self.log_patcher.start()
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-
-    def tearDown(self):
-        self.log_patcher.stop()
 
     def _build_repo(self, bucket=None, objekts=None):
         repo = MagicMock()

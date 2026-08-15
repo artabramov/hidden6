@@ -1,8 +1,6 @@
 # app/services/objekt_download.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-import logging
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
@@ -16,8 +14,6 @@ from app.s3.bucket import bucket_load
 from app.s3.objekt import objekt_load
 from app.s3.paths import resolve_objekt_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
-
-log = logging.getLogger(__name__)
 
 
 async def objekt_download(
@@ -36,8 +32,6 @@ async def objekt_download(
     """
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
-
-    log.info("msg=objekt_download resource=%s", resource)
 
     validate_bucket_name(bucket_name, resource)
     validate_objekt_key(object_key, resource)
