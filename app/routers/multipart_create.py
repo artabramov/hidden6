@@ -124,10 +124,10 @@ async def multipart_create_router(
         raise S3ObjektXmlMalformedError(resource) from exc
 
     objekt = await multipart_complete(
-        bucket_name=bucket_name,
-        object_key=object_key,
-        user=current_user,
         session=session,
+        current_user=current_user,
+        bucket_name=bucket_name,
+        objekt_key=object_key,
         upload_id=upload_id,
         parts=parts,
     )

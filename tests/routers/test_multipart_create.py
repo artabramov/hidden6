@@ -92,6 +92,8 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
     async def test_completes_upload(self):
         objekt = MagicMock()
         objekt.etag = "abc-1"
+        session = MagicMock()
+        user = MagicMock()
 
         with patch(
             "app.routers.multipart_create.multipart_complete",
@@ -102,12 +104,16 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(COMPLETE_XML),
-                session=MagicMock(),
-                current_user=MagicMock(),
+                session=session,
+                current_user=user,
                 upload_id="beef",
             )
 
         kwargs = mock_service.await_args.kwargs
+        self.assertIs(kwargs["session"], session)
+        self.assertIs(kwargs["current_user"], user)
+        self.assertEqual(kwargs["bucket_name"], "photos")
+        self.assertEqual(kwargs["objekt_key"], "2024/cat.png")
         self.assertEqual(kwargs["upload_id"], "beef")
         self.assertEqual(kwargs["parts"][0].part_number, 1)
         self.assertEqual(kwargs["parts"][0].etag, "aaa")

@@ -39,10 +39,10 @@ log = logging.getLogger(__name__)
 
 
 async def multipart_complete(
-    bucket_name: str,
-    object_key: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
+    objekt_key: str,
     upload_id: str,
     parts: list[MultipartPart],
 ) -> Objekt:
@@ -56,23 +56,23 @@ async def multipart_complete(
     log.info("msg=multipart_complete upload_id=%s parts=%d", upload_id, len(parts))  # noqa: E501
 
     config = get_config()
-    resource = f"/{bucket_name}/{object_key}"
+    resource = f"/{bucket_name}/{objekt_key}"
     validate_bucket_name(bucket_name, resource)
-    validate_objekt_key(object_key, resource)
+    validate_objekt_key(objekt_key, resource)
 
     bucket_path, object_path = resolve_objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
-        object_key,
+        objekt_key,
     )
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
     multipart = await multipart_load(
         repo=repo,
         bucket=bucket,
-        object_key=object_key,
+        object_key=objekt_key,
         upload_id=upload_id,
         resource=resource,
     )
@@ -116,8 +116,8 @@ async def multipart_complete(
                 objekt = await objekt_upsert(
                     repo=repo,
                     bucket=bucket,
-                    user=user,
-                    object_key=object_key,
+                    user=current_user,
+                    object_key=objekt_key,
                     size_bytes=size_bytes,
                     etag=etag_construct(stored_etags),
                     content_type=multipart.content_type,
@@ -218,7 +218,7 @@ async def multipart_complete(
                 cleanup_dir,
             )
 
-    log.info("msg=multipart_completed bucket=%s key=%s", bucket_name, object_key)  # noqa: E501
+    log.info("msg=multipart_completed bucket=%s key=%s", bucket_name, objekt_key)  # noqa: E501
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
 
     return objekt
