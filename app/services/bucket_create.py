@@ -76,13 +76,21 @@ async def bucket_create(
             try:
                 await repo.rollback()
             except Exception:
-                log.exception("msg=rollback_failed bucket=%s", bucket_name)
+                log.exception(
+                    "msg=rollback_failed "
+                    "bucket_name=%s",
+                    bucket_name
+                )
 
             if directory_created:
                 try:
                     await rmdir(bucket_path)
                 except Exception:
-                    log.exception("msg=cleanup_failed bucket=%s", bucket_name)
+                    log.exception(
+                        "msg=cleanup_failed "
+                        "bucket_name=%s",
+                        bucket_name
+                    )
 
             raise
 
