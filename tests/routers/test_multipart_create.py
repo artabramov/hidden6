@@ -54,10 +54,10 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=user,
             session=session,
+            current_user=user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
             content_type=None,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -58,10 +58,10 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
 
     async def _create(self, content_type=None):
         return await multipart_create(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=self.user,
             session=self.session,
+            current_user=self.user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
             content_type=content_type,
         )
 
@@ -105,10 +105,10 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
     async def test_invalid_key_stops_before_storage(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:
             await multipart_create(
-                bucket_name="photos",
-                object_key="../etc/passwd",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
+                objekt_key="../etc/passwd",
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
