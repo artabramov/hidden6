@@ -69,8 +69,8 @@ async def objekt_download_router(
     bucket_name: str,
     object_key: str,
     request: Request,
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
 ) -> Response:
     """
     Download an object (GetObject) or return only its metadata
@@ -85,7 +85,7 @@ async def objekt_download_router(
     objekt, object_path = await objekt_download(
         bucket_name=bucket_name,
         object_key=object_key,
-        user=user,
+        user=current_user,
         session=session,
     )
     headers = _objekt_headers(objekt)
