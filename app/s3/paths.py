@@ -60,7 +60,7 @@ def multipart_part_path(
     return os.path.join(upload_dir, f"{part_number}.part")
 
 
-def version_path(
+def resolve_version_path(
     versions_dir: str,
     bucket_id: int,
     version_id: str,

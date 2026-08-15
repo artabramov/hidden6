@@ -10,7 +10,7 @@ from app.s3.paths import (
     multipart_path,
     objekt_path,
     resolve_staged_path,
-    version_path,
+    resolve_version_path,
 )
 
 
@@ -69,9 +69,9 @@ class TestResolveStagedPath(unittest.TestCase):
         )
 
 
-class TestVersionPath(unittest.TestCase):
+class TestResolveVersionPath(unittest.TestCase):
     def test_resolves_with_int_bucket_id(self):
         self.assertEqual(
-            version_path("/mnt/versions", 7, "v1a2b3"),
+            resolve_version_path("/mnt/versions", 7, "v1a2b3"),
             "/mnt/versions/7/v1a2b3",
         )
