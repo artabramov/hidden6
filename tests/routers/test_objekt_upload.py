@@ -40,8 +40,8 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(),
-                user=user,
                 session=session,
+                current_user=user,
             )
 
         kwargs = mock_service.await_args.kwargs
@@ -69,8 +69,8 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(),
-                user=user,
                 session=session,
+                current_user=user,
                 upload_id="beef",
                 part_number=2,
             )
@@ -87,8 +87,8 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="cat.png",
                 request=self._build_request(),
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
                 upload_id="beef",
             )
 
@@ -102,8 +102,8 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="cat.png",
                 request=request,
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
             )
 
         self.assertEqual(cm.exception.resource, "/photos/cat.png")

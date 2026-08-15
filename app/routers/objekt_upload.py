@@ -63,8 +63,8 @@ async def objekt_upload_router(
     bucket_name: str,
     object_key: str,
     request: Request,
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
     upload_id: Annotated[
         str | None,
         Query(alias="uploadId"),
@@ -101,7 +101,7 @@ async def objekt_upload_router(
         etag = await multipart_upload(
             bucket_name=bucket_name,
             object_key=object_key,
-            user=user,
+            user=current_user,
             session=session,
             upload_id=upload_id,
             part_number=part_number,
@@ -115,7 +115,7 @@ async def objekt_upload_router(
     objekt = await objekt_upload(
         bucket_name=bucket_name,
         object_key=object_key,
-        user=user,
+        user=current_user,
         session=session,
         body=body,
     )
