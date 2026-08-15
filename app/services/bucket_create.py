@@ -72,7 +72,10 @@ async def bucket_create(
             await repo.commit()
 
         except Exception:
-            await repo.rollback()
+            try:
+                await repo.rollback()
+            except Exception:
+                log.exception("msg=rollback_failed bucket=%s", bucket_name)
 
             if directory_created:
                 try:
