@@ -52,9 +52,9 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             result = await objekt_list(
-                bucket_name="photos",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
             )
 
         repo.select_all.assert_awaited_once_with(
@@ -88,9 +88,9 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             result = await objekt_list(
-                bucket_name="photos",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
                 prefix="2024/",
             )
 
@@ -117,9 +117,9 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
             patch("app.services.objekt_list.hooks.emit", new_callable=AsyncMock),
         ):
             await objekt_list(
-                bucket_name="photos",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
                 prefix="a%b_c",
             )
 
@@ -138,9 +138,9 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
             patch("app.services.objekt_list.hooks.emit", new_callable=AsyncMock),
         ):
             await objekt_list(
-                bucket_name="photos",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
                 max_keys=10,
             )
 
@@ -162,9 +162,9 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             result = await objekt_list(
-                bucket_name="photos",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
             )
 
         self.assertEqual(result, [])
@@ -182,9 +182,9 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3BucketNotFoundError):
                 await objekt_list(
-                    bucket_name="photos",
-                    user=self.user,
                     session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
                 )
 
     async def test_access_denied_for_other_user_bucket(self):
@@ -200,7 +200,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         ):
             with self.assertRaises(S3AccessDeniedError):
                 await objekt_list(
-                    bucket_name="photos",
-                    user=other_user,
                     session=self.session,
+                    current_user=other_user,
+                    bucket_name="photos",
                 )

@@ -51,9 +51,9 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            user=user,
             session=session,
+            current_user=user,
+            bucket_name="photos",
             prefix="2024/",
             max_keys=100,
         )
@@ -84,9 +84,9 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            user=user,
             session=session,
+            current_user=user,
+            bucket_name="photos",
             prefix="",
             max_keys=1000,
         )

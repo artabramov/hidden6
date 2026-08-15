@@ -70,9 +70,9 @@ async def objekt_list_router(
     `OBJEKT_LISTED` — hook executed after the object list is retrieved.
     """
     objekts = await objekt_list(
-        bucket_name=bucket_name,
-        user=current_user,
         session=session,
+        current_user=current_user,
+        bucket_name=bucket_name,
         prefix=prefix,
         max_keys=max_keys,
     )

@@ -11,9 +11,9 @@ from app.s3.bucket import bucket_load
 
 
 async def objekt_list(
-    bucket_name: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
     prefix: str = "",
     max_keys: int = 1000,
 ) -> list[Objekt]:
@@ -28,7 +28,7 @@ async def objekt_list(
     resource = f"/{bucket_name}"
     repo = ORMRepository(session)
 
-    bucket = await bucket_load(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
     filters: dict = {
         "bucket_id": bucket.id,
