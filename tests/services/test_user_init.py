@@ -74,7 +74,7 @@ class TestUserInit(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             with self.assertRaises(UnauthorizedError):
-                await user_init("wrong-password", session)
+                await user_init(session, "wrong-password")
 
         lock_mock.assert_called_once_with(
             config.INSTALL_SECRETS,
@@ -117,7 +117,7 @@ class TestUserInit(unittest.IsolatedAsyncioTestCase):
             ) as emit_mock,
         ):
             with self.assertRaises(BadGatewayError):
-                await user_init("master-password", session)
+                await user_init(session, "master-password")
 
         repo.select.assert_awaited_once_with(User, is_root=True)
         emit_mock.assert_not_awaited()
@@ -172,7 +172,7 @@ class TestUserInit(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(),
             ) as emit_mock,
         ):
-            result = await user_init("master-password", session)
+            result = await user_init(session, "master-password")
 
         self.assertEqual(
             result,

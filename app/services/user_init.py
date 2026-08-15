@@ -28,8 +28,8 @@ log = logging.getLogger(__name__)
 
 
 async def user_init(
-    master_password: str,
     session: AsyncSession,
+    master_password: str,
 ) -> dict:
     """
     Initialize identity: create the root user and its first access key

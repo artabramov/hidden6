@@ -64,7 +64,7 @@ async def user_init_router(
     `USER_INITIALIZED` — hook executed after user initialization.
     """
     result = await user_init(
-        master_password=data.master_password,
         session=session,
+        master_password=data.master_password,
     )
     return UserInitResponse(**result)

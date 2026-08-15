@@ -33,8 +33,8 @@ class TestUserInitRouter(unittest.IsolatedAsyncioTestCase):
             response = await user_init_router(data=data, session=session)
 
         mock_service.assert_awaited_once_with(
-            master_password="Master-passphrase1",
             session=session,
+            master_password="Master-passphrase1",
         )
         self.assertEqual(response.user_id, 1)
         self.assertEqual(response.username, "root")
