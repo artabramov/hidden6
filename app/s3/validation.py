@@ -42,7 +42,7 @@ _FORBIDDEN_SEGMENTS = frozenset({"", ".", ".."})
 # instead of being flattened into a single filename.
 
 
-def bucket_name_validate(
+def validate_bucket_name(
     bucket_name: str,
     resource: str,
 ) -> None:
@@ -72,7 +72,7 @@ def bucket_name_validate(
         raise S3InvalidBucketNameError(resource)
 
 
-def objekt_key_validate(object_key: str, resource: str) -> None:
+def validate_objekt_key(object_key: str, resource: str) -> None:
     """
     Validate an S3 object key for the filesystem-backed namespace.
 

@@ -28,7 +28,7 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.objekt import objekt_mkdir, objekt_upsert
 from app.s3.paths import objekt_path
-from app.s3.validation import bucket_name_validate, objekt_key_validate
+from app.s3.validation import validate_bucket_name, validate_objekt_key
 
 log = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ async def objekt_upload(
     """
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
-    bucket_name_validate(bucket_name, resource)
-    objekt_key_validate(object_key, resource)
+    validate_bucket_name(bucket_name, resource)
+    validate_objekt_key(object_key, resource)
 
     bucket_path, object_path = objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,

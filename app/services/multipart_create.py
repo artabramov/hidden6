@@ -14,7 +14,7 @@ from app.repositories.io import mktree, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.paths import multipart_path
-from app.s3.validation import objekt_key_validate
+from app.s3.validation import validate_objekt_key
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ async def multipart_create(
 
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
-    objekt_key_validate(object_key, resource)
+    validate_objekt_key(object_key, resource)
 
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, user, resource)

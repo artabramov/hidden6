@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.constants import OBJEKT_KEY_MAX_BYTES
 from app.errors import S3ObjektKeyInvalidError
 from app.s3.paths import objekt_path
-from app.s3.validation import objekt_key_validate
+from app.s3.validation import validate_objekt_key
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -32,13 +32,13 @@ class TestObjektKeyValidate(unittest.TestCase):
         resource = f"/photos/{object_key}"
 
         with self.assertRaises(S3ObjektKeyInvalidError) as ctx:
-            objekt_key_validate(object_key, resource)
+            validate_objekt_key(object_key, resource)
 
         self.assertEqual(ctx.exception.resource, resource)
 
     def _assert_accepts(self, object_key):
         self.assertIsNone(
-            objekt_key_validate(object_key, f"/photos/{object_key}"),
+            validate_objekt_key(object_key, f"/photos/{object_key}"),
         )
 
     def test_accepts_flat_key(self):

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from app.errors import S3InvalidBucketNameError
 from app.s3.paths import bucket_path
-from app.s3.validation import bucket_name_validate
+from app.s3.validation import validate_bucket_name
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -30,33 +30,33 @@ class TestBucketNameValidate(unittest.TestCase):
         resource = f"/{bucket_name}"
 
         with self.assertRaises(S3InvalidBucketNameError) as ctx:
-            bucket_name_validate(bucket_name, resource)
+            validate_bucket_name(bucket_name, resource)
 
         self.assertEqual(ctx.exception.resource, resource)
 
     def test_accepts_shortest_name(self):
-        self.assertIsNone(bucket_name_validate("abc", "/abc"))
+        self.assertIsNone(validate_bucket_name("abc", "/abc"))
 
     def test_accepts_hyphenated_name(self):
-        self.assertIsNone(bucket_name_validate("my-bucket", "/my-bucket"))
+        self.assertIsNone(validate_bucket_name("my-bucket", "/my-bucket"))
 
     def test_accepts_name_with_period(self):
-        self.assertIsNone(bucket_name_validate("my.bucket", "/my.bucket"))
+        self.assertIsNone(validate_bucket_name("my.bucket", "/my.bucket"))
 
     def test_accepts_name_with_digits(self):
-        self.assertIsNone(bucket_name_validate("bucket123", "/bucket123"))
+        self.assertIsNone(validate_bucket_name("bucket123", "/bucket123"))
 
     def test_accepts_mixed_hyphen_period_digits(self):
-        self.assertIsNone(bucket_name_validate("a1-b2.c3", "/a1-b2.c3"))
+        self.assertIsNone(validate_bucket_name("a1-b2.c3", "/a1-b2.c3"))
 
     def test_accepts_dashes_and_periods(self):
         self.assertIsNone(
-            bucket_name_validate("my-bucket.1", "/my-bucket.1"),
+            validate_bucket_name("my-bucket.1", "/my-bucket.1"),
         )
 
     def test_accepts_longest_name(self):
         name = "a" * 63
-        self.assertIsNone(bucket_name_validate(name, f"/{name}"))
+        self.assertIsNone(validate_bucket_name(name, f"/{name}"))
 
     def test_rejects_empty_name(self):
         self._assert_rejects("")
