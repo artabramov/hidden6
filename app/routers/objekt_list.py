@@ -53,8 +53,8 @@ _MAX_KEYS_DEFAULT = 1000
 )
 async def objekt_list_router(
     bucket_name: str,
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
     prefix: Annotated[str, Query()] = "",
     max_keys: Annotated[
         int,
@@ -71,7 +71,7 @@ async def objekt_list_router(
     """
     objekts = await objekt_list(
         bucket_name=bucket_name,
-        user=user,
+        user=current_user,
         session=session,
         prefix=prefix,
         max_keys=max_keys,
