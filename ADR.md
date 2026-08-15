@@ -31,4 +31,4 @@ ADR-24: S3 object keys map to nested filesystem paths.
 ADR-25: S3 upload bodies are decoded from aws-chunked framing.
 ADR-26: S3 multipart uploads are tracked in the database.
 ADR-27: S3 versioning keeps the current object on the key path.
-ADR-28: S3 object operations may leave empty key directories.
+ADR-28: S3 empty key directories are kept after rollback.

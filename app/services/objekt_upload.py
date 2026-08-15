@@ -34,13 +34,23 @@ from app.s3.validation import validate_bucket_name, validate_objekt_key
 log = logging.getLogger(__name__)
 
 
-# NOTE (ADR-28): S3 object operations may leave empty key directories.
+# NOTE (ADR-28): S3 empty key directories are kept after rollback.
 # Key prefixes are represented as filesystem directories but have no
 # independent meaning in the S3 namespace. Tracking and removing
 # directories created by a failed operation would complicate filesystem
 # reconciliation. Empty directories contain no object data or metadata
 # and are therefore accepted as a trade-off for simpler and more
 # reliable rollback logic.
+
+# TODO: Add garbage collection for empty S3 key-prefix directories.
+# Failed object operations may leave empty filesystem directories that
+# represent no state in the S3 namespace. The collector should scan
+# bucket trees without holding locks, identify empty directories, then
+# acquire the corresponding bucket WRITE lock and attempt removal while
+# holding the lock. Removal must rely on rmdir semantics so a directory
+# that became non-empty during the scan is left intact. Directories
+# should be processed bottom-up, and bucket root directories must never
+# be removed.
 
 async def objekt_upload(
     session: AsyncSession,
