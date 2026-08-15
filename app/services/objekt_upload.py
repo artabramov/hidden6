@@ -53,7 +53,7 @@ async def objekt_upload(
     validate_bucket_name(bucket_name, resource)
     validate_objekt_key(objekt_key, resource)
 
-    bucket_path, object_path = resolve_objekt_path(
+    bucket_path, objekt_path = resolve_objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         objekt_key,
@@ -83,7 +83,7 @@ async def objekt_upload(
             if not await isdir(bucket_path):
                 raise S3BucketNotFoundError(resource)
 
-            await objekt_mkdir(object_path, resource)
+            await objekt_mkdir(objekt_path, resource)
 
             objekt = await objekt_upsert(
                 repo=repo,
@@ -100,7 +100,7 @@ async def objekt_upload(
             # change made straight on the mount can still put one there
             # before the rename lands.
             try:
-                await rename(staged_path, object_path)
+                await rename(staged_path, objekt_path)
             except (IsADirectoryError, NotADirectoryError) as exc:
                 raise S3ObjektKeyConflictError(resource) from exc
 
