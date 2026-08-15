@@ -69,3 +69,13 @@ def version_path(
     Filesystem path of a retained non-current object version.
     """
     return os.path.join(versions_dir, str(bucket_id), version_id)
+
+
+def resolve_staged_path(
+    tmp_dir: str,
+    filename: str,
+) -> str:
+    """
+    Filesystem path of a temporary staged object file under tmp.
+    """
+    return os.path.join(tmp_dir, filename)

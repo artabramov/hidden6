@@ -9,6 +9,7 @@ from app.s3.paths import (
     multipart_part_path,
     multipart_path,
     objekt_path,
+    resolve_staged_path,
     version_path,
 )
 
@@ -57,6 +58,14 @@ class TestMultipartPath(unittest.TestCase):
         self.assertEqual(
             multipart_part_path("/mnt/tmp/beef", 3),
             "/mnt/tmp/beef/3.part",
+        )
+
+
+class TestResolveStagedPath(unittest.TestCase):
+    def test_resolves_staged_file(self):
+        self.assertEqual(
+            resolve_staged_path("/mnt/tmp", "beef"),
+            "/mnt/tmp/beef",
         )
 
 

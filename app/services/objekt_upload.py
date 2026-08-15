@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +26,7 @@ from app.repositories.io import (
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.objekt import objekt_mkdir, objekt_upsert
-from app.s3.paths import objekt_path
+from app.s3.paths import objekt_path, resolve_staged_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
 log = logging.getLogger(__name__)
@@ -63,7 +62,10 @@ async def objekt_upload(
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, user, resource)
 
-    staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
+    staged_path = resolve_staged_path(
+        config.MOUNTPOINT_TMP_DIR,
+        uuid.uuid4().hex,
+    )
 
     try:
         await upload(body, staged_path)
