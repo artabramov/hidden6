@@ -76,6 +76,10 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         kwargs = mock_service.await_args.kwargs
+        self.assertIs(kwargs["session"], session)
+        self.assertIs(kwargs["current_user"], user)
+        self.assertEqual(kwargs["bucket_name"], "photos")
+        self.assertEqual(kwargs["objekt_key"], "2024/cat.png")
         self.assertEqual(kwargs["upload_id"], "beef")
         self.assertEqual(kwargs["part_number"], 2)
         self.assertIsInstance(kwargs["body"], RequestBodyReader)

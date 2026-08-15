@@ -35,10 +35,10 @@ log = logging.getLogger(__name__)
 
 
 async def multipart_upload(
-    bucket_name: str,
-    object_key: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
+    objekt_key: str,
     upload_id: str,
     part_number: int,
     body: AsyncReadable,
@@ -52,19 +52,19 @@ async def multipart_upload(
     log.info("msg=multipart_upload upload_id=%s part=%d", upload_id, part_number)  # noqa: E501
 
     config = get_config()
-    resource = f"/{bucket_name}/{object_key}"
-    validate_objekt_key(object_key, resource)
+    resource = f"/{bucket_name}/{objekt_key}"
+    validate_objekt_key(objekt_key, resource)
 
     if part_number < 1 or part_number > OBJEKT_PART_NUMBER_MAX:
         raise S3ObjektPartNumberInvalidError(resource)
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, user, resource)
+    bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
     multipart = await multipart_load(
         repo=repo,
         bucket=bucket,
-        object_key=object_key,
+        object_key=objekt_key,
         upload_id=upload_id,
         resource=resource,
     )

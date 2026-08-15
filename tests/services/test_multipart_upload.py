@@ -105,10 +105,10 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
 
     async def _upload(self, part_number=1):
         return await multipart_upload(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=self.user,
             session=self.session,
+            current_user=self.user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
             upload_id="beef",
             part_number=part_number,
             body=MagicMock(),
@@ -249,10 +249,10 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
     async def test_invalid_key_stops_before_storage(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:
             await multipart_upload(
-                bucket_name="photos",
-                object_key="../etc/passwd",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
+                objekt_key="../etc/passwd",
                 upload_id="beef",
                 part_number=1,
                 body=MagicMock(),

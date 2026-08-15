@@ -99,10 +99,10 @@ async def objekt_upload_router(
             raise S3ObjektPartNumberInvalidError(resource)
 
         etag = await multipart_upload(
-            bucket_name=bucket_name,
-            object_key=object_key,
-            user=current_user,
             session=session,
+            current_user=current_user,
+            bucket_name=bucket_name,
+            objekt_key=object_key,
             upload_id=upload_id,
             part_number=part_number,
             body=body,
