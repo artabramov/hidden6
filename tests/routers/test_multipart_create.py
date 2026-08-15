@@ -48,8 +48,8 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(),
-                user=user,
                 session=session,
+                current_user=user,
                 uploads="",
             )
 
@@ -79,8 +79,8 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=request,
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
                 uploads="",
             )
 
@@ -102,8 +102,8 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(COMPLETE_XML),
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
                 upload_id="beef",
             )
 
@@ -119,8 +119,8 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="cat.png",
                 request=self._build_request(b"<nope"),
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
                 upload_id="beef",
             )
 
@@ -132,8 +132,8 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 object_key="cat.png",
                 request=self._build_request(),
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
             )
 
         self.assertEqual(cm.exception.status_code, 501)

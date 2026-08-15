@@ -79,8 +79,8 @@ async def multipart_create_router(
     bucket_name: str,
     object_key: str,
     request: Request,
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
     uploads: Annotated[str | None, Query()] = None,
     upload_id: Annotated[
         str | None,
@@ -103,7 +103,7 @@ async def multipart_create_router(
         multipart = await multipart_create(
             bucket_name=bucket_name,
             object_key=object_key,
-            user=user,
+            user=current_user,
             session=session,
             content_type=request.headers.get("content-type"),
         )
@@ -126,7 +126,7 @@ async def multipart_create_router(
     objekt = await multipart_complete(
         bucket_name=bucket_name,
         object_key=object_key,
-        user=user,
+        user=current_user,
         session=session,
         upload_id=upload_id,
         parts=parts,

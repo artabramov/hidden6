@@ -62,8 +62,8 @@ router = APIRouter(include_in_schema=False)
 async def multipart_abort_router(
     bucket_name: str,
     object_key: str,
-    user: User = Depends(require_auth),
     session: AsyncSession = Depends(require_session),
+    current_user: User = Depends(require_auth),
     upload_id: Annotated[
         str | None,
         Query(alias="uploadId"),
@@ -82,7 +82,7 @@ async def multipart_abort_router(
     await multipart_abort(
         bucket_name=bucket_name,
         object_key=object_key,
-        user=user,
+        user=current_user,
         session=session,
         upload_id=upload_id,
     )

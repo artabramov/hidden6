@@ -29,8 +29,8 @@ class TestMultipartAbortRouter(unittest.IsolatedAsyncioTestCase):
             response = await multipart_abort_router(
                 bucket_name="photos",
                 object_key="2024/cat.png",
-                user=user,
                 session=session,
+                current_user=user,
                 upload_id="beef",
             )
 
@@ -51,8 +51,8 @@ class TestMultipartAbortRouter(unittest.IsolatedAsyncioTestCase):
             await multipart_abort_router(
                 bucket_name="photos",
                 object_key="cat.png",
-                user=MagicMock(),
                 session=MagicMock(),
+                current_user=MagicMock(),
             )
 
         self.assertEqual(cm.exception.status_code, 501)
