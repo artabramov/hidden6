@@ -20,12 +20,7 @@ load_all_models()
 
 class TestBucketList(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.log_patcher = patch("app.services.bucket_list.log")
-        self.log_patcher.start()
         self.session = MagicMock()
-
-    def tearDown(self):
-        self.log_patcher.stop()
 
     async def test_non_root_lists_own_buckets_only(self):
         user = User(id=1, username="alice", is_root=False)

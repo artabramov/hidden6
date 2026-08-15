@@ -1,16 +1,12 @@
 # app/services/bucket_list.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-import logging
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.hooks import Events, hooks
 from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
-
-log = logging.getLogger(__name__)
 
 
 async def bucket_list(
