@@ -50,6 +50,7 @@ async def objekt_upload(
     """
     config = get_config()
     resource = f"/{bucket_name}/{object_key}"
+
     validate_bucket_name(bucket_name, resource)
     validate_objekt_key(object_key, resource)
 
@@ -104,8 +105,23 @@ async def objekt_upload(
             await repo.commit()
 
     except Exception:
-        await repo.rollback()
-        await delete(staged_path)
+        try:
+            await repo.rollback()
+        except Exception:
+            log.exception(
+                "msg=rollback_failed bucket=%s object_key=%s",
+                bucket_name,
+                object_key,
+            )
+
+        try:
+            await delete(staged_path)
+        except Exception:
+            log.exception(
+                "msg=cleanup_failed path=%s",
+                staged_path,
+            )
+
         raise
 
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)

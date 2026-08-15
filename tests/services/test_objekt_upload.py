@@ -27,7 +27,7 @@ load_all_models()
 
 class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self._patch("log")
+        self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.body = MagicMock()
@@ -228,6 +228,59 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.repo.rollback.assert_awaited_once()
         self.delete.assert_awaited_once_with("/mnt/tmp/beef")
         self.emit.assert_not_awaited()
+
+    async def test_logs_when_rollback_fails(self):
+        self._build_mocks()
+        self.upload.side_effect = RuntimeError("disk full")
+        self.repo.rollback.side_effect = RuntimeError("session closed")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "disk full")
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
+        self.log.exception.assert_called_once()
+        self.assertIn(
+            "msg=rollback_failed",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_cleanup_fails(self):
+        self._build_mocks()
+        self.upload.side_effect = RuntimeError("disk full")
+        self.delete.side_effect = OSError("busy")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "disk full")
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
+        self.log.exception.assert_called_once()
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_rollback_and_cleanup_failures(self):
+        self._build_mocks()
+        self.rename.side_effect = IsADirectoryError()
+        self.repo.rollback.side_effect = RuntimeError("session closed")
+        self.delete.side_effect = OSError("busy")
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.repo.commit.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
+        messages = [
+            call.args[0] for call in self.log.exception.call_args_list
+        ]
+        self.assertEqual(len(messages), 2)
+        self.assertIn("msg=rollback_failed", messages[0])
+        self.assertIn("msg=cleanup_failed", messages[1])
 
     async def test_rejects_key_escaping_the_bucket(self):
         self._build_mocks()
