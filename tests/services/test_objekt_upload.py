@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 from tests.helpers import set_minimal_app_config_env
 
 
 set_minimal_app_config_env()
 
+from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
@@ -23,6 +24,12 @@ from app.models.user import User  # noqa: E402
 from app.services.objekt_upload import objekt_upload  # noqa: E402
 
 load_all_models()
+
+BUCKET_PATH = "/mnt/buckets/photos"
+OBJEKT_PATH = "/mnt/buckets/photos/2024/cat.png"
+STAGED_PATH = "/mnt/tmp/staged"
+BACKUP_PATH = "/mnt/tmp/backup"
+RESOURCE = "/photos/2024/cat.png"
 
 
 class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
@@ -54,7 +61,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         ctx.__aexit__.return_value = None
         return ctx
 
-    def _build_mocks(self, mimetype="image/png"):
+    def _build_mocks(self, *, mimetype="image/png", object_exists=False):
         config = MagicMock()
         config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
         config.MOUNTPOINT_TMP_DIR = "/mnt/tmp"
@@ -65,7 +72,13 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
-        self._patch("uuid.uuid4", return_value=MagicMock(hex="beef"))
+        self._patch(
+            "uuid.uuid4",
+            side_effect=[
+                MagicMock(hex="staged"),
+                MagicMock(hex="backup"),
+            ],
+        )
         self.lock = self._patch(
             "locks.lock_directory",
             return_value=self._build_lock_context(),
@@ -80,6 +93,11 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=True,
         )
+        self.isfile = self._patch(
+            "isfile",
+            new_callable=AsyncMock,
+            return_value=object_exists,
+        )
         self.objekt_mkdir = self._patch(
             "objekt_mkdir",
             new_callable=AsyncMock,
@@ -90,6 +108,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             return_value=self.objekt,
         )
         self.upload = self._patch("upload", new_callable=AsyncMock)
+        self.copy = self._patch("copy", new_callable=AsyncMock)
         self._patch(
             "get_filesize",
             new_callable=AsyncMock,
@@ -118,31 +137,35 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             body=self.body,
         )
 
-    async def test_stages_and_publishes_object(self):
+    def _delete_paths(self):
+        return [c.args[0] for c in self.delete.await_args_list]
+
+    async def test_stages_and_publishes_new_object(self):
         self._build_mocks()
 
         objekt = await self._upload()
 
-        self.upload.assert_awaited_once_with(self.body, "/mnt/tmp/beef")
-        self.lock.assert_called_once_with(
-            "/mnt/buckets/photos",
-            LockType.WRITE,
-        )
-        self.isdir.assert_awaited_once_with("/mnt/buckets/photos")
-        self.objekt_mkdir.assert_awaited_once_with(
-            "/mnt/buckets/photos/2024/cat.png",
-            "/photos/2024/cat.png",
-        )
-        self.rename.assert_awaited_once_with(
-            "/mnt/tmp/beef",
-            "/mnt/buckets/photos/2024/cat.png",
-        )
+        self.lock.assert_called_once_with(BUCKET_PATH, LockType.WRITE)
+        self.isdir.assert_awaited_once_with(BUCKET_PATH)
+        self.upload.assert_awaited_once_with(self.body, STAGED_PATH)
+        self.objekt_mkdir.assert_awaited_once_with(OBJEKT_PATH, RESOURCE)
+        self.isfile.assert_awaited_once_with(OBJEKT_PATH)
+        self.copy.assert_not_awaited()
+        self.rename.assert_awaited_once_with(STAGED_PATH, OBJEKT_PATH)
         self.repo.commit.assert_awaited_once()
+        self.delete.assert_not_awaited()
         self.assertIs(objekt, self.objekt)
-        self.emit.assert_awaited_once_with(
-            Events.OBJEKT_UPLOADED,
-            objekt,
-        )
+        self.emit.assert_awaited_once_with(Events.OBJEKT_UPLOADED, objekt)
+
+    async def test_overwrites_existing_object_and_cleans_backup(self):
+        self._build_mocks(object_exists=True)
+
+        await self._upload()
+
+        self.copy.assert_awaited_once_with(OBJEKT_PATH, BACKUP_PATH)
+        self.rename.assert_awaited_once_with(STAGED_PATH, OBJEKT_PATH)
+        self.repo.commit.assert_awaited_once()
+        self.delete.assert_awaited_once_with(BACKUP_PATH)
 
     async def test_upserts_metadata_of_staged_body(self):
         self._build_mocks()
@@ -164,123 +187,8 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             self.objekt_upsert.await_args.kwargs["content_type"],
-            "application/octet-stream",
+            OBJEKT_CONTENT_TYPE_DEFAULT,
         )
-
-    async def test_inaccessible_bucket_stops_before_upload(self):
-        self._build_mocks()
-        self.bucket_load.side_effect = S3BucketNotFoundError("/photos")
-
-        with self.assertRaises(S3BucketNotFoundError):
-            await self._upload()
-
-        self.upload.assert_not_awaited()
-
-    async def test_missing_bucket_dir_cleans_staged_file(self):
-        self._build_mocks()
-        self.isdir.return_value = False
-
-        with self.assertRaises(S3BucketNotFoundError):
-            await self._upload()
-
-        self.rename.assert_not_awaited()
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-
-    async def test_key_conflict_cleans_staged_file(self):
-        self._build_mocks()
-        self.objekt_mkdir.side_effect = S3ObjektKeyConflictError()
-
-        with self.assertRaises(S3ObjektKeyConflictError):
-            await self._upload()
-
-        self.rename.assert_not_awaited()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-
-    async def test_directory_at_object_path_is_a_key_conflict(self):
-        self._build_mocks()
-        self.rename.side_effect = IsADirectoryError()
-
-        with self.assertRaises(S3ObjektKeyConflictError):
-            await self._upload()
-
-        self.repo.commit.assert_not_awaited()
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-
-    async def test_object_at_key_prefix_is_a_key_conflict(self):
-        self._build_mocks()
-        self.rename.side_effect = NotADirectoryError()
-
-        with self.assertRaises(S3ObjektKeyConflictError):
-            await self._upload()
-
-        self.repo.commit.assert_not_awaited()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-
-    async def test_failed_upload_cleans_staged_file(self):
-        self._build_mocks()
-        self.upload.side_effect = RuntimeError("disk full")
-
-        with self.assertRaises(RuntimeError):
-            await self._upload()
-
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-        self.emit.assert_not_awaited()
-
-    async def test_logs_when_rollback_fails(self):
-        self._build_mocks()
-        self.upload.side_effect = RuntimeError("disk full")
-        self.repo.rollback.side_effect = RuntimeError("session closed")
-
-        with self.assertRaises(RuntimeError) as cm:
-            await self._upload()
-
-        self.assertEqual(str(cm.exception), "disk full")
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-        self.log.exception.assert_called_once()
-        self.assertIn(
-            "msg=rollback_failed",
-            self.log.exception.call_args.args[0],
-        )
-
-    async def test_logs_when_cleanup_fails(self):
-        self._build_mocks()
-        self.upload.side_effect = RuntimeError("disk full")
-        self.delete.side_effect = OSError("busy")
-
-        with self.assertRaises(RuntimeError) as cm:
-            await self._upload()
-
-        self.assertEqual(str(cm.exception), "disk full")
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-        self.log.exception.assert_called_once()
-        self.assertIn(
-            "msg=cleanup_failed",
-            self.log.exception.call_args.args[0],
-        )
-
-    async def test_logs_rollback_and_cleanup_failures(self):
-        self._build_mocks()
-        self.rename.side_effect = IsADirectoryError()
-        self.repo.rollback.side_effect = RuntimeError("session closed")
-        self.delete.side_effect = OSError("busy")
-
-        with self.assertRaises(S3ObjektKeyConflictError):
-            await self._upload()
-
-        self.repo.commit.assert_not_awaited()
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/beef")
-        messages = [
-            call.args[0] for call in self.log.exception.call_args_list
-        ]
-        self.assertEqual(len(messages), 2)
-        self.assertIn("msg=rollback_failed", messages[0])
-        self.assertIn("msg=cleanup_failed", messages[1])
 
     async def test_rejects_key_escaping_the_bucket(self):
         self._build_mocks()
@@ -293,4 +201,277 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "/photos/../../etc/passwd",
         )
         self.bucket_load.assert_not_awaited()
+        self.lock.assert_not_called()
         self.upload.assert_not_awaited()
+
+    async def test_inaccessible_bucket_stops_before_lock(self):
+        self._build_mocks()
+        self.bucket_load.side_effect = S3BucketNotFoundError("/photos")
+
+        with self.assertRaises(S3BucketNotFoundError):
+            await self._upload()
+
+        self.lock.assert_not_called()
+        self.upload.assert_not_awaited()
+        self.delete.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_missing_bucket_dir_cleans_staged_path(self):
+        self._build_mocks()
+        self.isdir.return_value = False
+
+        with self.assertRaises(S3BucketNotFoundError):
+            await self._upload()
+
+        self.upload.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_failed_upload_cleans_staged_path(self):
+        self._build_mocks()
+        self.upload.side_effect = RuntimeError("disk full")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_key_conflict_on_mkdir_cleans_staged_path(self):
+        self._build_mocks()
+        self.objekt_mkdir.side_effect = S3ObjektKeyConflictError(RESOURCE)
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.rename.assert_not_awaited()
+        self.copy.assert_not_awaited()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+
+    async def test_directory_at_object_path_is_a_key_conflict(self):
+        self._build_mocks()
+        self.rename.side_effect = IsADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.repo.commit.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+
+    async def test_object_at_key_prefix_is_a_key_conflict(self):
+        self._build_mocks()
+        self.rename.side_effect = NotADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.repo.commit.assert_not_awaited()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+
+    async def test_rename_conflict_discards_backup_when_object_existed(self):
+        self._build_mocks(object_exists=True)
+        self.rename.side_effect = IsADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        self.copy.assert_awaited_once_with(OBJEKT_PATH, BACKUP_PATH)
+        self.assertEqual(
+            self._delete_paths(),
+            [BACKUP_PATH, STAGED_PATH],
+        )
+
+    async def test_upsert_failure_discards_backup_when_object_existed(self):
+        self._build_mocks(object_exists=True)
+        self.objekt_upsert.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        self.rename.assert_not_awaited()
+        self.assertEqual(
+            self._delete_paths(),
+            [BACKUP_PATH, STAGED_PATH],
+        )
+
+    async def test_commit_failure_deletes_published_new_object(self):
+        self._build_mocks()
+        self.repo.commit.side_effect = RuntimeError("commit failed")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        self.repo.rollback.assert_awaited_once()
+        self.assertEqual(
+            self._delete_paths(),
+            [OBJEKT_PATH, STAGED_PATH],
+        )
+        self.copy.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_commit_failure_restores_overwritten_object(self):
+        self._build_mocks(object_exists=True)
+        self.repo.commit.side_effect = RuntimeError("commit failed")
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        self.assertEqual(
+            self.copy.await_args_list,
+            [
+                call(OBJEKT_PATH, BACKUP_PATH),
+                call(BACKUP_PATH, OBJEKT_PATH),
+            ],
+        )
+        self.assertEqual(
+            self._delete_paths(),
+            [BACKUP_PATH, STAGED_PATH],
+        )
+        self.emit.assert_not_awaited()
+
+    async def test_logs_when_rollback_fails(self):
+        self._build_mocks()
+        self.upload.side_effect = RuntimeError("disk full")
+        self.repo.rollback.side_effect = RuntimeError("session closed")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "disk full")
+        self.log.exception.assert_called()
+        self.assertIn(
+            "msg=rollback_failed",
+            self.log.exception.call_args_list[0].args[0],
+        )
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+
+    async def test_logs_when_staged_cleanup_fails(self):
+        self._build_mocks()
+        self.upload.side_effect = RuntimeError("disk full")
+        self.delete.side_effect = OSError("busy")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "disk full")
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "staged_path=%s",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_published_cleanup_fails(self):
+        self._build_mocks()
+        self.repo.commit.side_effect = RuntimeError("commit failed")
+        self.delete.side_effect = [OSError("busy"), None]
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertTrue(
+            any("objekt_path=%s" in message for message in messages),
+        )
+
+    async def test_logs_when_restore_fails(self):
+        self._build_mocks(object_exists=True)
+        self.repo.commit.side_effect = RuntimeError("commit failed")
+        self.copy.side_effect = [None, OSError("busy")]
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertTrue(
+            any("msg=restore_failed" in message for message in messages),
+        )
+        # Restore failed, so the backup must not be deleted as "success".
+        self.assertEqual(self._delete_paths(), [STAGED_PATH])
+
+    async def test_logs_when_backup_cleanup_after_restore_fails(self):
+        self._build_mocks(object_exists=True)
+        self.repo.commit.side_effect = RuntimeError("commit failed")
+
+        def delete_side_effect(path):
+            if path == BACKUP_PATH:
+                raise OSError("busy")
+            return None
+
+        self.delete.side_effect = delete_side_effect
+
+        with self.assertRaises(RuntimeError):
+            await self._upload()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertTrue(
+            any("backup_path=%s" in message for message in messages),
+        )
+
+    async def test_logs_when_backup_discard_before_publish_fails(self):
+        self._build_mocks(object_exists=True)
+        self.rename.side_effect = IsADirectoryError()
+
+        def delete_side_effect(path):
+            if path == BACKUP_PATH:
+                raise OSError("busy")
+            return None
+
+        self.delete.side_effect = delete_side_effect
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertTrue(
+            any("backup_path=%s" in message for message in messages),
+        )
+
+    async def test_logs_when_post_commit_backup_cleanup_fails(self):
+        self._build_mocks(object_exists=True)
+        self.delete.side_effect = OSError("busy")
+
+        objekt = await self._upload()
+
+        self.assertIs(objekt, self.objekt)
+        self.emit.assert_awaited_once_with(
+            Events.OBJEKT_UPLOADED,
+            objekt,
+        )
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "backup_path=%s",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_rollback_and_cleanup_failures(self):
+        self._build_mocks()
+        self.rename.side_effect = IsADirectoryError()
+        self.repo.rollback.side_effect = RuntimeError("session closed")
+        self.delete.side_effect = OSError("busy")
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._upload()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertEqual(len(messages), 2)
+        self.assertIn("msg=rollback_failed", messages[0])
+        self.assertIn("msg=cleanup_failed", messages[1])
