@@ -70,10 +70,10 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=self.user,
             session=self.session,
+            current_user=self.user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
         )
         mock_iter.assert_called_once_with(self.object_path)
         self.assertIsInstance(response, StreamingResponse)
@@ -111,10 +111,10 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_service.assert_awaited_once_with(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=self.user,
             session=self.session,
+            current_user=self.user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
         )
         mock_iter.assert_not_called()
         self.assertNotIsInstance(response, StreamingResponse)

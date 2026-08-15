@@ -83,10 +83,10 @@ async def objekt_download_router(
     `OBJEKT_DOWNLOADED` — hook executed after the object is resolved.
     """
     objekt, object_path = await objekt_download(
-        bucket_name=bucket_name,
-        object_key=object_key,
-        user=current_user,
         session=session,
+        current_user=current_user,
+        bucket_name=bucket_name,
+        objekt_key=object_key,
     )
     headers = _objekt_headers(objekt)
 

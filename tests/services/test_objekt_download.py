@@ -79,10 +79,10 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks()
 
         objekt, path = await objekt_download(
-            bucket_name="photos",
-            object_key="2024/cat.png",
-            user=self.user,
             session=self.session,
+            current_user=self.user,
+            bucket_name="photos",
+            objekt_key="2024/cat.png",
         )
 
         self.assertIs(objekt, self.objekt)
@@ -100,10 +100,10 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(S3ObjektKeyInvalidError):
             await objekt_download(
-                bucket_name="photos",
-                object_key="../escape",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
+                objekt_key="../escape",
             )
 
         self.bucket_load.assert_not_awaited()
@@ -115,10 +115,10 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(S3BucketNotFoundError):
             await objekt_download(
-                bucket_name="photos",
-                object_key="2024/cat.png",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
+                objekt_key="2024/cat.png",
             )
 
         self.objekt_load.assert_not_awaited()
@@ -131,10 +131,10 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(S3ObjektNotFoundError):
             await objekt_download(
-                bucket_name="photos",
-                object_key="2024/cat.png",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
+                objekt_key="2024/cat.png",
             )
 
         self.isfile.assert_not_awaited()
@@ -145,10 +145,10 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(S3ObjektNotFoundError):
             await objekt_download(
-                bucket_name="photos",
-                object_key="2024/cat.png",
-                user=self.user,
                 session=self.session,
+                current_user=self.user,
+                bucket_name="photos",
+                objekt_key="2024/cat.png",
             )
 
         self.emit.assert_not_awaited()

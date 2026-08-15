@@ -17,10 +17,10 @@ from app.s3.validation import validate_bucket_name, validate_objekt_key
 
 
 async def objekt_download(
-    bucket_name: str,
-    object_key: str,
-    user: User,
     session: AsyncSession,
+    current_user: User,
+    bucket_name: str,
+    objekt_key: str,
 ) -> tuple[Objekt, str]:
     """
     Resolve an S3 object for download.
@@ -31,20 +31,20 @@ async def objekt_download(
     router streams to the client.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{object_key}"
+    resource = f"/{bucket_name}/{objekt_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_objekt_key(object_key, resource)
+    validate_objekt_key(objekt_key, resource)
 
     _bucket_path, object_path = resolve_objekt_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
-        object_key,
+        objekt_key,
     )
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, user, resource)
-    objekt = await objekt_load(repo, bucket, object_key, resource)
+    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    objekt = await objekt_load(repo, bucket, objekt_key, resource)
 
     if not await isfile(object_path):
         raise S3ObjektNotFoundError(resource)
