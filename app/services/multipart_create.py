@@ -1,6 +1,7 @@
 # app/services/multipart_create.py
 # SPDX-License-Identifier: GPL-3.0-only
 
+import logging
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,8 @@ from app.s3.bucket import bucket_load
 from app.s3.paths import resolve_multipart_path
 from app.s3.validation import validate_objekt_key
 
+log = logging.getLogger(__name__)
+
 
 async def multipart_create(
     session: AsyncSession,
@@ -24,10 +27,18 @@ async def multipart_create(
     content_type: str | None = None,
 ) -> ObjektMultipart:
     """
-    Start a multipart upload (S3 CreateMultipartUpload): register the
-    upload for the bucket and key, store the Content-Type that will be
-    assigned to the assembled object, and prepare the directory holding
-    its parts until the upload is completed or aborted.
+    Create an S3 multipart upload. The operation is transactional at
+    the DB level and reconciles filesystem state on failure. A dedicated
+    temporary directory is created to hold uploaded parts until the
+    multipart upload is completed or aborted.
+
+    (1) generate a multipart upload ID
+    (2) create the multipart upload directory
+    (3) create the multipart upload record
+    (4) commit
+
+    On failure of the transaction, the session is rolled back and the
+    temporary upload directory is removed as a best-effort cleanup step.
     """
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
@@ -38,8 +49,13 @@ async def multipart_create(
     bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
     upload_id = uuid.uuid4().hex
-    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
-    await mktree(upload_dir)
+
+    # Path used to store parts for the new multipart
+    # upload until it is completed or aborted.
+    upload_path = resolve_multipart_path(
+        config.MOUNTPOINT_TMP_DIR,
+        upload_id,
+    )
 
     multipart = ObjektMultipart(
         bucket_id=bucket.id,
@@ -48,11 +64,35 @@ async def multipart_create(
         object_key=objekt_key,
         content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
     )
+
     try:
-        await repo.insert(multipart, commit=True)
+        await mktree(upload_path)
+        await repo.insert(multipart)
+        await repo.commit()
+
     except Exception:
-        await repo.rollback()
-        await rmtree(upload_dir)
+        try:
+            await repo.rollback()
+        except Exception:
+            log.exception(
+                "msg=rollback_failed "
+                "bucket_name=%s "
+                "object_key=%s "
+                "upload_id=%s",
+                bucket_name,
+                objekt_key,
+                upload_id,
+            )
+
+        try:
+            await rmtree(upload_path)
+        except Exception:
+            log.exception(
+                "msg=cleanup_failed "
+                "upload_path=%s",
+                upload_path,
+            )
+
         raise
 
     return multipart
