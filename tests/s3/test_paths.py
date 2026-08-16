@@ -6,6 +6,7 @@ import unittest
 
 from app.s3.paths import (
     resolve_bucket_path,
+    resolve_multipart_aborted_path,
     resolve_multipart_backup_part_path,
     resolve_multipart_part_path,
     resolve_multipart_path,
@@ -80,6 +81,16 @@ class TestMultipartPath(unittest.TestCase):
                 "deadbeef",
             ),
             "/mnt/tmp/beef/.3.deadbeef.part.bak",
+        )
+
+    def test_resolves_aborted_upload_dir(self):
+        self.assertEqual(
+            resolve_multipart_aborted_path(
+                "/mnt/tmp",
+                "beef",
+                "cafebabe",
+            ),
+            "/mnt/tmp/.beef.aborted.cafebabe",
         )
 
 

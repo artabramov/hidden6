@@ -88,6 +88,20 @@ def resolve_multipart_backup_part_path(
     )
 
 
+def resolve_multipart_aborted_path(
+    tmp_dir: str,
+    upload_id: str,
+    token: str,
+) -> str:
+    """
+    Build the temporary path for an aborted multipart upload.
+    """
+    return os.path.join(
+        tmp_dir,
+        f".{upload_id}.aborted.{token}",
+    )
+
+
 def resolve_version_path(
     versions_dir: str,
     bucket_id: int,
