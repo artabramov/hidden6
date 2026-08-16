@@ -69,13 +69,13 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.multipart_load = self._patch(
-            "multipart_load",
+        self.load_multipart = self._patch(
+            "load_multipart",
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
         self.parts_delete = self._patch(
-            "multipart_parts_delete",
+            "delete_multipart_parts",
             new_callable=AsyncMock,
         )
         self.isdir = self._patch(
@@ -162,7 +162,7 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.rmtree.assert_not_awaited()
 
     async def test_unknown_upload_does_not_touch_filesystem(self):
-        self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
+        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._abort()

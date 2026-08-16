@@ -12,7 +12,7 @@ from app.models.user import User
 from app.repositories.io import isdir, rename, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
-from app.s3.multipart import multipart_load, multipart_parts_delete
+from app.s3.multipart import load_multipart, delete_multipart_parts
 from app.s3.paths import (
     resolve_multipart_aborted_path,
     resolve_multipart_path,
@@ -75,7 +75,7 @@ async def multipart_abort(
 
     async with locks.lock_directory(upload_path, LockType.WRITE):
         try:
-            multipart = await multipart_load(
+            multipart = await load_multipart(
                 repo=repo,
                 bucket=bucket,
                 object_key=objekt_key,
@@ -90,7 +90,7 @@ async def multipart_abort(
                 await rename(upload_path, cleanup_path)
                 upload_moved = True
 
-            await multipart_parts_delete(repo, multipart)
+            await delete_multipart_parts(repo, multipart)
             await repo.delete(multipart)
             await repo.commit()
 

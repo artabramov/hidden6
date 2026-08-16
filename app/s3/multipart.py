@@ -23,7 +23,7 @@ from app.s3.paths import resolve_multipart_part_path
 from app.schemas.multipart_complete import MultipartPart
 
 
-async def multipart_load(
+async def load_multipart(
     repo: ORMRepository,
     bucket: Bucket,
     object_key: str,
@@ -48,7 +48,7 @@ async def multipart_load(
     return multipart
 
 
-async def multipart_part_upsert(
+async def upsert_multipart_part(
     repo: ORMRepository,
     multipart: ObjektMultipart,
     part_number: int,
@@ -83,7 +83,7 @@ async def multipart_part_upsert(
     return await repo.update(existing)
 
 
-async def multipart_parts_list(
+async def list_multipart_parts(
     repo: ORMRepository,
     multipart: ObjektMultipart,
     *,
@@ -107,7 +107,7 @@ async def multipart_parts_list(
     return await repo.select_all(ObjektMultipartPart, **filters)
 
 
-async def multipart_parts_delete(
+async def delete_multipart_parts(
     repo: ORMRepository,
     multipart: ObjektMultipart,
 ) -> None:
@@ -116,7 +116,7 @@ async def multipart_parts_delete(
     has no ON DELETE CASCADE, so callers must clear parts before the
     parent ObjektMultipart row.
     """
-    rows = await multipart_parts_list(repo, multipart)
+    rows = await list_multipart_parts(repo, multipart)
     for row in rows:
         await repo.delete(row, flush=False)
     await repo.flush()

@@ -21,11 +21,11 @@ from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
 from app.models.objekt_multipart_part import ObjektMultipartPart  # noqa: E402
 from app.s3.multipart import (  # noqa: E402
-    multipart_load,
-    multipart_part_upsert,
+    load_multipart,
+    upsert_multipart_part,
     load_multipart_parts,
-    multipart_parts_delete,
-    multipart_parts_list,
+    delete_multipart_parts,
+    list_multipart_parts,
 )
 from app.schemas.multipart_complete import MultipartPart  # noqa: E402
 
@@ -46,7 +46,7 @@ class TestMultipartLoad(unittest.IsolatedAsyncioTestCase):
         self.repo.select = AsyncMock(return_value=self.multipart)
 
     async def _load(self):
-        return await multipart_load(
+        return await load_multipart(
             repo=self.repo,
             bucket=self.bucket,
             object_key="2024/cat.png",
@@ -95,7 +95,7 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
 
     async def test_inserts_new_part_row(self):
         with patch("app.s3.multipart.time.time", return_value=1_000_000):
-            row = await multipart_part_upsert(
+            row = await upsert_multipart_part(
                 repo=self.repo,
                 multipart=self.multipart,
                 part_number=1,
@@ -124,7 +124,7 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
         self.repo.select = AsyncMock(return_value=existing)
 
         with patch("app.s3.multipart.time.time", return_value=2_000_000):
-            row = await multipart_part_upsert(
+            row = await upsert_multipart_part(
                 repo=self.repo,
                 multipart=self.multipart,
                 part_number=1,
@@ -147,7 +147,7 @@ class TestMultipartPartsList(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=[])
 
-        await multipart_parts_list(
+        await list_multipart_parts(
             repo,
             multipart,
             part_number_marker=2,
@@ -176,7 +176,7 @@ class TestMultipartPartsDelete(unittest.IsolatedAsyncioTestCase):
         repo.delete = AsyncMock()
         repo.flush = AsyncMock()
 
-        await multipart_parts_delete(repo, multipart)
+        await delete_multipart_parts(repo, multipart)
 
         self.assertEqual(repo.delete.await_count, 2)
         repo.delete.assert_any_await(rows[0], flush=False)

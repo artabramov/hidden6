@@ -26,7 +26,7 @@ from app.repositories.io import (
 )
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
-from app.s3.multipart import multipart_load, multipart_part_upsert
+from app.s3.multipart import load_multipart, upsert_multipart_part
 from app.s3.paths import (
     resolve_multipart_backup_part_path,
     resolve_multipart_part_path,
@@ -113,7 +113,7 @@ async def multipart_upload(
             if not await isdir(upload_dir):
                 raise S3ObjektUploadNotFoundError(resource)
 
-            multipart = await multipart_load(
+            multipart = await load_multipart(
                 repo=repo,
                 bucket=bucket,
                 object_key=objekt_key,
@@ -134,7 +134,7 @@ async def multipart_upload(
             await rename(staged_path, part_path)
             part_written = True
 
-            await multipart_part_upsert(
+            await upsert_multipart_part(
                 repo=repo,
                 multipart=multipart,
                 part_number=part_number,

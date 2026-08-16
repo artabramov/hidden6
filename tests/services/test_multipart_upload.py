@@ -72,8 +72,8 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=MagicMock(id=7),
         )
-        self.multipart_load = self._patch(
-            "multipart_load",
+        self.load_multipart = self._patch(
+            "load_multipart",
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
@@ -105,7 +105,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             return_value=1024,
         )
         self.part_upsert = self._patch(
-            "multipart_part_upsert",
+            "upsert_multipart_part",
             new_callable=AsyncMock,
         )
 
@@ -271,7 +271,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.upload.assert_not_awaited()
 
     async def test_unknown_upload_raises(self):
-        self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
+        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._upload()
@@ -285,7 +285,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._upload()
 
-        self.multipart_load.assert_not_awaited()
+        self.load_multipart.assert_not_awaited()
         self.upload.assert_not_awaited()
         self.delete.assert_awaited_once_with(STAGED_PATH)
 

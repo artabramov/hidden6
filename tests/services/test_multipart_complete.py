@@ -106,8 +106,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.multipart_load = self._patch(
-            "multipart_load",
+        self.load_multipart = self._patch(
+            "load_multipart",
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
@@ -123,7 +123,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             ),
         )
         self.parts_delete = self._patch(
-            "multipart_parts_delete",
+            "delete_multipart_parts",
             new_callable=AsyncMock,
         )
         self._patch("etag_construct", return_value="joined-2")
@@ -376,7 +376,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_unknown_upload_raises(self):
-        self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
+        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._complete()
@@ -396,7 +396,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
-        self.multipart_load.assert_not_awaited()
+        self.load_multipart.assert_not_awaited()
         self.concat.assert_not_awaited()
 
     async def test_missing_bucket_dir_cleans_staged_file(self):

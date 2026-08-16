@@ -30,9 +30,9 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.etag import etag_construct
 from app.s3.multipart import (
-    multipart_load,
+    load_multipart,
     load_multipart_parts,
-    multipart_parts_delete,
+    delete_multipart_parts,
 )
 from app.s3.objekt import objekt_mkdir, objekt_upsert
 from app.s3.paths import (
@@ -142,7 +142,7 @@ async def multipart_complete(
     # and commit so UploadPart cannot change the source parts.
     async with locks.lock_directory(upload_path, LockType.WRITE):
         try:
-            multipart = await multipart_load(
+            multipart = await load_multipart(
                 repo=repo,
                 bucket=bucket,
                 object_key=objekt_key,
@@ -238,7 +238,7 @@ async def multipart_complete(
 
                 # Parts have no ON DELETE CASCADE; clear them before
                 # the parent upload row, then commit.
-                await multipart_parts_delete(repo, multipart)
+                await delete_multipart_parts(repo, multipart)
                 await repo.delete(multipart)
                 await repo.commit()
 
