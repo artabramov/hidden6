@@ -12,6 +12,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.errors import S3ObjektPartNumberInvalidError
 from app.models.user import User
+from app.s3.headers import etag_headers
 from app.services.multipart_upload import multipart_upload
 from app.services.objekt_upload import objekt_upload
 from app.streams import build_body_reader
@@ -109,7 +110,7 @@ async def objekt_upload_router(
         )
         return Response(
             status_code=status.HTTP_200_OK,
-            headers={"ETag": f'"{etag}"'},
+            headers=etag_headers(etag),
         )
 
     objekt = await objekt_upload(
@@ -121,5 +122,5 @@ async def objekt_upload_router(
     )
     return Response(
         status_code=status.HTTP_200_OK,
-        headers={"ETag": f'"{objekt.etag}"'},
+        headers=etag_headers(objekt.etag),
     )

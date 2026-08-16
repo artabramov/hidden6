@@ -5,12 +5,19 @@ from app.models.objekt import Objekt
 from app.s3.datetime import http_datetime
 
 
+def etag_headers(etag: str) -> dict[str, str]:
+    """
+    ETag response header for PutObject and UploadPart.
+    """
+    return {"ETag": f'"{etag}"'}
+
+
 def objekt_headers(objekt: Objekt) -> dict[str, str]:
     """
     Response headers shared by GetObject and HeadObject.
     """
     return {
         "Content-Length": str(objekt.size_bytes),
-        "ETag": f'"{objekt.etag}"',
+        **etag_headers(objekt.etag),
         "Last-Modified": http_datetime(objekt.modified_at),
     }
