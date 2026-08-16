@@ -23,6 +23,9 @@ from app.services.multipart_abort import multipart_abort  # noqa: E402
 
 load_all_models()
 
+UPLOAD_PATH = "/mnt/tmp/beef"
+CLEANUP_PATH = "/mnt/tmp/.beef.aborted.cafebabe"
+
 
 class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
     def _patch(self, target, **kwargs):
@@ -103,19 +106,15 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
     async def test_renames_then_drops_parts_and_upload(self):
         await self._abort()
 
-        cleanup = "/mnt/tmp/.beef.aborted.cafebabe"
-        self.lock.assert_called_once_with(
-            "/mnt/tmp/beef",
-            LockType.WRITE,
-        )
-        self.rename.assert_awaited_once_with("/mnt/tmp/beef", cleanup)
+        self.lock.assert_called_once_with(UPLOAD_PATH, LockType.WRITE)
+        self.rename.assert_awaited_once_with(UPLOAD_PATH, CLEANUP_PATH)
         self.parts_delete.assert_awaited_once_with(
             self.repo,
             self.multipart,
         )
         self.repo.delete.assert_awaited_once_with(self.multipart)
         self.repo.commit.assert_awaited_once()
-        self.rmtree.assert_awaited_once_with(cleanup)
+        self.rmtree.assert_awaited_once_with(CLEANUP_PATH)
 
     async def test_missing_upload_dir_still_drops_db_rows(self):
         self.isdir.return_value = False
@@ -128,61 +127,58 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.repo.commit.assert_awaited_once()
         self.rmtree.assert_not_awaited()
 
-    async def test_failed_cleanup_is_logged(self):
-        self.rmtree.side_effect = OSError("busy")
-
-        await self._abort()
-
-        self.log.exception.assert_called_once()
-        self.repo.commit.assert_awaited_once()
-
-    async def test_db_failure_after_rename_restores_upload_dir(self):
+    async def test_commit_failure_restores_upload_dir(self):
         self.repo.commit.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
             await self._abort()
 
-        cleanup = "/mnt/tmp/.beef.aborted.cafebabe"
         self.assertEqual(
             self.rename.await_args_list,
             [
-                call("/mnt/tmp/beef", cleanup),
-                call(cleanup, "/mnt/tmp/beef"),
+                call(UPLOAD_PATH, CLEANUP_PATH),
+                call(CLEANUP_PATH, UPLOAD_PATH),
             ],
         )
         self.repo.rollback.assert_awaited_once()
         self.rmtree.assert_not_awaited()
 
-    async def test_restore_failure_is_logged(self):
-        self.repo.commit.side_effect = RuntimeError("db down")
-        self.rename.side_effect = [None, OSError("busy")]
+    async def test_parts_delete_failure_restores_upload_dir(self):
+        self.parts_delete.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
             await self._abort()
 
-        self.log.exception.assert_called()
-        self.assertIn(
-            "multipart_abort_integrity_failed",
-            self.log.exception.call_args.args[0],
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(UPLOAD_PATH, CLEANUP_PATH),
+                call(CLEANUP_PATH, UPLOAD_PATH),
+            ],
         )
+        self.repo.delete.assert_not_awaited()
+        self.repo.commit.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
         self.rmtree.assert_not_awaited()
 
-    async def test_inaccessible_bucket_raises(self):
-        self.bucket_load.side_effect = S3BucketNotFoundError()
-
-        with self.assertRaises(S3BucketNotFoundError):
-            await self._abort()
-
-        self.repo.delete.assert_not_awaited()
-
-    async def test_unknown_upload_raises(self):
+    async def test_unknown_upload_does_not_touch_filesystem(self):
         self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
 
         with self.assertRaises(S3ObjektUploadNotFoundError):
             await self._abort()
 
+        self.rename.assert_not_awaited()
         self.repo.delete.assert_not_awaited()
         self.rmtree.assert_not_awaited()
+
+    async def test_inaccessible_bucket_stops_before_lock(self):
+        self.bucket_load.side_effect = S3BucketNotFoundError()
+
+        with self.assertRaises(S3BucketNotFoundError):
+            await self._abort()
+
+        self.lock.assert_not_called()
+        self.repo.delete.assert_not_awaited()
 
     async def test_invalid_key_stops_before_cleanup(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:
@@ -196,4 +192,53 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
         self.bucket_load.assert_not_awaited()
+        self.lock.assert_not_called()
         self.rmtree.assert_not_awaited()
+
+    async def test_logs_when_post_commit_cleanup_fails(self):
+        self.rmtree.side_effect = OSError("busy")
+
+        await self._abort()
+
+        self.repo.commit.assert_awaited_once()
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "cleanup_path=%s",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_restore_fails(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.rename.side_effect = [None, OSError("busy")]
+
+        with self.assertRaises(RuntimeError):
+            await self._abort()
+
+        self.assertIn(
+            "msg=restore_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.rmtree.assert_not_awaited()
+
+    async def test_logs_when_rollback_fails(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.repo.rollback.side_effect = RuntimeError("session closed")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._abort()
+
+        self.assertEqual(str(cm.exception), "db down")
+        self.assertIn(
+            "msg=rollback_failed",
+            self.log.exception.call_args_list[0].args[0],
+        )
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(UPLOAD_PATH, CLEANUP_PATH),
+                call(CLEANUP_PATH, UPLOAD_PATH),
+            ],
+        )
