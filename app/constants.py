@@ -17,7 +17,7 @@ MOUNTPOINT_TMP_DIRNAME = "tmp"
 FILE_CHUNK_SIZE_BYTES = 1024 * 64
 FILE_MIMETYPE_READ_BYTES = 1024 * 16
 
-# S3 bucket versioning statuses (PutBucketVersioning).
+# S3 bucket versioning statuses.
 BUCKET_VERSIONING_DISABLED = "Disabled"
 BUCKET_VERSIONING_ENABLED = "Enabled"
 BUCKET_VERSIONING_SUSPENDED = "Suspended"
