@@ -6,8 +6,10 @@ import unittest
 
 from app.s3.paths import (
     resolve_bucket_path,
+    resolve_multipart_backup_part_path,
     resolve_multipart_part_path,
     resolve_multipart_path,
+    resolve_multipart_staged_part_path,
     resolve_objekt_path,
     resolve_staged_path,
     resolve_version_path,
@@ -58,6 +60,26 @@ class TestMultipartPath(unittest.TestCase):
         self.assertEqual(
             resolve_multipart_part_path("/mnt/tmp/beef", 3),
             "/mnt/tmp/beef/3.part",
+        )
+
+    def test_resolves_staged_part_file(self):
+        self.assertEqual(
+            resolve_multipart_staged_part_path(
+                "/mnt/tmp/beef",
+                3,
+                "deadbeef",
+            ),
+            "/mnt/tmp/beef/.3.deadbeef.part.tmp",
+        )
+
+    def test_resolves_backup_part_file(self):
+        self.assertEqual(
+            resolve_multipart_backup_part_path(
+                "/mnt/tmp/beef",
+                3,
+                "deadbeef",
+            ),
+            "/mnt/tmp/beef/.3.deadbeef.part.bak",
         )
 
 

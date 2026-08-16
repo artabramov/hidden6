@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,7 +27,12 @@ from app.repositories.io import (
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.multipart import multipart_load, multipart_part_upsert
-from app.s3.paths import resolve_multipart_part_path, resolve_multipart_path
+from app.s3.paths import (
+    resolve_multipart_backup_part_path,
+    resolve_multipart_part_path,
+    resolve_multipart_path,
+    resolve_multipart_staged_part_path,
+)
 from app.s3.validation import validate_objekt_key
 
 log = logging.getLogger(__name__)
@@ -44,10 +48,29 @@ async def multipart_upload(
     body: AsyncReadable,
 ) -> str:
     """
-    Store one part of a multipart upload (S3 UploadPart) and return
-    its ETag. Bytes are staged on disk first; the ObjektMultipartPart
-    row is written only after the final part file exists. A re-upload
-    keeps the previous part file until the database update commits.
+    Upload one part of an S3 multipart upload. The operation is
+    transactional at the DB level and reconciles filesystem state
+    on failure. Part writes are staged through a temporary file and
+    applied under a part-level lock.
+
+    (1) verify that the multipart upload still exists
+    (2) upload part data to a temporary path
+    (3) read part metadata (size, ETag)
+
+    if part already exists:
+        (4) move the current part to a temporary backup
+
+    (5) publish the staged part
+    (6) create or update the multipart part record
+    (7) commit
+
+    On failure of the transaction, the session is rolled back and
+    filesystem state is reconciled: newly written parts are removed,
+    previous parts are restored from their temporary backup, and staged
+    data is removed.
+
+    After a successful commit, the temporary backup of a replaced part
+    is removed as a best-effort cleanup step.
     """
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
@@ -60,100 +83,132 @@ async def multipart_upload(
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
-    multipart = await multipart_load(
-        repo=repo,
-        bucket=bucket,
-        object_key=objekt_key,
-        upload_id=upload_id,
-        resource=resource,
+    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
+    part_path = resolve_multipart_part_path(upload_dir, part_number)
+    token = uuid.uuid4().hex
+
+    # Temporary path used to stage the incoming part
+    # before it is published to the multipart upload.
+    staged_path = resolve_multipart_staged_part_path(
+        upload_dir,
+        part_number,
+        token,
     )
 
-    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
-    part = resolve_multipart_part_path(upload_dir, part_number)
+    # Temporary path used to preserve the existing part
+    # so it can be restored if the re-upload fails.
+    backup_path = resolve_multipart_backup_part_path(
+        upload_dir,
+        part_number,
+        token,
+    )
 
-    if not await isdir(upload_dir):
-        raise S3ObjektUploadNotFoundError(resource)
+    backup_created = False
+    part_written = False
 
     # Serialize re-uploads of the same part number. Different part
     # numbers use different paths and may proceed in parallel.
-    async with locks.lock_file(part, LockType.WRITE):
-        token = uuid.uuid4().hex
-        temp_part = os.path.join(
-            upload_dir,
-            f".{part_number}.{token}.part.tmp",
-        )
-        backup_part = None
-        published = False
-
+    async with locks.lock_file(part_path, LockType.WRITE):
         try:
-            await upload(body, temp_part)
-            etag = await get_file_hash(temp_part)
-            size_bytes = await get_filesize(temp_part)
+            if not await isdir(upload_dir):
+                raise S3ObjektUploadNotFoundError(resource)
 
-            # Re-upload: move the previous bytes aside so a failed DB
-            # commit can restore them. First upload publishes directly.
-            if await isfile(part):
-                backup_part = os.path.join(
-                    upload_dir,
-                    f".{part_number}.{token}.part.bak",
-                )
-                await rename(part, backup_part)
+            multipart = await multipart_load(
+                repo=repo,
+                bucket=bucket,
+                object_key=objekt_key,
+                upload_id=upload_id,
+                resource=resource,
+            )
 
-            await rename(temp_part, part)
-            published = True
-            temp_part = None
+            await upload(body, staged_path)
+            etag = await get_file_hash(staged_path)
+            size_bytes = await get_filesize(staged_path)
 
-            try:
-                await multipart_part_upsert(
-                    repo=repo,
-                    multipart=multipart,
-                    part_number=part_number,
-                    size_bytes=size_bytes,
-                    etag=etag,
-                )
-                await repo.commit()
-            except Exception:
-                await repo.rollback()
-                if backup_part is not None:
-                    try:
-                        await rename(backup_part, part)
-                        backup_part = None
-                    except Exception:
-                        log.exception(
-                            "msg=multipart_part_integrity_failed "
-                            "part=%s backup=%s",
-                            part,
-                            backup_part,
-                        )
-                raise
+            # Preserve the current part before overwriting it so
+            # a failed transaction can restore the previous payload.
+            if await isfile(part_path):
+                await rename(part_path, backup_path)
+                backup_created = True
 
-            if backup_part is not None:
-                try:
-                    await delete(backup_part)
-                except Exception:
-                    log.exception(
-                        "msg=multipart_part_backup_cleanup_failed "
-                        "backup=%s",
-                        backup_part,
-                    )
-                backup_part = None
+            await rename(staged_path, part_path)
+            part_written = True
 
+            await multipart_part_upsert(
+                repo=repo,
+                multipart=multipart,
+                part_number=part_number,
+                size_bytes=size_bytes,
+                etag=etag,
+            )
+            await repo.commit()
+
+        # Roll back DB state and reconcile the part files before
+        # releasing the part lock, so no concurrent re-upload can
+        # observe an intermediate state.
         except Exception:
-            if temp_part is not None:
-                await delete(temp_part)
-            # Restore previous bytes only when the new part never became
-            # the published file. After a published re-upload, restore
-            # is handled above around the DB commit.
-            if not published and backup_part is not None:
+            try:
+                await repo.rollback()
+            except Exception:
+                log.exception(
+                    "msg=rollback_failed "
+                    "bucket_name=%s "
+                    "object_key=%s "
+                    "part_number=%s",
+                    bucket_name,
+                    objekt_key,
+                    part_number,
+                )
+
+            # A new part was published before the transaction failed.
+            # Remove it because there is no previous payload to restore.
+            if part_written and not backup_created:
                 try:
-                    await rename(backup_part, part)
+                    await delete(part_path)
                 except Exception:
                     log.exception(
-                        "msg=multipart_part_integrity_failed "
-                        "part=%s backup=%s",
-                        part,
-                        backup_part,
+                        "msg=cleanup_failed "
+                        "part_path=%s",
+                        part_path,
                     )
+
+            # An existing part was moved aside before the transaction
+            # failed. Restore it from the temporary backup.
+            if backup_created:
+                try:
+                    await rename(backup_path, part_path)
+                except Exception:
+                    log.exception(
+                        "msg=restore_failed "
+                        "part_path=%s "
+                        "backup_path=%s",
+                        part_path,
+                        backup_path,
+                    )
+
+            # Remove any staged payload left behind
+            # by a failed part upload.
+            try:
+                await delete(staged_path)
+            except Exception:
+                log.exception(
+                    "msg=cleanup_failed "
+                    "staged_path=%s",
+                    staged_path,
+                )
+
             raise
+
+        # After a successful commit, the previous part
+        # payload is no longer needed.
+        if backup_created:
+            try:
+                await delete(backup_path)
+            except Exception:
+                log.exception(
+                    "msg=cleanup_failed "
+                    "backup_path=%s",
+                    backup_path,
+                )
 
     return etag

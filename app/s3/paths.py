@@ -60,6 +60,34 @@ def resolve_multipart_part_path(
     return os.path.join(upload_dir, f"{part_number}.part")
 
 
+def resolve_multipart_staged_part_path(
+    upload_dir: str,
+    part_number: int,
+    token: str,
+) -> str:
+    """
+    Build the temporary staging path for a multipart part.
+    """
+    return os.path.join(
+        upload_dir,
+        f".{part_number}.{token}.part.tmp",
+    )
+
+
+def resolve_multipart_backup_part_path(
+    upload_dir: str,
+    part_number: int,
+    token: str,
+) -> str:
+    """
+    Build the temporary backup path for an existing multipart part.
+    """
+    return os.path.join(
+        upload_dir,
+        f".{part_number}.{token}.part.bak",
+    )
+
+
 def resolve_version_path(
     versions_dir: str,
     bucket_id: int,
