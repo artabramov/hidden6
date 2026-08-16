@@ -11,6 +11,11 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
+from app.constants import (  # noqa: E402
+    BUCKET_VERSIONING_ENABLED,
+    BUCKET_VERSIONING_SUSPENDED,
+    S3_XMLNS,
+)
 from app.db.engine import load_all_models  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -37,11 +42,17 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
             ),
         ]
 
-        with patch(
-            "app.routers.objekt_list.objekt_list",
-            new_callable=AsyncMock,
-            return_value=objekts,
-        ) as mock_service:
+        with (
+            patch(
+                "app.routers.objekt_list.objekt_list",
+                new_callable=AsyncMock,
+                return_value=objekts,
+            ) as mock_list,
+            patch(
+                "app.routers.objekt_list.bucket_versioning_get",
+                new_callable=AsyncMock,
+            ) as mock_versioning,
+        ):
             response = await objekt_list_router(
                 bucket_name="photos",
                 session=session,
@@ -50,13 +61,14 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
                 max_keys=100,
             )
 
-        mock_service.assert_awaited_once_with(
+        mock_list.assert_awaited_once_with(
             session=session,
             current_user=user,
             bucket_name="photos",
             prefix="2024/",
             max_keys=100,
         )
+        mock_versioning.assert_not_awaited()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.media_type, "application/xml")
 
@@ -72,24 +84,126 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
         user = User(id=2, username="bob", is_root=False)
         session = MagicMock()
 
-        with patch(
-            "app.routers.objekt_list.objekt_list",
-            new_callable=AsyncMock,
-            return_value=[],
-        ) as mock_service:
+        with (
+            patch(
+                "app.routers.objekt_list.objekt_list",
+                new_callable=AsyncMock,
+                return_value=[],
+            ) as mock_list,
+            patch(
+                "app.routers.objekt_list.bucket_versioning_get",
+                new_callable=AsyncMock,
+            ) as mock_versioning,
+        ):
             response = await objekt_list_router(
                 bucket_name="photos",
                 session=session,
                 current_user=user,
             )
 
-        mock_service.assert_awaited_once_with(
+        mock_list.assert_awaited_once_with(
             session=session,
             current_user=user,
             bucket_name="photos",
             prefix="",
             max_keys=1000,
         )
+        mock_versioning.assert_not_awaited()
         body = response.body.decode()
         self.assertIn("<KeyCount>0</KeyCount>", body)
         self.assertNotIn("<Contents>", body)
+
+    async def test_returns_versioning_xml_when_enabled(self):
+        user = User(id=1, username="alice", is_root=False)
+        session = MagicMock()
+
+        with (
+            patch(
+                "app.routers.objekt_list.bucket_versioning_get",
+                new_callable=AsyncMock,
+                return_value=BUCKET_VERSIONING_ENABLED,
+            ) as mock_versioning,
+            patch(
+                "app.routers.objekt_list.objekt_list",
+                new_callable=AsyncMock,
+            ) as mock_list,
+        ):
+            response = await objekt_list_router(
+                bucket_name="photos",
+                session=session,
+                current_user=user,
+                versioning="",
+            )
+
+        mock_versioning.assert_awaited_once_with(
+            session=session,
+            current_user=user,
+            bucket_name="photos",
+        )
+        mock_list.assert_not_awaited()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.media_type, "application/xml")
+
+        body = response.body.decode()
+        self.assertIn("<VersioningConfiguration", body)
+        self.assertIn(f'xmlns="{S3_XMLNS}"', body)
+        self.assertIn(
+            f"<Status>{BUCKET_VERSIONING_ENABLED}</Status>",
+            body,
+        )
+
+    async def test_returns_versioning_xml_when_suspended(self):
+        user = User(id=1, username="alice", is_root=False)
+        session = MagicMock()
+
+        with (
+            patch(
+                "app.routers.objekt_list.bucket_versioning_get",
+                new_callable=AsyncMock,
+                return_value=BUCKET_VERSIONING_SUSPENDED,
+            ),
+            patch(
+                "app.routers.objekt_list.objekt_list",
+                new_callable=AsyncMock,
+            ) as mock_list,
+        ):
+            response = await objekt_list_router(
+                bucket_name="photos",
+                session=session,
+                current_user=user,
+                versioning="",
+            )
+
+        mock_list.assert_not_awaited()
+        body = response.body.decode()
+        self.assertIn(
+            f"<Status>{BUCKET_VERSIONING_SUSPENDED}</Status>",
+            body,
+        )
+
+    async def test_returns_versioning_xml_without_status(self):
+        user = User(id=1, username="alice", is_root=False)
+        session = MagicMock()
+
+        with (
+            patch(
+                "app.routers.objekt_list.bucket_versioning_get",
+                new_callable=AsyncMock,
+                return_value=None,
+            ),
+            patch(
+                "app.routers.objekt_list.objekt_list",
+                new_callable=AsyncMock,
+            ) as mock_list,
+        ):
+            response = await objekt_list_router(
+                bucket_name="photos",
+                session=session,
+                current_user=user,
+                versioning="",
+            )
+
+        mock_list.assert_not_awaited()
+        body = response.body.decode()
+        self.assertIn("<VersioningConfiguration", body)
+        self.assertNotIn("<Status>", body)
