@@ -102,6 +102,33 @@ def resolve_multipart_aborted_path(
     )
 
 
+def resolve_multipart_completed_path(
+    tmp_dir: str,
+    upload_id: str,
+    token: str,
+) -> str:
+    """
+    Build the temporary path for a completed multipart upload.
+    """
+    return os.path.join(
+        tmp_dir,
+        f".{upload_id}.completed.{token}",
+    )
+
+
+def resolve_multipart_object_backup_path(
+    tmp_dir: str,
+    token: str,
+) -> str:
+    """
+    Build the temporary backup path for an overwritten object.
+    """
+    return os.path.join(
+        tmp_dir,
+        f".{token}.object.bak",
+    )
+
+
 def resolve_version_path(
     versions_dir: str,
     bucket_id: int,

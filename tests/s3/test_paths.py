@@ -8,6 +8,8 @@ from app.s3.paths import (
     resolve_bucket_path,
     resolve_multipart_aborted_path,
     resolve_multipart_backup_part_path,
+    resolve_multipart_completed_path,
+    resolve_multipart_object_backup_path,
     resolve_multipart_part_path,
     resolve_multipart_path,
     resolve_multipart_staged_part_path,
@@ -91,6 +93,25 @@ class TestMultipartPath(unittest.TestCase):
                 "cafebabe",
             ),
             "/mnt/tmp/.beef.aborted.cafebabe",
+        )
+
+    def test_resolves_completed_upload_dir(self):
+        self.assertEqual(
+            resolve_multipart_completed_path(
+                "/mnt/tmp",
+                "beef",
+                "cafebabe",
+            ),
+            "/mnt/tmp/.beef.completed.cafebabe",
+        )
+
+    def test_resolves_object_backup_file(self):
+        self.assertEqual(
+            resolve_multipart_object_backup_path(
+                "/mnt/tmp",
+                "deadbeef",
+            ),
+            "/mnt/tmp/.deadbeef.object.bak",
         )
 
 
