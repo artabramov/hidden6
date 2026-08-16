@@ -2,19 +2,23 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.errors import S3BucketNotFoundError, S3ObjektPartInvalidError
+from app.errors import (
+    S3BucketNotFoundError,
+    S3ObjektKeyConflictError,
+    S3ObjektPartInvalidError,
+)
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.io import (
     concat,
+    copy,
     delete,
     get_filesize,
     isdir,
@@ -31,7 +35,13 @@ from app.s3.multipart import (
     multipart_parts_delete,
 )
 from app.s3.objekt import objekt_mkdir, objekt_upsert
-from app.s3.paths import resolve_multipart_path, resolve_objekt_path
+from app.s3.paths import (
+    resolve_multipart_completed_path,
+    resolve_multipart_object_backup_path,
+    resolve_multipart_path,
+    resolve_objekt_path,
+    resolve_staged_path,
+)
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 from app.schemas.multipart_complete import MultipartPart
 
@@ -47,11 +57,38 @@ async def multipart_complete(
     parts: list[MultipartPart],
 ) -> Objekt:
     """
-    Assemble the uploaded parts into a single object (S3
-    CompleteMultipartUpload). The multipart directory WRITE lock is
-    held until the upload row is committed away so UploadPart cannot
-    interleave after validation. When an existing object is overwritten,
-    its bytes stay on a same-directory backup until commit succeeds.
+    Complete an S3 multipart upload. The uploaded parts are validated
+    and assembled into a staged object while the multipart upload is
+    locked. The completed object is then published under the bucket
+    WRITE lock and committed together with removal of the multipart
+    upload state.
+
+    (1) load the multipart upload
+    (2) load and validate the requested parts
+    (3) assemble the parts into a temporary object
+    (4) verify the stored part ETags against the assembled data
+    (5) read the assembled object size
+    (6) verify that the bucket directory exists
+    (7) create the directories carrying the object key prefix
+
+    if object exists:
+        (8) copy the current object to a temporary backup
+
+    (9) publish the assembled object
+    (10) move the multipart upload to a temporary cleanup path
+    (11) delete all multipart part records
+    (12) delete the multipart upload record
+    (13) commit
+
+    On failure during assembly, staged object data is removed.
+    On failure during publication, the session is rolled back and
+    filesystem state is reconciled: newly written objects are removed,
+    overwritten objects are restored from their temporary backup, the
+    active multipart upload is restored from its cleanup path, and
+    staged data is removed.
+
+    After a successful commit, the previous object backup and completed
+    multipart upload directory are removed as best-effort cleanup steps.
     """
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
@@ -68,29 +105,59 @@ async def multipart_complete(
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, current_user, resource)
 
-    multipart = await multipart_load(
-        repo=repo,
-        bucket=bucket,
-        object_key=objekt_key,
-        upload_id=upload_id,
-        resource=resource,
+    # Path containing the active multipart upload
+    # and its uploaded parts.
+    upload_path = resolve_multipart_path(
+        config.MOUNTPOINT_TMP_DIR,
+        upload_id,
     )
 
-    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
-    staged_path = os.path.join(config.MOUNTPOINT_TMP_DIR, uuid.uuid4().hex)
-    cleanup_dir = None
-    object_backup = None
-    object_published = False
-    objekt = None
+    # Temporary path used to assemble the uploaded parts
+    # before the completed object is published.
+    staged_path = resolve_staged_path(
+        config.MOUNTPOINT_TMP_DIR,
+        uuid.uuid4().hex,
+    )
 
-    # Lock order: multipart upload dir, then bucket dir. The multipart
-    # WRITE lock stays held through publish, commit, and FS rollback.
-    async with locks.lock_directory(upload_dir, LockType.WRITE):
+    # Temporary path used to move the completed multipart
+    # upload aside until the transaction is committed.
+    cleanup_path = resolve_multipart_completed_path(
+        config.MOUNTPOINT_TMP_DIR,
+        upload_id,
+        uuid.uuid4().hex,
+    )
+
+    # Temporary path used to preserve the existing object
+    # so it can be restored if completion fails.
+    backup_path = resolve_multipart_object_backup_path(
+        config.MOUNTPOINT_TMP_DIR,
+        uuid.uuid4().hex,
+    )
+
+    backup_created = False
+    objekt_written = False
+    upload_moved = False
+
+    # Hold the multipart lock through validation, assembly, publication,
+    # and commit so UploadPart cannot change the source parts.
+    async with locks.lock_directory(upload_path, LockType.WRITE):
         try:
+            multipart = await multipart_load(
+                repo=repo,
+                bucket=bucket,
+                object_key=objekt_key,
+                upload_id=upload_id,
+                resource=resource,
+            )
+
+            # Part validation and assembly may require reading the
+            # entire multipart payload. Keep this expensive work outside
+            # the bucket lock so other operations on the bucket are not
+            # blocked while the object is assembled.
             part_paths, stored_etags = await multipart_parts(
                 repo=repo,
                 multipart=multipart,
-                upload_dir=upload_dir,
+                upload_dir=upload_path,
                 parts=parts,
                 resource=resource,
             )
@@ -106,7 +173,37 @@ async def multipart_complete(
 
             size_bytes = await get_filesize(staged_path)
 
-            async with locks.lock_directory(bucket_path, LockType.WRITE):
+        except Exception:
+            try:
+                await repo.rollback()
+            except Exception:
+                log.exception(
+                    "msg=rollback_failed "
+                    "bucket_name=%s "
+                    "object_key=%s "
+                    "upload_id=%s",
+                    bucket_name,
+                    objekt_key,
+                    upload_id,
+                )
+
+            # Remove any assembled payload left behind by
+            # the failed completion.
+            try:
+                await delete(staged_path)
+            except Exception:
+                log.exception(
+                    "msg=cleanup_failed "
+                    "staged_path=%s",
+                    staged_path,
+                )
+
+            raise
+
+        # The bucket lock is acquired only for publication and held
+        # through commit and filesystem compensation.
+        async with locks.lock_directory(bucket_path, LockType.WRITE):
+            try:
                 if not await isdir(bucket_path):
                     raise S3BucketNotFoundError(resource)
 
@@ -122,99 +219,142 @@ async def multipart_complete(
                     content_type=multipart.content_type,
                 )
 
-                # Keep previous bytes until DB commit. Backup lives next
-                # to the object so rename stays atomic on one filesystem.
+                # Backing up an existing object requires copying its
+                # full payload under the bucket WRITE lock. This cost
+                # is accepted to preserve the previous object until
+                # the transaction commits or can be rolled back.
                 if await isfile(object_path):
-                    object_backup = os.path.join(
-                        os.path.dirname(object_path),
-                        f".{os.path.basename(object_path)}."
-                        f"{uuid.uuid4().hex}.object.bak",
-                    )
-                    await rename(object_path, object_backup)
+                    await copy(object_path, backup_path)
+                    backup_created = True
 
-                await rename(staged_path, object_path)
-                object_published = True
-                staged_path = None
-
-            cleanup_dir = os.path.join(
-                config.MOUNTPOINT_TMP_DIR,
-                f".{upload_id}.completed.{uuid.uuid4().hex}",
-            )
-            await rename(upload_dir, cleanup_dir)
-
-            # Parts have no ON DELETE CASCADE; clear them before the
-            # parent upload row, then commit.
-            await multipart_parts_delete(repo, multipart)
-            await repo.delete(multipart)
-            await repo.commit()
-
-        except Exception:
-            await repo.rollback()
-
-            # Restore object_path and multipart tombstone independently.
-            async with locks.lock_directory(bucket_path, LockType.WRITE):
-                if object_backup is not None:
-                    try:
-                        await rename(object_backup, object_path)
-                        object_backup = None
-                    except Exception:
-                        log.exception(
-                            "msg=multipart_complete_integrity_failed "
-                            "upload_id=%s state=object_backup "
-                            "object=%s backup=%s",
-                            upload_id,
-                            object_path,
-                            object_backup,
-                        )
-                elif object_published:
-                    try:
-                        await delete(object_path)
-                        object_published = False
-                    except Exception:
-                        log.exception(
-                            "msg=multipart_complete_integrity_failed "
-                            "upload_id=%s state=published_object "
-                            "object=%s",
-                            upload_id,
-                            object_path,
-                        )
-
-            if cleanup_dir is not None:
                 try:
-                    await rename(cleanup_dir, upload_dir)
-                    cleanup_dir = None
+                    await rename(staged_path, object_path)
+                except (IsADirectoryError, NotADirectoryError) as exc:
+                    raise S3ObjektKeyConflictError(resource) from exc
+                objekt_written = True
+
+                await rename(upload_path, cleanup_path)
+                upload_moved = True
+
+                # Parts have no ON DELETE CASCADE; clear them before
+                # the parent upload row, then commit.
+                await multipart_parts_delete(repo, multipart)
+                await repo.delete(multipart)
+                await repo.commit()
+
+            except Exception:
+                try:
+                    await repo.rollback()
                 except Exception:
                     log.exception(
-                        "msg=multipart_complete_integrity_failed "
-                        "upload_id=%s state=multipart_tombstone "
-                        "upload_dir=%s cleanup=%s",
+                        "msg=rollback_failed "
+                        "bucket_name=%s "
+                        "object_key=%s "
+                        "upload_id=%s",
+                        bucket_name,
+                        objekt_key,
                         upload_id,
-                        upload_dir,
-                        cleanup_dir,
                     )
 
-            if staged_path is not None:
-                await delete(staged_path)
-            raise
+                # A new object was published before the transaction
+                # failed. Remove it because there is no previous
+                # payload to restore.
+                if objekt_written and not backup_created:
+                    try:
+                        await delete(object_path)
+                    except Exception:
+                        log.exception(
+                            "msg=cleanup_failed "
+                            "object_path=%s",
+                            object_path,
+                        )
 
-    if object_backup is not None:
+                # An existing object was overwritten before the
+                # transaction failed. Restore its previous payload
+                # from the temporary backup.
+                if objekt_written and backup_created:
+                    try:
+                        await copy(backup_path, object_path)
+                    except Exception:
+                        log.exception(
+                            "msg=restore_failed "
+                            "object_path=%s "
+                            "backup_path=%s",
+                            object_path,
+                            backup_path,
+                        )
+                    else:
+                        try:
+                            await delete(backup_path)
+                        except Exception:
+                            log.exception(
+                                "msg=cleanup_failed "
+                                "backup_path=%s",
+                                backup_path,
+                            )
+
+                # A backup was created, but the assembled object was
+                # never published. The original object is still intact,
+                # so discard the backup.
+                if backup_created and not objekt_written:
+                    try:
+                        await delete(backup_path)
+                    except Exception:
+                        log.exception(
+                            "msg=cleanup_failed "
+                            "backup_path=%s",
+                            backup_path,
+                        )
+
+                # The active multipart upload was moved aside before the
+                # transaction failed. Restore it from the cleanup path.
+                if upload_moved:
+                    try:
+                        await rename(cleanup_path, upload_path)
+                    except Exception:
+                        log.exception(
+                            "msg=restore_failed "
+                            "upload_path=%s "
+                            "cleanup_path=%s",
+                            upload_path,
+                            cleanup_path,
+                        )
+
+                # Remove any assembled payload left behind by
+                # the failed completion.
+                try:
+                    await delete(staged_path)
+                except Exception:
+                    log.exception(
+                        "msg=cleanup_failed "
+                        "staged_path=%s",
+                        staged_path,
+                    )
+
+                raise
+
+    # After a successful commit, the previous
+    # object backup is no longer needed.
+    if backup_created:
         try:
-            await delete(object_backup)
+            await delete(backup_path)
         except Exception:
             log.exception(
-                "msg=multipart_object_backup_cleanup_failed "
-                "upload_id=%s backup=%s",
-                upload_id,
-                object_backup,
+                "msg=cleanup_failed "
+                "backup_path=%s",
+                backup_path,
             )
 
-    if cleanup_dir is not None:
+    # After a successful commit, the completed multipart
+    # upload directory is no longer needed.
+    if upload_moved:
         try:
-            await rmtree(cleanup_dir)
-        except OSError:
+            await rmtree(cleanup_path)
+        except Exception:
             log.exception(
-                "msg=multipart_cleanup_failed path=%s",
-                cleanup_dir,
+                "msg=cleanup_failed "
+                "cleanup_path=%s",
+                cleanup_path,
             )
 
     await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
