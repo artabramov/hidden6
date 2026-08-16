@@ -130,20 +130,21 @@ async def load_multipart_parts(
     resource: str,
 ) -> tuple[list[str], list[str]]:
     """
-    Resolve the parts listed by the client against ObjektMultipartPart
-    rows and staged files. Parts must be listed in ascending order,
-    every listed part must have been uploaded, and every part but the
-    last must be at least the minimum part size. Returns the staged
-    paths and stored ETags in client order.
+    Load and validate the multipart parts listed by the client.
+
+    Parts must be listed in ascending order, every listed part must
+    have a matching ObjektMultipartPart row and staged file, and every
+    part except the last must meet the minimum part size. Returns the
+    staged paths and stored ETags in client order.
     """
     previous = 0
     paths: list[str] = []
     etags: list[str] = []
-    sizes: list[int] = []
 
-    for part in parts:
+    for index, part in enumerate(parts):
         if part.part_number <= previous:
             raise S3ObjektPartOrderInvalidError(resource)
+
         if part.part_number > OBJEKT_PART_NUMBER_MAX:
             raise S3ObjektPartNumberInvalidError(resource)
 
@@ -157,16 +158,20 @@ async def load_multipart_parts(
         if row is None:
             raise S3ObjektPartInvalidError(resource)
 
-        path = resolve_multipart_part_path(upload_path, part.part_number)
+        path = resolve_multipart_part_path(
+            upload_path,
+            part.part_number,
+        )
         if not await isfile(path):
             raise S3ObjektPartInvalidError(resource)
 
+        if (
+            index < len(parts) - 1
+            and row.size_bytes < OBJEKT_PART_SIZE_MIN_BYTES
+        ):
+            raise S3ObjektPartTooSmallError(resource)
+
         paths.append(path)
         etags.append(row.etag)
-        sizes.append(row.size_bytes)
-
-    for size_bytes in sizes[:-1]:
-        if size_bytes < OBJEKT_PART_SIZE_MIN_BYTES:
-            raise S3ObjektPartTooSmallError(resource)
 
     return paths, etags
