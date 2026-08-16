@@ -27,7 +27,7 @@ from app.repositories.io import (
 )
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
-from app.s3.objekt import objekt_mkdir, objekt_upsert
+from app.s3.objekt import objekt_mkdir, upsert_objekt
 from app.s3.paths import resolve_objekt_path, resolve_staged_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
@@ -141,7 +141,7 @@ async def objekt_upload(
                 await copy(objekt_path, backup_path)
                 backup_created = True
 
-            objekt = await objekt_upsert(
+            objekt = await upsert_objekt(
                 repo=repo,
                 bucket=bucket,
                 user=current_user,

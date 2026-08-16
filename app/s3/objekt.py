@@ -16,7 +16,7 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_default_object_lock
 
 
-async def objekt_load(
+async def load_objekt(
     repo: ORMRepository,
     bucket: Bucket,
     object_key: str,
@@ -55,7 +55,7 @@ async def objekt_mkdir(object_path: str, resource: str) -> None:
         raise S3ObjektKeyConflictError(resource) from exc
 
 
-async def objekt_upsert(
+async def upsert_objekt(
     repo: ORMRepository,
     bucket: Bucket,
     user: User,

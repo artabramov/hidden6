@@ -102,8 +102,8 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "objekt_mkdir",
             new_callable=AsyncMock,
         )
-        self.objekt_upsert = self._patch(
-            "objekt_upsert",
+        self.upsert_objekt = self._patch(
+            "upsert_objekt",
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
@@ -172,7 +172,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         await self._upload()
 
-        kwargs = self.objekt_upsert.await_args.kwargs
+        kwargs = self.upsert_objekt.await_args.kwargs
         self.assertIs(kwargs["bucket"], self.bucket)
         self.assertIs(kwargs["user"], self.user)
         self.assertEqual(kwargs["object_key"], "2024/cat.png")
@@ -186,7 +186,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         await self._upload()
 
         self.assertEqual(
-            self.objekt_upsert.await_args.kwargs["content_type"],
+            self.upsert_objekt.await_args.kwargs["content_type"],
             OBJEKT_CONTENT_TYPE_DEFAULT,
         )
 
@@ -286,7 +286,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_upsert_failure_discards_backup_when_object_existed(self):
         self._build_mocks(object_exists=True)
-        self.objekt_upsert.side_effect = RuntimeError("db down")
+        self.upsert_objekt.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
             await self._upload()

@@ -22,7 +22,7 @@ from app.errors import (  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.s3.objekt import objekt_load, objekt_mkdir, objekt_upsert  # noqa: E402
+from app.s3.objekt import load_objekt, objekt_mkdir, upsert_objekt  # noqa: E402
 
 load_all_models()
 
@@ -204,7 +204,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         repo.select = AsyncMock(return_value=objekt)
 
-        result = await objekt_load(repo, bucket, "cat.png", "/photos/cat.png")
+        result = await load_objekt(repo, bucket, "cat.png", "/photos/cat.png")
 
         self.assertIs(result, objekt)
         repo.select.assert_awaited_once_with(
@@ -226,7 +226,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
         repo.select = AsyncMock(return_value=objekt)
 
         with self.assertRaises(S3ObjektNotFoundError):
-            await objekt_load(repo, bucket, "gone.txt", "/photos/gone.txt")
+            await load_objekt(repo, bucket, "gone.txt", "/photos/gone.txt")
 
     async def test_missing_objekt_raises(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
@@ -234,7 +234,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
         repo.select = AsyncMock(return_value=None)
 
         with self.assertRaises(S3ObjektNotFoundError):
-            await objekt_load(repo, bucket, "missing.png", "/photos/missing.png")
+            await load_objekt(repo, bucket, "missing.png", "/photos/missing.png")
 
 
 class TestObjektMkdir(unittest.IsolatedAsyncioTestCase):
@@ -289,7 +289,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         return repo
 
     async def _upsert(self, repo):
-        return await objekt_upsert(
+        return await upsert_objekt(
             repo=repo,
             bucket=self.bucket,
             user=self.user,
