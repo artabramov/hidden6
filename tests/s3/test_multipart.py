@@ -184,7 +184,7 @@ class TestMultipartPartsDelete(unittest.IsolatedAsyncioTestCase):
         repo.flush.assert_awaited_once()
 
 
-class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
+class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
     def _patch(self, target, **kwargs):
         patcher = patch(f"app.s3.multipart.{target}", **kwargs)
         mock = patcher.start()
@@ -225,26 +225,29 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
             for number, etag in zip(numbers, etags)
         ]
 
-    async def _resolve(self, numbers=(1, 2)):
+    async def _load(self, numbers=(1, 2)):
         return await load_multipart_parts(
-            self.repo,
-            self.multipart,
-            "/mnt/tmp/beef",
-            self._build_parts(numbers),
-            "/photos/2024/cat.png",
+            repo=self.repo,
+            multipart=self.multipart,
+            upload_path="/mnt/tmp/beef",
+            parts=self._build_parts(numbers),
+            resource="/photos/2024/cat.png",
         )
 
     async def test_maps_parts_onto_rows_and_staged_files(self):
-        paths, etags = await self._resolve()
+        paths, etags = await self._load()
 
         self.assertEqual(
             paths,
             ["/mnt/tmp/beef/1.part", "/mnt/tmp/beef/2.part"],
         )
         self.assertEqual(etags, ["etag-1", "etag-2"])
+        self.assertEqual(self.repo.select.await_count, 2)
+        self.isfile.assert_any_await("/mnt/tmp/beef/1.part")
+        self.isfile.assert_any_await("/mnt/tmp/beef/2.part")
 
     async def test_accepts_noncontiguous_ascending_parts(self):
-        paths, etags = await self._resolve(numbers=(1, 3, 8))
+        paths, etags = await self._load(numbers=(1, 3, 8))
 
         self.assertEqual(
             paths,
@@ -258,29 +261,37 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
 
     async def test_rejects_unordered_parts(self):
         with self.assertRaises(S3ObjektPartOrderInvalidError):
-            await self._resolve(numbers=(2, 1))
+            await self._load(numbers=(2, 1))
+
+        self.repo.select.assert_awaited_once()
 
     async def test_rejects_repeated_part(self):
         with self.assertRaises(S3ObjektPartOrderInvalidError):
-            await self._resolve(numbers=(1, 1))
+            await self._load(numbers=(1, 1))
+
+        self.repo.select.assert_awaited_once()
 
     async def test_rejects_part_number_above_maximum(self):
         with self.assertRaises(S3ObjektPartNumberInvalidError):
-            await self._resolve(numbers=(10001,))
+            await self._load(numbers=(10001,))
+
+        self.repo.select.assert_not_awaited()
 
     async def test_rejects_missing_part_row(self):
         self.repo.select = AsyncMock(return_value=None)
 
         with self.assertRaises(S3ObjektPartInvalidError):
-            await self._resolve()
+            await self._load()
+
+        self.isfile.assert_not_awaited()
 
     async def test_rejects_missing_staged_file(self):
         self.isfile.return_value = False
 
         with self.assertRaises(S3ObjektPartInvalidError):
-            await self._resolve()
+            await self._load()
 
-    async def test_rejects_small_leading_part(self):
+    async def test_rejects_small_non_final_part(self):
         async def _select(_cls, **filters):
             number = filters["part_number"]
             return ObjektMultipartPart(
@@ -294,7 +305,10 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
         self.repo.select = AsyncMock(side_effect=_select)
 
         with self.assertRaises(S3ObjektPartTooSmallError):
-            await self._resolve()
+            await self._load()
+
+        # Size is checked inline, so the next part is never loaded.
+        self.repo.select.assert_awaited_once()
 
     async def test_last_part_may_be_small(self):
         async def _select(_cls, **filters):
@@ -308,7 +322,7 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
 
         self.repo.select = AsyncMock(side_effect=_select)
 
-        paths, etags = await self._resolve(numbers=(1,))
+        paths, etags = await self._load(numbers=(1,))
 
         self.assertEqual(paths, ["/mnt/tmp/beef/1.part"])
         self.assertEqual(etags, ["etag-1"])
@@ -328,4 +342,6 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
         self.repo.select = AsyncMock(side_effect=_select)
 
         with self.assertRaises(S3ObjektPartTooSmallError):
-            await self._resolve(numbers=(1, 2))
+            await self._load(numbers=(1, 2))
+
+        self.repo.select.assert_awaited_once()
