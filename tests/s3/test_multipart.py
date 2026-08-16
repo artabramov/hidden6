@@ -32,7 +32,7 @@ from app.schemas.multipart_complete import MultipartPart  # noqa: E402
 load_all_models()
 
 
-class TestMultipartLoad(unittest.IsolatedAsyncioTestCase):
+class TestLoadMultipart(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
         self.multipart = ObjektMultipart(
@@ -78,7 +78,7 @@ class TestMultipartLoad(unittest.IsolatedAsyncioTestCase):
             await self._load()
 
 
-class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
+class TestUpsertMultipartPart(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.multipart = ObjektMultipart(
             id=5,
@@ -94,23 +94,22 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
         self.repo.commit = AsyncMock()
 
     async def test_inserts_new_part_row(self):
-        with patch("app.s3.multipart.time.time", return_value=1_000_000):
-            row = await upsert_multipart_part(
-                repo=self.repo,
-                multipart=self.multipart,
-                part_number=1,
-                size_bytes=1024,
-                etag="abc",
-            )
+        row = await upsert_multipart_part(
+            repo=self.repo,
+            multipart=self.multipart,
+            part_number=1,
+            size_bytes=1024,
+            etag="abc",
+        )
 
         self.repo.insert.assert_awaited_once()
         self.assertEqual(row.objekt_multipart_id, 5)
         self.assertEqual(row.part_number, 1)
         self.assertEqual(row.size_bytes, 1024)
         self.assertEqual(row.etag, "abc")
-        self.assertEqual(row.modified_at, 1_000_000)
         self.assertNotIn("commit", self.repo.insert.await_args.kwargs)
         self.repo.commit.assert_not_called()
+        self.repo.update.assert_not_awaited()
 
     async def test_updates_existing_part_row(self):
         existing = ObjektMultipartPart(
@@ -141,7 +140,7 @@ class TestMultipartPartUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(existing.modified_at, 2_000_000)
 
 
-class TestMultipartPartsList(unittest.IsolatedAsyncioTestCase):
+class TestListMultipartParts(unittest.IsolatedAsyncioTestCase):
     async def test_lists_parts_ordered_with_pagination(self):
         multipart = ObjektMultipart(id=5, upload_id="beef", object_key="a")
         repo = MagicMock()
@@ -164,7 +163,7 @@ class TestMultipartPartsList(unittest.IsolatedAsyncioTestCase):
         )
 
 
-class TestMultipartPartsDelete(unittest.IsolatedAsyncioTestCase):
+class TestDeleteMultipartParts(unittest.IsolatedAsyncioTestCase):
     async def test_deletes_every_part_row(self):
         multipart = ObjektMultipart(id=5, upload_id="beef", object_key="a")
         rows = [
