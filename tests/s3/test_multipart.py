@@ -23,7 +23,7 @@ from app.models.objekt_multipart_part import ObjektMultipartPart  # noqa: E402
 from app.s3.multipart import (  # noqa: E402
     multipart_load,
     multipart_part_upsert,
-    multipart_parts,
+    load_multipart_parts,
     multipart_parts_delete,
     multipart_parts_list,
 )
@@ -226,7 +226,7 @@ class TestMultipartParts(unittest.IsolatedAsyncioTestCase):
         ]
 
     async def _resolve(self, numbers=(1, 2)):
-        return await multipart_parts(
+        return await load_multipart_parts(
             self.repo,
             self.multipart,
             "/mnt/tmp/beef",

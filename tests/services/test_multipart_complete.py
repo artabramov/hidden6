@@ -111,8 +111,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.multipart,
         )
-        self.multipart_parts = self._patch(
-            "multipart_parts",
+        self.load_multipart_parts = self._patch(
+            "load_multipart_parts",
             new_callable=AsyncMock,
             return_value=(
                 [
@@ -190,7 +190,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
     async def test_assembles_parts_into_object(self):
         objekt = await self._complete()
 
-        self.multipart_parts.assert_awaited_once()
+        self.load_multipart_parts.assert_awaited_once()
         self.concat.assert_awaited_once_with(
             [
                 "/mnt/tmp/beef/1.part",
@@ -301,7 +301,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_concatenates_only_client_listed_parts(self):
-        self.multipart_parts.return_value = (
+        self.load_multipart_parts.return_value = (
             [
                 "/mnt/tmp/beef/1.part",
                 "/mnt/tmp/beef/8.part",
@@ -364,7 +364,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_invalid_parts_stop_before_assembly(self):
-        self.multipart_parts.side_effect = (
+        self.load_multipart_parts.side_effect = (
             S3ObjektPartOrderInvalidError()
         )
 

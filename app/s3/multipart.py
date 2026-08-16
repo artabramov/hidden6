@@ -122,10 +122,10 @@ async def multipart_parts_delete(
     await repo.flush()
 
 
-async def multipart_parts(
+async def load_multipart_parts(
     repo: ORMRepository,
     multipart: ObjektMultipart,
-    upload_dir: str,
+    upload_path: str,
     parts: list[MultipartPart],
     resource: str,
 ) -> tuple[list[str], list[str]]:
@@ -157,7 +157,7 @@ async def multipart_parts(
         if row is None:
             raise S3ObjektPartInvalidError(resource)
 
-        path = resolve_multipart_part_path(upload_dir, part.part_number)
+        path = resolve_multipart_part_path(upload_path, part.part_number)
         if not await isfile(path):
             raise S3ObjektPartInvalidError(resource)
 

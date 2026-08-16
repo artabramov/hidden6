@@ -31,7 +31,7 @@ from app.s3.bucket import bucket_load
 from app.s3.etag import etag_construct
 from app.s3.multipart import (
     multipart_load,
-    multipart_parts,
+    load_multipart_parts,
     multipart_parts_delete,
 )
 from app.s3.objekt import objekt_mkdir, objekt_upsert
@@ -154,10 +154,10 @@ async def multipart_complete(
             # entire multipart payload. Keep this expensive work outside
             # the bucket lock so other operations on the bucket are not
             # blocked while the object is assembled.
-            part_paths, stored_etags = await multipart_parts(
+            part_paths, stored_etags = await load_multipart_parts(
                 repo=repo,
                 multipart=multipart,
-                upload_dir=upload_path,
+                upload_path=upload_path,
                 parts=parts,
                 resource=resource,
             )
