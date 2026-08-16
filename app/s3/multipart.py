@@ -56,7 +56,7 @@ async def upsert_multipart_part(
     etag: str,
 ) -> ObjektMultipartPart:
     """
-    Insert or replace the ObjektMultipartPart row for one part number.
+    Insert or update the multipart part for the specified part number.
     The staged part file must already exist when this is called.
     """
     existing = await repo.select(
@@ -64,7 +64,6 @@ async def upsert_multipart_part(
         objekt_multipart_id=multipart.id,
         part_number=part_number,
     )
-    modified_at = int(time.time())
 
     if existing is None:
         return await repo.insert(
@@ -73,13 +72,13 @@ async def upsert_multipart_part(
                 part_number=part_number,
                 size_bytes=size_bytes,
                 etag=etag,
-                modified_at=modified_at,
             ),
         )
 
     existing.size_bytes = size_bytes
     existing.etag = etag
-    existing.modified_at = modified_at
+    existing.modified_at = int(time.time())
+
     return await repo.update(existing)
 
 
