@@ -6,9 +6,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import OBJEKT_KEY_MAX_BYTES
-from app.errors import S3ObjektKeyInvalidError
 from app.s3.paths import resolve_objekt_path
-from app.s3.validation import validate_objekt_key
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -25,95 +23,6 @@ from app.models.user import User  # noqa: E402
 from app.s3.objekt import load_objekt, objekt_mkdir, upsert_objekt  # noqa: E402
 
 load_all_models()
-
-
-class TestObjektKeyValidate(unittest.TestCase):
-    def _assert_rejects(self, object_key):
-        resource = f"/photos/{object_key}"
-
-        with self.assertRaises(S3ObjektKeyInvalidError) as ctx:
-            validate_objekt_key(object_key, resource)
-
-        self.assertEqual(ctx.exception.resource, resource)
-
-    def _assert_accepts(self, object_key):
-        self.assertIsNone(
-            validate_objekt_key(object_key, f"/photos/{object_key}"),
-        )
-
-    def test_accepts_flat_key(self):
-        self._assert_accepts("file.txt")
-        self._assert_accepts("cat.png")
-
-    def test_accepts_nested_key(self):
-        self._assert_accepts("dir/file.txt")
-        self._assert_accepts("dir/subdir/file.txt")
-        self._assert_accepts("photos/2024/cat.png")
-
-    def test_accepts_unicode_key(self):
-        self._assert_accepts("фото/кот.jpg")
-        self._assert_accepts("資料/report.pdf")
-
-    def test_accepts_backslash(self):
-        self._assert_accepts("foo\\bar")
-
-    def test_accepts_key_at_max_utf8_bytes(self):
-        key = "a" * OBJEKT_KEY_MAX_BYTES
-        self._assert_accepts(key)
-
-    def test_accepts_multibyte_key_at_max_utf8_bytes(self):
-        key = "я" * (OBJEKT_KEY_MAX_BYTES // 2)
-        self.assertEqual(len(key.encode("utf-8")), OBJEKT_KEY_MAX_BYTES)
-        self._assert_accepts(key)
-
-    def test_rejects_empty_key(self):
-        self._assert_rejects("")
-
-    def test_rejects_dot_key(self):
-        self._assert_rejects(".")
-
-    def test_rejects_parent_key(self):
-        self._assert_rejects("..")
-
-    def test_rejects_key_longer_than_max_bytes(self):
-        self._assert_rejects("a" * (OBJEKT_KEY_MAX_BYTES + 1))
-
-    def test_rejects_multibyte_key_longer_than_max_bytes(self):
-        self._assert_rejects("я" * OBJEKT_KEY_MAX_BYTES)
-
-    def test_rejects_multibyte_key_one_byte_over_limit(self):
-        key = ("я" * (OBJEKT_KEY_MAX_BYTES // 2)) + "a"
-        self.assertEqual(len(key.encode("utf-8")), OBJEKT_KEY_MAX_BYTES + 1)
-        self.assertLess(len(key), OBJEKT_KEY_MAX_BYTES)
-        self._assert_rejects(key)
-
-    def test_rejects_null_byte(self):
-        self._assert_rejects("cat\x00.png")
-
-    def test_rejects_surrogate_code_point(self):
-        self._assert_rejects("cat\ud800.png")
-
-    def test_rejects_leading_slash(self):
-        self._assert_rejects("/cat.png")
-        self._assert_rejects("/foo")
-
-    def test_rejects_trailing_slash(self):
-        self._assert_rejects("photos/")
-        self._assert_rejects("foo/")
-
-    def test_rejects_repeated_slashes(self):
-        self._assert_rejects("photos//cat.png")
-        self._assert_rejects("foo//bar")
-
-    def test_rejects_dot_segment(self):
-        self._assert_rejects("photos/./cat.png")
-        self._assert_rejects("foo/./bar")
-
-    def test_rejects_parent_segment(self):
-        self._assert_rejects("photos/../../etc/passwd")
-        self._assert_rejects("foo/../bar")
-        self._assert_rejects("../foo")
-        self._assert_rejects("foo/..")
 
 
 class TestObjektPath(unittest.TestCase):

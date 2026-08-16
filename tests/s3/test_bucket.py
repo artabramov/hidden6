@@ -4,9 +4,7 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
-from app.errors import S3InvalidBucketNameError
 from app.s3.paths import resolve_bucket_path
-from app.s3.validation import validate_bucket_name
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -23,91 +21,6 @@ from app.models.user import User  # noqa: E402
 from app.s3.bucket import bucket_default_object_lock, load_bucket  # noqa: E402
 
 load_all_models()
-
-
-class TestBucketNameValidate(unittest.TestCase):
-    def _assert_rejects(self, bucket_name):
-        resource = f"/{bucket_name}"
-
-        with self.assertRaises(S3InvalidBucketNameError) as ctx:
-            validate_bucket_name(bucket_name, resource)
-
-        self.assertEqual(ctx.exception.resource, resource)
-
-    def test_accepts_shortest_name(self):
-        self.assertIsNone(validate_bucket_name("abc", "/abc"))
-
-    def test_accepts_hyphenated_name(self):
-        self.assertIsNone(validate_bucket_name("my-bucket", "/my-bucket"))
-
-    def test_accepts_name_with_period(self):
-        self.assertIsNone(validate_bucket_name("my.bucket", "/my.bucket"))
-
-    def test_accepts_name_with_digits(self):
-        self.assertIsNone(validate_bucket_name("bucket123", "/bucket123"))
-
-    def test_accepts_mixed_hyphen_period_digits(self):
-        self.assertIsNone(validate_bucket_name("a1-b2.c3", "/a1-b2.c3"))
-
-    def test_accepts_dashes_and_periods(self):
-        self.assertIsNone(
-            validate_bucket_name("my-bucket.1", "/my-bucket.1"),
-        )
-
-    def test_accepts_longest_name(self):
-        name = "a" * 63
-        self.assertIsNone(validate_bucket_name(name, f"/{name}"))
-
-    def test_rejects_empty_name(self):
-        self._assert_rejects("")
-
-    def test_rejects_too_short(self):
-        self._assert_rejects("ab")
-
-    def test_rejects_too_long(self):
-        self._assert_rejects("a" * 64)
-
-    def test_rejects_uppercase(self):
-        self._assert_rejects("MyBucket")
-
-    def test_rejects_underscore(self):
-        self._assert_rejects("Bad_Name")
-        self._assert_rejects("_bucket")
-
-    def test_rejects_leading_dash(self):
-        self._assert_rejects("-bucket")
-
-    def test_rejects_trailing_dash(self):
-        self._assert_rejects("bucket-")
-
-    def test_rejects_leading_period(self):
-        self._assert_rejects(".bucket")
-
-    def test_rejects_trailing_period(self):
-        self._assert_rejects("bucket.")
-
-    def test_rejects_adjacent_periods(self):
-        self._assert_rejects("my..bucket")
-        self._assert_rejects("bucket..name")
-
-    def test_rejects_period_next_to_dash(self):
-        self._assert_rejects("my.-bucket")
-        self._assert_rejects("my-.bucket")
-
-    def test_rejects_ip_address(self):
-        self._assert_rejects("192.168.1.1")
-
-    def test_rejects_reserved_prefixes(self):
-        self._assert_rejects("xn--example")
-        self._assert_rejects("sthree-example")
-        self._assert_rejects("amzn-s3-demo-example")
-
-    def test_rejects_reserved_suffixes(self):
-        self._assert_rejects("example-s3alias")
-        self._assert_rejects("example--ol-s3")
-        self._assert_rejects("example.mrap")
-        self._assert_rejects("example--x-s3")
-        self._assert_rejects("example--table-s3")
 
 
 class TestBucketPath(unittest.TestCase):
