@@ -8,10 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
-from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.io import iter_read
-from app.s3.datetime import http_datetime
+from app.s3.headers import objekt_headers
 from app.services.objekt_download import objekt_download
 
 router = APIRouter(include_in_schema=False)
@@ -47,15 +46,6 @@ _RESPONSES = {
 }
 
 
-def _objekt_headers(objekt: Objekt) -> dict[str, str]:
-    last_modified = http_datetime(objekt.modified_at)
-    return {
-        "Content-Length": str(objekt.size_bytes),
-        "ETag": f'"{objekt.etag}"',
-        "Last-Modified": last_modified,
-    }
-
-
 @router.api_route(
     "/{bucket_name}/{object_key:path}",
     methods=["GET", "HEAD"],
@@ -88,7 +78,7 @@ async def objekt_download_router(
         bucket_name=bucket_name,
         objekt_key=object_key,
     )
-    headers = _objekt_headers(objekt)
+    headers = objekt_headers(objekt)
 
     if request.method == "HEAD":
         return Response(
