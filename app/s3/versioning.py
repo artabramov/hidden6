@@ -6,16 +6,17 @@ from app.constants import (
     BUCKET_VERSIONING_ENABLED,
     BUCKET_VERSIONING_SUSPENDED,
 )
+from app.errors import S3IllegalVersioningConfigurationError
 from app.models.bucket import Bucket
 
 
 def get_bucket_versioning_status(bucket: Bucket) -> str | None:
     """
-    Return the S3 VersioningConfiguration Status value for a bucket.
+    Return the S3 versioning status for a bucket.
 
     Disabled is an internal state representing a bucket where versioning
-    has never been enabled and is therefore exposed without a Status
-    value. Enabled and Suspended are returned as their S3 values.
+    has never been configured and is exposed through the S3 API without
+    a Status value.
     """
     if bucket.versioning_status == BUCKET_VERSIONING_DISABLED:
         return None
@@ -25,25 +26,20 @@ def get_bucket_versioning_status(bucket: Bucket) -> str | None:
 
 def set_bucket_versioning_status(
     bucket: Bucket,
-    status: str,
+    versioning_status: str,
+    resource: str,
 ) -> None:
     """
-    Apply an S3 bucket versioning state transition.
+    Apply an S3 versioning state to a bucket.
 
-    A bucket may move from Disabled to Enabled, from Enabled to
-    Suspended, and from Suspended back to Enabled. Once versioning has
-    been enabled, the bucket never returns to Disabled.
+    The S3 API accepts Enabled and Suspended. Disabled is an internal
+    state representing a bucket where versioning has never been
+    configured and cannot be restored through the S3 API.
     """
-    if status not in (
+    if versioning_status not in (
         BUCKET_VERSIONING_ENABLED,
         BUCKET_VERSIONING_SUSPENDED,
     ):
-        raise ValueError("Invalid bucket versioning status")
+        raise S3IllegalVersioningConfigurationError(resource)
 
-    if (
-        bucket.versioning_status == BUCKET_VERSIONING_DISABLED
-        and status == BUCKET_VERSIONING_SUSPENDED
-    ):
-        raise ValueError("Versioning cannot be suspended before it is enabled")
-
-    bucket.versioning_status = status
+    bucket.versioning_status = versioning_status

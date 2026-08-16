@@ -32,3 +32,4 @@ ADR-25: S3 upload bodies are decoded from aws-chunked framing.
 ADR-26: S3 multipart uploads are tracked in the database.
 ADR-27: S3 versioning keeps the current object on the key path.
 ADR-28: S3 empty key directories are kept after rollback.
+ADR-29: S3 bucket versioning follows AWS state semantics.

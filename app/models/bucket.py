@@ -21,6 +21,31 @@ from app.db.base import Base
 # only their own buckets; root may access any bucket. IAM and bucket
 # policies are not evaluated.
 
+# NOTE (ADR-29): S3 bucket versioning follows AWS state semantics.
+# Buckets have three internal states: Disabled, Enabled, and Suspended.
+# Enabled and Suspended may be reapplied or transition to each other.
+#
+# Disabled:
+#     Initial internal state for a bucket where versioning has never
+#     been configured. GetBucketVersioning exposes no Status value.
+#     PutBucketVersioning may change the state directly to Enabled or
+#     Suspended. Disabled cannot be restored through the S3 API.
+#
+# Enabled:
+#     New object states receive unique version IDs. PUT Object creates
+#     a new current version and preserves the previous current state as
+#     a noncurrent version. DELETE Object without versionId creates a
+#     uniquely identified delete marker. DELETE Object with versionId
+#     permanently removes the specified version.
+#
+# Suspended:
+#     Existing uniquely identified versions are preserved. New PUT
+#     Object operations use the S3 null version and replace an existing
+#     null version for the same key instead of retaining it as history.
+#     DELETE Object without versionId removes the current null version,
+#     if any, and creates a null delete marker. DELETE Object with
+#     versionId permanently removes the specified version.
+
 
 class Bucket(Base):
     """
@@ -28,36 +53,6 @@ class Bucket(Base):
 
     The bucket name is unique across the store and maps directly to
     its on-disk directory.
-
-    Versioning has three internal states:
-
-    Disabled:
-        Versioning has never been enabled for the bucket. Objects use
-        S3 null-version semantics without retaining version history.
-        PUT replaces the current object in place, and DELETE permanently
-        removes the current object. The S3 versioning configuration is
-        exposed without a Status value.
-
-    Enabled:
-        Every new object state receives a unique version ID. PUT creates
-        a new current version and preserves the previous current state
-        as a noncurrent version. DELETE without versionId creates a
-        delete marker with a unique version ID and preserves existing
-        versions. DELETE with versionId permanently removes the
-        specified version.
-
-    Suspended:
-        Versioning was enabled previously and is now suspended. Existing
-        uniquely identified versions remain preserved, but new PUT
-        operations create a null version. If a null version for the same
-        key already exists, it is overwritten rather than retained as a
-        new version. A simple DELETE removes the existing null version,
-        if any, and creates a null delete marker as the current state;
-        uniquely identified historical versions are preserved. DELETE
-        with versionId permanently removes the specified version.
-
-    Once versioning has been Enabled, the bucket may transition between
-    Enabled and Suspended but never returns to Disabled.
 
     Object Lock is a bucket-level capability. Enabling it requires
     versioning to remain Enabled and cannot be reversed. When Object
