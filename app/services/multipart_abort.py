@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
-import os
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +13,10 @@ from app.repositories.io import isdir, rename, rmtree
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_load
 from app.s3.multipart import multipart_load, multipart_parts_delete
-from app.s3.paths import resolve_multipart_path
+from app.s3.paths import (
+    resolve_multipart_aborted_path,
+    resolve_multipart_path,
+)
 from app.s3.validation import validate_objekt_key
 
 log = logging.getLogger(__name__)
@@ -28,10 +30,23 @@ async def multipart_abort(
     upload_id: str,
 ) -> None:
     """
-    Abort a multipart upload (S3 AbortMultipartUpload): move the
-    staging directory aside, drop every ObjektMultipartPart row and the
-    parent upload, then remove the renamed directory. A failed commit
-    restores the active upload directory when possible.
+    Abort an S3 multipart upload. The operation is transactional at
+    the DB level and reconciles filesystem state on failure. The active
+    multipart upload directory is moved aside under a directory lock
+    before its database state is removed.
+
+    (1) load the multipart upload
+    (2) move the active upload directory to a temporary cleanup path
+    (3) delete all multipart part records
+    (4) delete the multipart upload record
+    (5) commit
+
+    On failure of the transaction, the session is rolled back and the
+    active multipart upload directory is restored from the temporary
+    cleanup path when it was moved.
+
+    After a successful commit, the temporary cleanup directory and all
+    stored part data are removed as a best-effort cleanup step.
     """
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
@@ -40,52 +55,84 @@ async def multipart_abort(
 
     repo = ORMRepository(session)
     bucket = await bucket_load(repo, bucket_name, current_user, resource)
-    multipart = await multipart_load(
-        repo=repo,
-        bucket=bucket,
-        object_key=objekt_key,
-        upload_id=upload_id,
-        resource=resource,
+
+    # Path containing the active multipart upload
+    # and its uploaded parts.
+    upload_path = resolve_multipart_path(
+        config.MOUNTPOINT_TMP_DIR,
+        upload_id,
     )
 
-    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
-    cleanup_dir = None
+    # Temporary path used to move the multipart upload
+    # aside until the abort transaction is committed.
+    cleanup_path = resolve_multipart_aborted_path(
+        config.MOUNTPOINT_TMP_DIR,
+        upload_id,
+        uuid.uuid4().hex,
+    )
 
-    try:
-        async with locks.lock_directory(upload_dir, LockType.WRITE):
-            # Rename first so concurrent UploadPart cannot publish into
-            # the active path after the DB rows are gone.
-            if await isdir(upload_dir):
-                cleanup_dir = os.path.join(
-                    config.MOUNTPOINT_TMP_DIR,
-                    f".{upload_id}.aborted.{uuid.uuid4().hex}",
-                )
-                await rename(upload_dir, cleanup_dir)
+    upload_moved = False
+
+    async with locks.lock_directory(upload_path, LockType.WRITE):
+        try:
+            multipart = await multipart_load(
+                repo=repo,
+                bucket=bucket,
+                object_key=objekt_key,
+                upload_id=upload_id,
+                resource=resource,
+            )
+
+            # Move the active upload aside before deleting its DB state
+            # so concurrent UploadPart requests cannot publish new parts
+            # into it.
+            if await isdir(upload_path):
+                await rename(upload_path, cleanup_path)
+                upload_moved = True
 
             await multipart_parts_delete(repo, multipart)
             await repo.delete(multipart)
             await repo.commit()
 
-    except Exception:
-        await repo.rollback()
-        if cleanup_dir is not None:
+        # Roll back DB state and restore the active upload directory
+        # before releasing the lock, so no UploadPart request can
+        # observe an intermediate state.
+        except Exception:
             try:
-                await rename(cleanup_dir, upload_dir)
-                cleanup_dir = None
+                await repo.rollback()
             except Exception:
                 log.exception(
-                    "msg=multipart_abort_integrity_failed "
-                    "upload_dir=%s cleanup=%s",
-                    upload_dir,
-                    cleanup_dir,
+                    "msg=rollback_failed "
+                    "bucket_name=%s "
+                    "object_key=%s "
+                    "upload_id=%s",
+                    bucket_name,
+                    objekt_key,
+                    upload_id,
                 )
-        raise
 
-    if cleanup_dir is not None:
+            if upload_moved:
+                try:
+                    await rename(cleanup_path, upload_path)
+                    upload_moved = False
+                except Exception:
+                    log.exception(
+                        "msg=restore_failed "
+                        "upload_path=%s "
+                        "cleanup_path=%s",
+                        upload_path,
+                        cleanup_path,
+                    )
+            raise
+
+    # After a successful commit, the aborted multipart
+    # upload directory is no longer needed.
+    if upload_moved:
         try:
-            await rmtree(cleanup_dir)
+            await rmtree(cleanup_path)
         except OSError:
             log.exception(
-                "msg=multipart_cleanup_failed path=%s",
-                cleanup_dir,
+                "msg=cleanup_failed "
+                "cleanup_path=%s",
+                cleanup_path,
             )
