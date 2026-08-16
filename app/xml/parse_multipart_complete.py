@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 
 from pydantic import ValidationError
 
-from app.s3.etag import etag_normalize
+from app.s3.etag import normalize_etag
 from app.schemas.multipart_complete import MultipartPart
 
 
@@ -51,7 +51,7 @@ def _parse_element(element: ElementTree.Element) -> MultipartPart:
     try:
         return MultipartPart(
             part_number=int(values.get("PartNumber", "")),
-            etag=etag_normalize(values.get("ETag", "")),
+            etag=normalize_etag(values.get("ETag", "")),
         )
     except (ValidationError, ValueError) as exc:
         raise ValueError("Malformed CompleteMultipartUpload.") from exc

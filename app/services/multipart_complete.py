@@ -27,8 +27,8 @@ from app.repositories.io import (
     rmtree,
 )
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_load
-from app.s3.etag import etag_construct
+from app.s3.bucket import load_bucket
+from app.s3.etag import construct_etag
 from app.s3.multipart import (
     load_multipart,
     load_multipart_parts,
@@ -103,7 +103,7 @@ async def multipart_complete(
     )
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
     # Path containing the active multipart upload
     # and its uploaded parts.
@@ -215,7 +215,7 @@ async def multipart_complete(
                     user=current_user,
                     object_key=objekt_key,
                     size_bytes=size_bytes,
-                    etag=etag_construct(stored_etags),
+                    etag=construct_etag(stored_etags),
                     content_type=multipart.content_type,
                 )
 

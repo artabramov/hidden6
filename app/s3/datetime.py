@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from email.utils import formatdate
 
 
-def datetime_format(unix_ts: int) -> str:
+def format_datetime(unix_ts: int) -> str:
     """
     Format a timestamp the way S3 carries time in XML bodies: ISO 8601
     in UTC with milliseconds and a Z suffix. Milliseconds are always
@@ -17,7 +17,7 @@ def datetime_format(unix_ts: int) -> str:
     return dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
-def datetime_http(unix_ts: int) -> str:
+def http_datetime(unix_ts: int) -> str:
     """
     Format a timestamp the way S3 carries time in HTTP headers:
     RFC 1123 / IMF-fixdate in GMT (for example Last-Modified).

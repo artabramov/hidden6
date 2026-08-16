@@ -20,7 +20,7 @@ from app.errors import (  # noqa: E402
 from app.constants import BUCKET_VERSIONING_ENABLED  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.s3.bucket import bucket_default_object_lock, bucket_load  # noqa: E402
+from app.s3.bucket import bucket_default_object_lock, load_bucket  # noqa: E402
 
 load_all_models()
 
@@ -144,7 +144,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
     async def test_returns_own_bucket(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
 
-        result = await bucket_load(
+        result = await load_bucket(
             self._build_repo(bucket),
             "photos",
             self.user,
@@ -156,7 +156,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
     async def test_returns_foreign_bucket_for_root(self):
         bucket = Bucket(id=7, user_id=99, bucket_name="photos")
 
-        result = await bucket_load(
+        result = await load_bucket(
             self._build_repo(bucket),
             "photos",
             self.root,
@@ -167,7 +167,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_bucket_raises(self):
         with self.assertRaises(S3BucketNotFoundError):
-            await bucket_load(
+            await load_bucket(
                 self._build_repo(None),
                 "photos",
                 self.user,
@@ -178,7 +178,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
         bucket = Bucket(id=7, user_id=99, bucket_name="photos")
 
         with self.assertRaises(S3AccessDeniedError):
-            await bucket_load(
+            await load_bucket(
                 self._build_repo(bucket),
                 "photos",
                 self.user,

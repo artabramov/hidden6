@@ -43,7 +43,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch(
@@ -79,7 +79,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch(
@@ -111,7 +111,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch("app.services.objekt_list.hooks.emit", new_callable=AsyncMock),
@@ -132,7 +132,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch("app.services.objekt_list.hooks.emit", new_callable=AsyncMock),
@@ -153,7 +153,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch(
@@ -176,7 +176,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(side_effect=S3BucketNotFoundError("/photos")),
             ),
         ):
@@ -194,7 +194,7 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         with (
             patch("app.services.objekt_list.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.bucket_load",
+                "app.services.objekt_list.load_bucket",
                 new=AsyncMock(side_effect=S3AccessDeniedError("/photos")),
             ),
         ):

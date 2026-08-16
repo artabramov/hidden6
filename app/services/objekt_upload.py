@@ -26,7 +26,7 @@ from app.repositories.io import (
     upload,
 )
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_load
+from app.s3.bucket import load_bucket
 from app.s3.objekt import objekt_mkdir, upsert_objekt
 from app.s3.paths import resolve_objekt_path, resolve_staged_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
@@ -98,7 +98,7 @@ async def objekt_upload(
     )
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
     # Temporary path used to stage the incoming object
     # before it is published to the bucket.

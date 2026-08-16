@@ -54,8 +54,8 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         self._patch("ORMRepository", return_value=repo)
 
-        self.bucket_load = self._patch(
-            "bucket_load",
+        self.load_bucket = self._patch(
+            "load_bucket",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
@@ -87,7 +87,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
         self.assertIs(objekt, self.objekt)
         self.assertEqual(path, "/mnt/buckets/photos/2024/cat.png")
-        self.bucket_load.assert_awaited_once()
+        self.load_bucket.assert_awaited_once()
         self.load_objekt.assert_awaited_once()
         self.isfile.assert_awaited_once_with("/mnt/buckets/photos/2024/cat.png")
         self.emit.assert_awaited_once_with(
@@ -106,12 +106,12 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
                 objekt_key="../escape",
             )
 
-        self.bucket_load.assert_not_awaited()
+        self.load_bucket.assert_not_awaited()
         self.load_objekt.assert_not_awaited()
 
     async def test_missing_bucket_raises(self):
         self._build_mocks()
-        self.bucket_load.side_effect = S3BucketNotFoundError("/photos/x")
+        self.load_bucket.side_effect = S3BucketNotFoundError("/photos/x")
 
         with self.assertRaises(S3BucketNotFoundError):
             await objekt_download(

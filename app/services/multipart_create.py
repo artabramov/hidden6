@@ -12,7 +12,7 @@ from app.models.objekt_multipart import ObjektMultipart
 from app.models.user import User
 from app.repositories.io import mktree, rmtree
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_load
+from app.s3.bucket import load_bucket
 from app.s3.paths import resolve_multipart_path
 from app.s3.validation import validate_objekt_key
 
@@ -46,7 +46,7 @@ async def multipart_create(
     validate_objekt_key(objekt_key, resource)
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
     upload_id = uuid.uuid4().hex
 

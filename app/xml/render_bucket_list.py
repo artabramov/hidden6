@@ -6,7 +6,7 @@ from xml.sax.saxutils import escape
 from app.constants import S3_XMLNS
 from app.models.bucket import Bucket
 from app.models.user import User
-from app.s3.datetime import datetime_format
+from app.s3.datetime import format_datetime
 
 
 def render_bucket_list(
@@ -32,7 +32,7 @@ def render_bucket_list(
             f"<Name>{escape(bucket.bucket_name)}</Name>",
             (
                 f"<CreationDate>"
-                f"{datetime_format(bucket.created_at)}"
+                f"{format_datetime(bucket.created_at)}"
                 f"</CreationDate>"
             ),
             "</Bucket>",

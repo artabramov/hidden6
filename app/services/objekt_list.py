@@ -7,7 +7,7 @@ from app.hooks import Events, hooks
 from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_load
+from app.s3.bucket import load_bucket
 
 
 async def objekt_list(
@@ -28,7 +28,7 @@ async def objekt_list(
     resource = f"/{bucket_name}"
     repo = ORMRepository(session)
 
-    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
     filters: dict = {
         "bucket_id": bucket.id,

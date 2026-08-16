@@ -4,7 +4,7 @@
 import hashlib
 
 
-def etag_normalize(value: str) -> str:
+def normalize_etag(value: str) -> str:
     """
     Reduce an ETag to the bare hash it stands for. S3 carries ETags
     wrapped in quotes on the wire, and clients echo them back with the
@@ -14,7 +14,7 @@ def etag_normalize(value: str) -> str:
     return value.strip().strip('"').lower()
 
 
-def etag_construct(part_hashes: list[str]) -> str:
+def construct_etag(part_hashes: list[str]) -> str:
     """
     Build the ETag of an assembled object: the MD5 of the concatenated
     part digests, suffixed with the number of parts. Unlike the ETag of

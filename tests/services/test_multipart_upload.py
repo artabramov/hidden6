@@ -67,8 +67,8 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
         self._patch("uuid.uuid4", return_value=MagicMock(hex="deadbeef"))
-        self.bucket_load = self._patch(
-            "bucket_load",
+        self.load_bucket = self._patch(
+            "load_bucket",
             new_callable=AsyncMock,
             return_value=MagicMock(id=7),
         )
@@ -266,7 +266,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
-        self.bucket_load.assert_not_awaited()
+        self.load_bucket.assert_not_awaited()
         self.lock.assert_not_called()
         self.upload.assert_not_awaited()
 

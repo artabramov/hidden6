@@ -11,7 +11,7 @@ from app.dependencies.require_session import require_session
 from app.models.objekt import Objekt
 from app.models.user import User
 from app.repositories.io import iter_read
-from app.s3.datetime import datetime_http
+from app.s3.datetime import http_datetime
 from app.services.objekt_download import objekt_download
 
 router = APIRouter(include_in_schema=False)
@@ -48,7 +48,7 @@ _RESPONSES = {
 
 
 def _objekt_headers(objekt: Objekt) -> dict[str, str]:
-    last_modified = datetime_http(objekt.modified_at)
+    last_modified = http_datetime(objekt.modified_at)
     return {
         "Content-Length": str(objekt.size_bytes),
         "ETag": f'"{objekt.etag}"',

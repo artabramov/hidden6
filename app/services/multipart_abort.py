@@ -11,7 +11,7 @@ from app.locks import LockType, locks
 from app.models.user import User
 from app.repositories.io import isdir, rename, rmtree
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_load
+from app.s3.bucket import load_bucket
 from app.s3.multipart import load_multipart, delete_multipart_parts
 from app.s3.paths import (
     resolve_multipart_aborted_path,
@@ -54,7 +54,7 @@ async def multipart_abort(
     validate_objekt_key(objekt_key, resource)
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
     # Path containing the active multipart upload
     # and its uploaded parts.

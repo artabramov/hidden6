@@ -51,8 +51,8 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
         self._patch("uuid.uuid4", return_value=MagicMock(hex="beef"))
-        self.bucket_load = self._patch(
-            "bucket_load",
+        self.load_bucket = self._patch(
+            "load_bucket",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
@@ -90,7 +90,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(multipart.content_type, "image/png")
 
     async def test_inaccessible_bucket_stops_before_staging(self):
-        self.bucket_load.side_effect = S3BucketNotFoundError("/photos")
+        self.load_bucket.side_effect = S3BucketNotFoundError("/photos")
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._create()
@@ -109,7 +109,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
-        self.bucket_load.assert_not_awaited()
+        self.load_bucket.assert_not_awaited()
         self.mktree.assert_not_awaited()
 
     async def test_failed_mktree_removes_upload_dir(self):

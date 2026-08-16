@@ -5,7 +5,7 @@ from xml.sax.saxutils import escape
 
 from app.constants import S3_XMLNS
 from app.models.objekt import Objekt
-from app.s3.datetime import datetime_format
+from app.s3.datetime import format_datetime
 
 
 def render_objekt_list(
@@ -32,7 +32,7 @@ def render_objekt_list(
         f"<IsTruncated>{'true' if is_truncated else 'false'}</IsTruncated>",
     ]
     for objekt in objekts:
-        last_modified = datetime_format(objekt.modified_at)
+        last_modified = format_datetime(objekt.modified_at)
         parts.extend([
             "<Contents>",
             f"<Key>{escape(objekt.object_key)}</Key>",

@@ -16,7 +16,7 @@ from app.db.engine import load_all_models  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.routers.objekt_download import objekt_download_router  # noqa: E402
-from app.s3.datetime import datetime_http  # noqa: E402
+from app.s3.datetime import http_datetime  # noqa: E402
 
 load_all_models()
 
@@ -83,7 +83,7 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.headers["ETag"], '"etag123"')
         self.assertEqual(
             response.headers["Last-Modified"],
-            datetime_http(1_704_067_200),
+            http_datetime(1_704_067_200),
         )
 
         body = b""
@@ -124,6 +124,6 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.headers["ETag"], '"etag123"')
         self.assertEqual(
             response.headers["Last-Modified"],
-            datetime_http(1_704_067_200),
+            http_datetime(1_704_067_200),
         )
         self.assertEqual(response.body, b"")

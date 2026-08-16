@@ -83,8 +83,8 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             "locks.lock_directory",
             return_value=self._build_lock_context(),
         )
-        self.bucket_load = self._patch(
-            "bucket_load",
+        self.load_bucket = self._patch(
+            "load_bucket",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
@@ -200,13 +200,13 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             cm.exception.resource,
             "/photos/../../etc/passwd",
         )
-        self.bucket_load.assert_not_awaited()
+        self.load_bucket.assert_not_awaited()
         self.lock.assert_not_called()
         self.upload.assert_not_awaited()
 
     async def test_inaccessible_bucket_stops_before_lock(self):
         self._build_mocks()
-        self.bucket_load.side_effect = S3BucketNotFoundError("/photos")
+        self.load_bucket.side_effect = S3BucketNotFoundError("/photos")
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._upload()

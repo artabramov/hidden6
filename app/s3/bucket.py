@@ -15,7 +15,7 @@ _SECONDS_PER_DAY = 24 * 60 * 60
 _SECONDS_PER_YEAR = 365 * _SECONDS_PER_DAY
 
 
-async def bucket_load(
+async def load_bucket(
     repo: ORMRepository,
     bucket_name: str,
     user: User,

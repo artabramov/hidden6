@@ -102,7 +102,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             ],
         )
         self._patch(
-            "bucket_load",
+            "load_bucket",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
@@ -126,7 +126,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "delete_multipart_parts",
             new_callable=AsyncMock,
         )
-        self._patch("etag_construct", return_value="joined-2")
+        self._patch("construct_etag", return_value="joined-2")
         self.lock = self._patch(
             "locks.lock_directory",
             return_value=lock_context,

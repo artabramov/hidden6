@@ -25,7 +25,7 @@ from app.repositories.io import (
     upload,
 )
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_load
+from app.s3.bucket import load_bucket
 from app.s3.multipart import load_multipart, upsert_multipart_part
 from app.s3.paths import (
     resolve_multipart_backup_part_path,
@@ -81,7 +81,7 @@ async def multipart_upload(
         raise S3ObjektPartNumberInvalidError(resource)
 
     repo = ORMRepository(session)
-    bucket = await bucket_load(repo, bucket_name, current_user, resource)
+    bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
     upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
     part_path = resolve_multipart_part_path(upload_dir, part_number)

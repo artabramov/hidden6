@@ -64,8 +64,8 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             "uuid.uuid4",
             return_value=MagicMock(hex="cafebabe"),
         )
-        self.bucket_load = self._patch(
-            "bucket_load",
+        self.load_bucket = self._patch(
+            "load_bucket",
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
@@ -172,7 +172,7 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.rmtree.assert_not_awaited()
 
     async def test_inaccessible_bucket_stops_before_lock(self):
-        self.bucket_load.side_effect = S3BucketNotFoundError()
+        self.load_bucket.side_effect = S3BucketNotFoundError()
 
         with self.assertRaises(S3BucketNotFoundError):
             await self._abort()
@@ -191,7 +191,7 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
-        self.bucket_load.assert_not_awaited()
+        self.load_bucket.assert_not_awaited()
         self.lock.assert_not_called()
         self.rmtree.assert_not_awaited()
 
