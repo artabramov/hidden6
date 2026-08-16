@@ -83,14 +83,14 @@ async def multipart_upload(
     repo = ORMRepository(session)
     bucket = await load_bucket(repo, bucket_name, current_user, resource)
 
-    upload_dir = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
-    part_path = resolve_multipart_part_path(upload_dir, part_number)
+    upload_path = resolve_multipart_path(config.MOUNTPOINT_TMP_DIR, upload_id)
+    part_path = resolve_multipart_part_path(upload_path, part_number)
     token = uuid.uuid4().hex
 
     # Temporary path used to stage the incoming part
     # before it is published to the multipart upload.
     staged_path = resolve_multipart_staged_part_path(
-        upload_dir,
+        upload_path,
         part_number,
         token,
     )
@@ -98,7 +98,7 @@ async def multipart_upload(
     # Temporary path used to preserve the existing part
     # so it can be restored if the re-upload fails.
     backup_path = resolve_multipart_backup_part_path(
-        upload_dir,
+        upload_path,
         part_number,
         token,
     )
@@ -110,7 +110,7 @@ async def multipart_upload(
     # numbers use different paths and may proceed in parallel.
     async with locks.lock_file(part_path, LockType.WRITE):
         try:
-            if not await isdir(upload_dir):
+            if not await isdir(upload_path):
                 raise S3ObjektUploadNotFoundError(resource)
 
             multipart = await load_multipart(
