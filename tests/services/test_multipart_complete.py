@@ -13,6 +13,7 @@ set_minimal_app_config_env()
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
+    S3ObjektKeyConflictError,
     S3ObjektKeyInvalidError,
     S3ObjektPartInvalidError,
     S3ObjektPartOrderInvalidError,
@@ -36,9 +37,12 @@ PART_HASHES = [
     hashlib.md5(b"second").hexdigest(),
 ]
 
+BUCKET_PATH = "/mnt/buckets/photos"
 OBJECT_PATH = "/mnt/buckets/photos/2024/cat.png"
-OBJECT_BACKUP = "/mnt/buckets/photos/2024/.cat.png.bakhex.object.bak"
-CLEANUP_DIR = "/mnt/tmp/.beef.completed.done"
+UPLOAD_PATH = "/mnt/tmp/beef"
+STAGED_PATH = "/mnt/tmp/staged"
+CLEANUP_PATH = "/mnt/tmp/.beef.completed.done"
+BACKUP_PATH = "/mnt/tmp/.bakhex.object.bak"
 
 
 class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
@@ -89,11 +93,12 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
-        self.uuid = self._patch(
+        self._patch(
             "uuid.uuid4",
             side_effect=[
                 MagicMock(hex="staged"),
                 MagicMock(hex="done"),
+                MagicMock(hex="bakhex"),
             ],
         )
         self._patch(
@@ -155,6 +160,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
+        self.copy = self._patch("copy", new_callable=AsyncMock)
         self.rename = self._patch("rename", new_callable=AsyncMock)
         self.delete = self._patch("delete", new_callable=AsyncMock)
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
@@ -168,13 +174,6 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             for number, value in zip(numbers, hashes)
         ]
 
-    def _existing_object_uuids(self):
-        self.uuid.side_effect = [
-            MagicMock(hex="staged"),
-            MagicMock(hex="bakhex"),
-            MagicMock(hex="done"),
-        ]
-
     async def _complete(self, parts=None):
         return await multipart_complete(
             session=self.session,
@@ -185,6 +184,9 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             parts=parts or self._build_parts(),
         )
 
+    def _delete_paths(self):
+        return [c.args[0] for c in self.delete.await_args_list]
+
     async def test_assembles_parts_into_object(self):
         objekt = await self._complete()
 
@@ -194,20 +196,21 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 "/mnt/tmp/beef/1.part",
                 "/mnt/tmp/beef/2.part",
             ],
-            "/mnt/tmp/staged",
+            STAGED_PATH,
         )
         self.assertEqual(
             self.lock.call_args_list,
             [
-                call("/mnt/tmp/beef", LockType.WRITE),
-                call("/mnt/buckets/photos", LockType.WRITE),
+                call(UPLOAD_PATH, LockType.WRITE),
+                call(BUCKET_PATH, LockType.WRITE),
             ],
         )
+        self.copy.assert_not_awaited()
         self.assertEqual(
             self.rename.await_args_list,
             [
-                call("/mnt/tmp/staged", OBJECT_PATH),
-                call("/mnt/tmp/beef", CLEANUP_DIR),
+                call(STAGED_PATH, OBJECT_PATH),
+                call(UPLOAD_PATH, CLEANUP_PATH),
             ],
         )
         self.parts_delete.assert_awaited_once_with(
@@ -216,7 +219,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         )
         self.repo.delete.assert_awaited_once_with(self.multipart)
         self.repo.commit.assert_awaited_once()
-        self.rmtree.assert_awaited_once_with(CLEANUP_DIR)
+        self.rmtree.assert_awaited_once_with(CLEANUP_PATH)
         self.delete.assert_not_awaited()
         self.assertIs(objekt, self.objekt)
         self.emit.assert_awaited_once_with(
@@ -226,20 +229,19 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
     async def test_existing_object_backed_up_until_commit(self):
         self.isfile.return_value = True
-        self._existing_object_uuids()
 
         await self._complete()
 
+        self.copy.assert_awaited_once_with(OBJECT_PATH, BACKUP_PATH)
         self.assertEqual(
             self.rename.await_args_list,
             [
-                call(OBJECT_PATH, OBJECT_BACKUP),
-                call("/mnt/tmp/staged", OBJECT_PATH),
-                call("/mnt/tmp/beef", CLEANUP_DIR),
+                call(STAGED_PATH, OBJECT_PATH),
+                call(UPLOAD_PATH, CLEANUP_PATH),
             ],
         )
-        self.delete.assert_awaited_once_with(OBJECT_BACKUP)
-        self.rmtree.assert_awaited_once_with(CLEANUP_DIR)
+        self.delete.assert_awaited_once_with(BACKUP_PATH)
+        self.rmtree.assert_awaited_once_with(CLEANUP_PATH)
 
     async def test_holds_multipart_lock_across_commit(self):
         hold = {"multipart": False, "bucket": False}
@@ -272,7 +274,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 return None
 
         def _lock(path, _type):
-            if path == "/mnt/tmp/beef":
+            if path == UPLOAD_PATH:
                 return MultipartLock()
             return BucketLock()
 
@@ -280,8 +282,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         async def _commit():
             events.append("commit")
-            if not hold["multipart"]:
-                raise AssertionError("multipart lock released before commit")
+            if not hold["multipart"] or not hold["bucket"]:
+                raise AssertionError("locks released before commit")
 
         self.repo.commit = AsyncMock(side_effect=_commit)
 
@@ -292,8 +294,8 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             [
                 "multipart_enter",
                 "bucket_enter",
-                "bucket_exit",
                 "commit",
+                "bucket_exit",
                 "multipart_exit",
             ],
         )
@@ -316,7 +318,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 "/mnt/tmp/beef/1.part",
                 "/mnt/tmp/beef/8.part",
             ],
-            "/mnt/tmp/staged",
+            STAGED_PATH,
         )
 
     async def test_rejects_corrupted_staged_part_hash(self):
@@ -331,6 +333,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.objekt_upsert.assert_not_awaited()
         self.parts_delete.assert_not_awaited()
         self.repo.commit.assert_not_awaited()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_stores_multipart_etag_from_stored_part_etags(self):
         await self._complete()
@@ -348,132 +351,17 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "image/png",
         )
 
-    async def test_failed_cleanup_is_logged(self):
-        self.rmtree.side_effect = OSError("busy")
-
-        objekt = await self._complete()
-
-        self.log.exception.assert_called_once()
-        self.assertIs(objekt, self.objekt)
-        self.repo.commit.assert_awaited_once()
-
-    async def test_backup_cleanup_failure_is_logged(self):
-        self.isfile.return_value = True
-        self._existing_object_uuids()
-        self.delete.side_effect = OSError("busy")
-
-        objekt = await self._complete()
-
-        self.assertIs(objekt, self.objekt)
-        self.log.exception.assert_called()
-        self.assertIn(
-            "multipart_object_backup_cleanup_failed",
-            self.log.exception.call_args.args[0],
+    async def test_rejects_mismatched_client_etag(self):
+        parts = self._build_parts(
+            hashes=[PART_HASHES[0], hashlib.md5(b"other").hexdigest()],
         )
-        self.repo.commit.assert_awaited_once()
 
-    async def test_db_failure_new_object_deletes_published_path(self):
-        self.repo.commit.side_effect = RuntimeError("db down")
+        with self.assertRaises(S3ObjektPartInvalidError):
+            await self._complete(parts)
 
-        with self.assertRaises(RuntimeError):
-            await self._complete()
-
+        self.concat.assert_not_awaited()
         self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with(OBJECT_PATH)
-        self.assertEqual(
-            self.rename.await_args_list[-1],
-            call(CLEANUP_DIR, "/mnt/tmp/beef"),
-        )
-        self.rmtree.assert_not_awaited()
-        self.assertEqual(
-            self.lock.call_args_list,
-            [
-                call("/mnt/tmp/beef", LockType.WRITE),
-                call("/mnt/buckets/photos", LockType.WRITE),
-                call("/mnt/buckets/photos", LockType.WRITE),
-            ],
-        )
-
-    async def test_db_failure_existing_object_restores_backup(self):
-        self.isfile.return_value = True
-        self._existing_object_uuids()
-        self.repo.commit.side_effect = RuntimeError("db down")
-
-        with self.assertRaises(RuntimeError):
-            await self._complete()
-
-        self.repo.rollback.assert_awaited_once()
-        self.assertEqual(
-            self.rename.await_args_list,
-            [
-                call(OBJECT_PATH, OBJECT_BACKUP),
-                call("/mnt/tmp/staged", OBJECT_PATH),
-                call("/mnt/tmp/beef", CLEANUP_DIR),
-                call(OBJECT_BACKUP, OBJECT_PATH),
-                call(CLEANUP_DIR, "/mnt/tmp/beef"),
-            ],
-        )
-        self.delete.assert_not_awaited()
-        self.rmtree.assert_not_awaited()
-
-    async def test_restore_continues_after_object_failure(self):
-        self.repo.commit.side_effect = RuntimeError("db down")
-        self.delete.side_effect = OSError("busy")
-
-        with self.assertRaises(RuntimeError) as cm:
-            await self._complete()
-
-        self.assertEqual(str(cm.exception), "db down")
-        self.assertEqual(
-            self.rename.await_args_list[-1],
-            call(CLEANUP_DIR, "/mnt/tmp/beef"),
-        )
-        self.log.exception.assert_called()
-        self.assertIn(
-            "state=published_object",
-            self.log.exception.call_args.args[0],
-        )
-
-    async def test_restore_failure_after_tombstone_is_logged(self):
-        self.repo.commit.side_effect = RuntimeError("db down")
-        self.rename.side_effect = [
-            None,
-            None,
-            OSError("busy"),
-        ]
-
-        with self.assertRaises(RuntimeError):
-            await self._complete()
-
-        self.delete.assert_awaited_once_with(OBJECT_PATH)
-        self.assertIn(
-            "state=multipart_tombstone",
-            self.log.exception.call_args.args[0],
-        )
-
-    async def test_object_backup_restore_failure_is_logged(self):
-        self.isfile.return_value = True
-        self._existing_object_uuids()
-        self.repo.commit.side_effect = RuntimeError("db down")
-        self.rename.side_effect = [
-            None,
-            None,
-            None,
-            OSError("busy"),
-            None,
-        ]
-
-        with self.assertRaises(RuntimeError):
-            await self._complete()
-
-        self.assertIn(
-            "state=object_backup",
-            self.log.exception.call_args_list[0].args[0],
-        )
-        self.assertEqual(
-            self.rename.await_args_list[-1],
-            call(CLEANUP_DIR, "/mnt/tmp/beef"),
-        )
+        self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_invalid_parts_stop_before_assembly(self):
         self.multipart_parts.side_effect = (
@@ -485,28 +373,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
         self.concat.assert_not_awaited()
         self.parts_delete.assert_not_awaited()
-
-    async def test_missing_bucket_dir_cleans_staged_file(self):
-        self.isdir.return_value = False
-
-        with self.assertRaises(S3BucketNotFoundError):
-            await self._complete()
-
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/staged")
-        self.parts_delete.assert_not_awaited()
-
-    async def test_rejects_mismatched_client_etag(self):
-        parts = self._build_parts(
-            hashes=[PART_HASHES[0], hashlib.md5(b"other").hexdigest()],
-        )
-
-        with self.assertRaises(S3ObjektPartInvalidError):
-            await self._complete(parts)
-
-        self.concat.assert_not_awaited()
-        self.repo.rollback.assert_awaited_once()
-        self.delete.assert_awaited_once_with("/mnt/tmp/staged")
+        self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_unknown_upload_raises(self):
         self.multipart_load.side_effect = S3ObjektUploadNotFoundError()
@@ -515,6 +382,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             await self._complete()
 
         self.concat.assert_not_awaited()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_invalid_key_stops_before_assembly(self):
         with self.assertRaises(S3ObjektKeyInvalidError) as cm:
@@ -530,3 +398,204 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")
         self.multipart_load.assert_not_awaited()
         self.concat.assert_not_awaited()
+
+    async def test_missing_bucket_dir_cleans_staged_file(self):
+        self.isdir.return_value = False
+
+        with self.assertRaises(S3BucketNotFoundError):
+            await self._complete()
+
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.parts_delete.assert_not_awaited()
+        self.rename.assert_not_awaited()
+
+    async def test_directory_at_object_path_is_a_key_conflict(self):
+        self.rename.side_effect = IsADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._complete()
+
+        self.repo.commit.assert_not_awaited()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+
+    async def test_commit_failure_deletes_published_new_object(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.repo.rollback.assert_awaited_once()
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(STAGED_PATH, OBJECT_PATH),
+                call(UPLOAD_PATH, CLEANUP_PATH),
+                call(CLEANUP_PATH, UPLOAD_PATH),
+            ],
+        )
+        self.assertEqual(
+            self._delete_paths(),
+            [OBJECT_PATH, STAGED_PATH],
+        )
+        self.rmtree.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_commit_failure_restores_overwritten_object(self):
+        self.isfile.return_value = True
+        self.repo.commit.side_effect = RuntimeError("db down")
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.assertEqual(
+            self.copy.await_args_list,
+            [
+                call(OBJECT_PATH, BACKUP_PATH),
+                call(BACKUP_PATH, OBJECT_PATH),
+            ],
+        )
+        self.assertEqual(
+            self.rename.await_args_list,
+            [
+                call(STAGED_PATH, OBJECT_PATH),
+                call(UPLOAD_PATH, CLEANUP_PATH),
+                call(CLEANUP_PATH, UPLOAD_PATH),
+            ],
+        )
+        self.assertEqual(
+            self._delete_paths(),
+            [BACKUP_PATH, STAGED_PATH],
+        )
+        self.rmtree.assert_not_awaited()
+
+    async def test_rename_conflict_discards_backup_when_object_existed(self):
+        self.isfile.return_value = True
+        self.rename.side_effect = IsADirectoryError()
+
+        with self.assertRaises(S3ObjektKeyConflictError):
+            await self._complete()
+
+        self.copy.assert_awaited_once_with(OBJECT_PATH, BACKUP_PATH)
+        self.assertEqual(
+            self._delete_paths(),
+            [BACKUP_PATH, STAGED_PATH],
+        )
+        self.rmtree.assert_not_awaited()
+
+    async def test_logs_when_post_commit_cleanup_fails(self):
+        self.rmtree.side_effect = OSError("busy")
+
+        objekt = await self._complete()
+
+        self.assertIs(objekt, self.objekt)
+        self.repo.commit.assert_awaited_once()
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "cleanup_path=%s",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_post_commit_backup_cleanup_fails(self):
+        self.isfile.return_value = True
+        self.delete.side_effect = OSError("busy")
+
+        objekt = await self._complete()
+
+        self.assertIs(objekt, self.objekt)
+        self.emit.assert_awaited_once()
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "backup_path=%s",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_object_restore_fails(self):
+        self.isfile.return_value = True
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.copy.side_effect = [None, OSError("busy")]
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertTrue(
+            any("msg=restore_failed" in message for message in messages),
+        )
+        self.assertEqual(
+            self.rename.await_args_list[-1],
+            call(CLEANUP_PATH, UPLOAD_PATH),
+        )
+
+    async def test_logs_when_upload_restore_fails(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.rename.side_effect = [
+            None,
+            None,
+            OSError("busy"),
+        ]
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.delete.assert_any_await(OBJECT_PATH)
+        self.assertIn(
+            "msg=restore_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "cleanup_path=%s",
+            self.log.exception.call_args.args[0],
+        )
+
+    async def test_logs_when_published_cleanup_fails(self):
+        self.repo.commit.side_effect = RuntimeError("db down")
+        self.delete.side_effect = [OSError("busy"), None]
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        messages = [
+            c.args[0] for c in self.log.exception.call_args_list
+        ]
+        self.assertTrue(
+            any("object_path=%s" in message for message in messages),
+        )
+
+    async def test_logs_when_assembly_rollback_fails(self):
+        self.concat.side_effect = RuntimeError("disk full")
+        self.repo.rollback.side_effect = RuntimeError("session closed")
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._complete()
+
+        self.assertEqual(str(cm.exception), "disk full")
+        self.assertIn(
+            "msg=rollback_failed",
+            self.log.exception.call_args_list[0].args[0],
+        )
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+
+    async def test_logs_when_staged_cleanup_fails_during_assembly(self):
+        self.concat.side_effect = RuntimeError("disk full")
+        self.delete.side_effect = OSError("busy")
+
+        with self.assertRaises(RuntimeError):
+            await self._complete()
+
+        self.assertIn(
+            "msg=cleanup_failed",
+            self.log.exception.call_args.args[0],
+        )
+        self.assertIn(
+            "staged_path=%s",
+            self.log.exception.call_args.args[0],
+        )
