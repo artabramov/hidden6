@@ -14,7 +14,10 @@ from app.constants import (  # noqa: E402
     BUCKET_VERSIONING_SUSPENDED,
 )
 from app.db.engine import load_all_models  # noqa: E402
-from app.errors import S3IllegalVersioningConfigurationError  # noqa: E402
+from app.errors import (  # noqa: E402
+    S3BucketStateInvalidError,
+    S3IllegalVersioningConfigurationError,
+)
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
 from app.models.objekt_version_metadata import (  # noqa: E402, F401
@@ -141,6 +144,48 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
             RESOURCE,
         )
 
+        self.assertEqual(
+            bucket.versioning_status,
+            BUCKET_VERSIONING_ENABLED,
+        )
+
+    def test_enables_when_object_lock_enabled(self):
+        bucket = Bucket(
+            id=1,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+
+        set_bucket_versioning_status(
+            bucket,
+            BUCKET_VERSIONING_ENABLED,
+            RESOURCE,
+        )
+
+        self.assertEqual(
+            bucket.versioning_status,
+            BUCKET_VERSIONING_ENABLED,
+        )
+
+    def test_rejects_suspend_when_object_lock_enabled(self):
+        bucket = Bucket(
+            id=1,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+
+        with self.assertRaises(S3BucketStateInvalidError) as cm:
+            set_bucket_versioning_status(
+                bucket,
+                BUCKET_VERSIONING_SUSPENDED,
+                RESOURCE,
+            )
+
+        self.assertEqual(cm.exception.resource, RESOURCE)
         self.assertEqual(
             bucket.versioning_status,
             BUCKET_VERSIONING_ENABLED,

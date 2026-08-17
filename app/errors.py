@@ -39,10 +39,13 @@ class S3ErrorCode:
     SIGNATURE_DOES_NOT_MATCH = "SignatureDoesNotMatch"
     REQUEST_TIME_TOO_SKEWED = "RequestTimeTooSkewed"
     NOT_IMPLEMENTED = "NotImplemented"
+
     BUCKET_NAME_INVALID = "InvalidBucketName"
     BUCKET_ALREADY_EXISTS = "BucketAlreadyExists"
     BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
     BUCKET_NOT_FOUND = "NoSuchBucket"
+    BUCKET_STATE_INVALID = "InvalidBucketState"
+
     OBJEKT_NOT_FOUND = "NoSuchKey"
     OBJEKT_KEY_INVALID = "InvalidArgument"
     OBJEKT_KEY_CONFLICT = "InvalidArgument"
@@ -182,6 +185,21 @@ class S3BucketNotFoundError(S3Error):
             code=S3ErrorCode.BUCKET_NOT_FOUND,
             message="The specified bucket does not exist.",
             status_code=status.HTTP_404_NOT_FOUND,
+            resource=resource,
+        )
+
+
+class S3BucketStateInvalidError(S3Error):
+    """Raised when an operation is invalid for the bucket state (409)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.BUCKET_STATE_INVALID,
+            message=(
+                "The request is not valid for the current state of the "
+                "bucket."
+            ),
+            status_code=status.HTTP_409_CONFLICT,
             resource=resource,
         )
 

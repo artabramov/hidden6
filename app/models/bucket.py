@@ -23,7 +23,9 @@ from app.db.base import Base
 
 # NOTE (ADR-29): S3 bucket versioning follows AWS state semantics.
 # Buckets have three internal states: Disabled, Enabled, and Suspended.
-# Enabled and Suspended may be reapplied or transition to each other.
+# Enabled and Suspended may be reapplied or transition to each other,
+# except that versioning cannot be suspended while Object Lock is
+# enabled.
 #
 # Disabled:
 #     Initial internal state for a bucket where versioning has never
@@ -44,7 +46,8 @@ from app.db.base import Base
 #     null version for the same key instead of retaining it as history.
 #     DELETE Object without versionId removes the current null version,
 #     if any, and creates a null delete marker. DELETE Object with
-#     versionId permanently removes the specified version.
+#     versionId permanently removes the specified version. Suspended
+#     cannot be entered while Object Lock is enabled.
 
 
 class Bucket(Base):

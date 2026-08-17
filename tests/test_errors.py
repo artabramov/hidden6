@@ -12,6 +12,7 @@ from app.errors import (
     S3BucketAlreadyExistsError,
     S3BucketAlreadyOwnedByYouError,
     S3BucketNotFoundError,
+    S3BucketStateInvalidError,
     S3Error,
     S3ErrorCode,
     S3IllegalVersioningConfigurationError,
@@ -116,6 +117,11 @@ class TestS3ErrorSubclasses(unittest.TestCase):
             S3BucketNotFoundError,
             S3ErrorCode.BUCKET_NOT_FOUND,
             status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            S3BucketStateInvalidError,
+            S3ErrorCode.BUCKET_STATE_INVALID,
+            status.HTTP_409_CONFLICT,
         ),
         (
             S3ObjektNotFoundError,

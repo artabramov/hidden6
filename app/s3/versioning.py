@@ -6,7 +6,10 @@ from app.constants import (
     BUCKET_VERSIONING_ENABLED,
     BUCKET_VERSIONING_SUSPENDED,
 )
-from app.errors import S3IllegalVersioningConfigurationError
+from app.errors import (
+    S3BucketStateInvalidError,
+    S3IllegalVersioningConfigurationError,
+)
 from app.models.bucket import Bucket
 
 
@@ -32,14 +35,20 @@ def set_bucket_versioning_status(
     """
     Apply an S3 versioning state to a bucket.
 
-    The S3 API accepts Enabled and Suspended. Disabled is an internal
-    state representing a bucket where versioning has never been
-    configured and cannot be restored through the S3 API.
+    PutBucketVersioning accepts Enabled and Suspended. Disabled is an
+    internal initial state and cannot be restored through the S3 API.
+    Versioning cannot be suspended while Object Lock is enabled.
     """
     if versioning_status not in (
         BUCKET_VERSIONING_ENABLED,
         BUCKET_VERSIONING_SUSPENDED,
     ):
         raise S3IllegalVersioningConfigurationError(resource)
+
+    if (
+        bucket.object_lock_enabled
+        and versioning_status == BUCKET_VERSIONING_SUSPENDED
+    ):
+        raise S3BucketStateInvalidError(resource)
 
     bucket.versioning_status = versioning_status
