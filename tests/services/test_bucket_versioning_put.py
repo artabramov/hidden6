@@ -18,13 +18,23 @@ from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3AccessDeniedError,
     S3BucketNotFoundError,
+    S3BucketStateInvalidError,
     S3IllegalVersioningConfigurationError,
+    S3XmlMalformedError,
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_versioning_put import bucket_versioning_put  # noqa: E402
 
 load_all_models()
+
+
+def _versioning_body(status: str) -> bytes:
+    return (
+        b"<VersioningConfiguration>"
+        + f"<Status>{status}</Status>".encode()
+        + b"</VersioningConfiguration>"
+    )
 
 
 class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
@@ -37,12 +47,18 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         self.log_patcher.stop()
 
-    def _bucket(self, versioning_status: str) -> Bucket:
+    def _bucket(
+        self,
+        versioning_status: str,
+        *,
+        object_lock_enabled: bool = False,
+    ) -> Bucket:
         return Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",
             versioning_status=versioning_status,
+            object_lock_enabled=object_lock_enabled,
         )
 
     def _repo(self):
@@ -52,7 +68,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
         repo.rollback = AsyncMock()
         return repo
 
-    async def _put(self, bucket, versioning_status, repo=None, user=None):
+    async def _put(self, bucket, body, repo=None, user=None):
         repo = repo if repo is not None else self._repo()
 
         with (
@@ -70,7 +86,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=user or self.user,
                 bucket_name="photos",
-                versioning_status=versioning_status,
+                body=body,
             )
 
         return repo, load_bucket_mock
@@ -80,7 +96,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         repo, load_bucket_mock = await self._put(
             bucket,
-            BUCKET_VERSIONING_ENABLED,
+            _versioning_body(BUCKET_VERSIONING_ENABLED),
         )
 
         self.assertEqual(bucket.versioning_status, BUCKET_VERSIONING_ENABLED)
@@ -97,7 +113,10 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
     async def test_suspends_from_disabled(self):
         bucket = self._bucket(BUCKET_VERSIONING_DISABLED)
 
-        await self._put(bucket, BUCKET_VERSIONING_SUSPENDED)
+        await self._put(
+            bucket,
+            _versioning_body(BUCKET_VERSIONING_SUSPENDED),
+        )
 
         self.assertEqual(
             bucket.versioning_status,
@@ -107,7 +126,10 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
     async def test_suspends_from_enabled(self):
         bucket = self._bucket(BUCKET_VERSIONING_ENABLED)
 
-        await self._put(bucket, BUCKET_VERSIONING_SUSPENDED)
+        await self._put(
+            bucket,
+            _versioning_body(BUCKET_VERSIONING_SUSPENDED),
+        )
 
         self.assertEqual(
             bucket.versioning_status,
@@ -117,9 +139,37 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
     async def test_reenables_from_suspended(self):
         bucket = self._bucket(BUCKET_VERSIONING_SUSPENDED)
 
-        await self._put(bucket, BUCKET_VERSIONING_ENABLED)
+        await self._put(
+            bucket,
+            _versioning_body(BUCKET_VERSIONING_ENABLED),
+        )
 
         self.assertEqual(bucket.versioning_status, BUCKET_VERSIONING_ENABLED)
+
+    async def test_rejects_malformed_xml(self):
+        repo = self._repo()
+
+        with (
+            patch(
+                "app.services.bucket_versioning_put.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_versioning_put.load_bucket",
+                new_callable=AsyncMock,
+            ) as load_bucket_mock,
+        ):
+            with self.assertRaises(S3XmlMalformedError) as cm:
+                await bucket_versioning_put(
+                    session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
+                    body=b"<VersioningConfiguration>",
+                )
+
+        self.assertEqual(cm.exception.resource, "/photos")
+        load_bucket_mock.assert_not_awaited()
+        repo.update.assert_not_awaited()
 
     async def test_rejects_disabled_status(self):
         bucket = self._bucket(BUCKET_VERSIONING_ENABLED)
@@ -141,7 +191,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
-                    versioning_status=BUCKET_VERSIONING_DISABLED,
+                    body=_versioning_body(BUCKET_VERSIONING_DISABLED),
                 )
 
         self.assertEqual(cm.exception.resource, "/photos")
@@ -169,7 +219,37 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
-                    versioning_status="Invalid",
+                    body=_versioning_body("Invalid"),
+                )
+
+        self.assertEqual(cm.exception.resource, "/photos")
+        self.assertEqual(bucket.versioning_status, BUCKET_VERSIONING_ENABLED)
+        repo.update.assert_not_awaited()
+
+    async def test_rejects_suspend_when_object_lock_enabled(self):
+        bucket = self._bucket(
+            BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+        repo = self._repo()
+
+        with (
+            patch(
+                "app.services.bucket_versioning_put.ORMRepository",
+                return_value=repo,
+            ),
+            patch(
+                "app.services.bucket_versioning_put.load_bucket",
+                new_callable=AsyncMock,
+                return_value=bucket,
+            ),
+        ):
+            with self.assertRaises(S3BucketStateInvalidError) as cm:
+                await bucket_versioning_put(
+                    session=self.session,
+                    current_user=self.user,
+                    bucket_name="photos",
+                    body=_versioning_body(BUCKET_VERSIONING_SUSPENDED),
                 )
 
         self.assertEqual(cm.exception.resource, "/photos")
@@ -195,7 +275,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
-                    versioning_status=BUCKET_VERSIONING_ENABLED,
+                    body=_versioning_body(BUCKET_VERSIONING_ENABLED),
                 )
 
         repo.update.assert_not_awaited()
@@ -221,7 +301,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=other_user,
                     bucket_name="photos",
-                    versioning_status=BUCKET_VERSIONING_ENABLED,
+                    body=_versioning_body(BUCKET_VERSIONING_ENABLED),
                 )
 
         repo.update.assert_not_awaited()
@@ -247,7 +327,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
-                    versioning_status=BUCKET_VERSIONING_ENABLED,
+                    body=_versioning_body(BUCKET_VERSIONING_ENABLED),
                 )
 
         repo.rollback.assert_awaited_once()
@@ -274,7 +354,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
-                    versioning_status=BUCKET_VERSIONING_ENABLED,
+                    body=_versioning_body(BUCKET_VERSIONING_ENABLED),
                 )
 
         repo.update.assert_awaited_once_with(bucket)
@@ -302,7 +382,7 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
-                    versioning_status=BUCKET_VERSIONING_ENABLED,
+                    body=_versioning_body(BUCKET_VERSIONING_ENABLED),
                 )
 
         self.assertEqual(str(cm.exception), "db down")
