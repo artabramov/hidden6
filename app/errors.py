@@ -40,6 +40,8 @@ class S3ErrorCode:
     REQUEST_TIME_TOO_SKEWED = "RequestTimeTooSkewed"
     NOT_IMPLEMENTED = "NotImplemented"
 
+    XML_MALFORMED = "MalformedXML"
+
     BUCKET_NAME_INVALID = "InvalidBucketName"
     BUCKET_ALREADY_EXISTS = "BucketAlreadyExists"
     BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
@@ -56,7 +58,6 @@ class S3ErrorCode:
     OBJEKT_PART_INVALID = "InvalidPart"
     OBJEKT_PART_ORDER_INVALID = "InvalidPartOrder"
     OBJEKT_PART_TOO_SMALL = "EntityTooSmall"
-    OBJEKT_XML_MALFORMED = "MalformedXML"
     ILLEGAL_VERSIONING_CONFIGURATION = "IllegalVersioningConfigurationException"  # noqa: E501
 
 
@@ -348,12 +349,12 @@ class S3ObjektPartTooSmallError(S3Error):
         )
 
 
-class S3ObjektXmlMalformedError(S3Error):
+class S3XmlMalformedError(S3Error):
     """Raised when the request XML cannot be parsed (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_XML_MALFORMED,
+            code=S3ErrorCode.XML_MALFORMED,
             message=(
                 "The XML provided was not well formed or did not "
                 "validate against the published schema."

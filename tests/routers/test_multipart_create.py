@@ -13,7 +13,7 @@ set_minimal_app_config_env()
 
 from app.errors import (  # noqa: E402
     S3NotImplementedError,
-    S3ObjektXmlMalformedError,
+    S3XmlMalformedError,
 )
 from app.routers.multipart_create import (  # noqa: E402
     multipart_create_router,
@@ -120,7 +120,7 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
         self.assertIn(b'<ETag>"abc-1"</ETag>', response.body)
 
     async def test_malformed_body_raises_s3_error(self):
-        with self.assertRaises(S3ObjektXmlMalformedError) as cm:
+        with self.assertRaises(S3XmlMalformedError) as cm:
             await multipart_create_router(
                 bucket_name="photos",
                 object_key="cat.png",

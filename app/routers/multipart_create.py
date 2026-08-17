@@ -11,7 +11,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.errors import (
     S3NotImplementedError,
-    S3ObjektXmlMalformedError,
+    S3XmlMalformedError,
 )
 from app.models.user import User
 from app.services.multipart_complete import multipart_complete
@@ -121,7 +121,7 @@ async def multipart_create_router(
     try:
         parts = parse_multipart_complete(await request.body())
     except ValueError as exc:
-        raise S3ObjektXmlMalformedError(resource) from exc
+        raise S3XmlMalformedError(resource) from exc
 
     objekt = await multipart_complete(
         session=session,

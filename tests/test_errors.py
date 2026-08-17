@@ -29,9 +29,9 @@ from app.errors import (
     S3ObjektPartTooSmallError,
     S3ObjektTooLargeError,
     S3ObjektUploadNotFoundError,
-    S3ObjektXmlMalformedError,
     S3RequestTimeTooSkewedError,
     S3SignatureDoesNotMatchError,
+    S3XmlMalformedError,
     ServiceUnavailableError,
     UnauthorizedError,
 )
@@ -174,8 +174,8 @@ class TestS3ErrorSubclasses(unittest.TestCase):
             status.HTTP_400_BAD_REQUEST,
         ),
         (
-            S3ObjektXmlMalformedError,
-            S3ErrorCode.OBJEKT_XML_MALFORMED,
+            S3XmlMalformedError,
+            S3ErrorCode.XML_MALFORMED,
             status.HTTP_400_BAD_REQUEST,
         ),
         (
