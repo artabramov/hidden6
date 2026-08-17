@@ -118,8 +118,9 @@ class Bucket(Base):
         server_default=text("0"),
     )
 
-    # Default Object Lock retention mode applied to new object versions.
-    # NULL when no default retention rule is configured.
+    # Default S3 Object Lock retention mode: GOVERNANCE or COMPLIANCE.
+    # NULL when no default retention period is configured for new
+    # versions.
     default_lock_mode: Mapped[str | None] = mapped_column(
         String(16),
         nullable=True,
