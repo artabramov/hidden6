@@ -1,7 +1,9 @@
 # app/routers/bucket_create.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from fastapi import APIRouter, Depends, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.require_auth import require_auth
@@ -9,6 +11,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_create import bucket_create
+from app.services.bucket_versioning_put import bucket_versioning_put
 
 router = APIRouter(include_in_schema=False)
 
@@ -35,9 +38,9 @@ router = APIRouter(include_in_schema=False)
         },
         409: {
             "description": (
-                "The bucket name is unavailable: it is already "
-                "owned by another user, or the caller has already "
-                "created a bucket with this name."
+                "The bucket name is unavailable, or the requested "
+                "versioning state is incompatible with the current "
+                "bucket state."
             ),
         },
         503: {
@@ -51,21 +54,34 @@ router = APIRouter(include_in_schema=False)
     status_code=status.HTTP_200_OK,
     response_class=Response,
     dependencies=[Depends(require_gocryptfs())],
-    summary="Create an S3 bucket.",
+    summary="Create a bucket or configure bucket versioning.",
 )
 async def bucket_create_router(
     bucket_name: str,
+    request: Request,
     session: AsyncSession = Depends(require_session),
     current_user: User = Depends(require_auth),
+    versioning: Annotated[str | None, Query()] = None,
 ) -> Response:
     """
-    Create an S3 bucket for the authenticated user.
+    Handle S3 PUT operations addressed to a bucket.
 
-    Validates the bucket name, creates the bucket with the authenticated
-    user as its owner, and returns the bucket location.
+    With `?versioning`, apply the versioning configuration from the
+    request body. Otherwise create the bucket for the authenticated
+    user.
 
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
+    if versioning is not None:
+        await bucket_versioning_put(
+            session=session,
+            current_user=current_user,
+            bucket_name=bucket_name,
+            body=await request.body(),
+        )
+
+        return Response(status_code=status.HTTP_200_OK)
+
     await bucket_create(
         session=session,
         current_user=current_user,
