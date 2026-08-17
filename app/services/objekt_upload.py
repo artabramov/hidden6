@@ -52,6 +52,56 @@ log = logging.getLogger(__name__)
 # should be processed bottom-up, and bucket root directories must never
 # be removed.
 
+# TODO: Add S3 object versioning to the upload transaction.
+#
+# PUT Object behavior depends on the bucket versioning state and on the
+# version ID of the current object state.
+#
+# Disabled:
+#     Keep the current behavior. The object has the S3 null version
+#     (internally version_id = NULL), PUT replaces it in place, and no
+#     historical ObjektVersion row is created.
+#
+# Enabled:
+#     Every PUT creates a new current object state with a unique
+#     version_id. If a current state already exists, preserve it as an
+#     ObjektVersion before publishing the new payload. This also applies
+#     to objects that predate versioning and therefore have a null
+#     version ID: the old null version becomes noncurrent and the new
+#     current state receives a unique version ID.
+#
+#     If the current state is a delete marker, preserve the marker as a
+#     noncurrent ObjektVersion and publish the new object as the current
+#     version. Delete markers have metadata but no payload to preserve.
+#
+# Suspended:
+#     Every new PUT creates the S3 null version (version_id = NULL).
+#
+#     If the current state has a unique version ID, preserve it as a
+#     noncurrent ObjektVersion and publish a new null current version.
+#
+#     If the current state is already the null version, overwrite that
+#     null version in place. It must not be retained as another
+#     ObjektVersion because S3 keeps at most one null version per key.
+#
+#     If the current state is a uniquely identified delete marker,
+#     preserve the marker as a noncurrent ObjektVersion and publish a
+#     new null current version.
+#
+#     If the current state is a null delete marker, replace the marker
+#     with the new null object state rather than retaining the marker as
+#     history.
+#
+# Filesystem and DB changes must remain one compensated transaction:
+# current payloads that become noncurrent must be moved/copied to the
+# versions store before the canonical bucket/key path is replaced, while
+# delete markers require only DB history. Rollback must restore both the
+# previous current metadata and its payload when applicable.
+#
+# A successful PUT should return the new current version ID through
+# x-amz-version-id when versioning is Enabled or Suspended. Disabled
+# buckets expose the null version without a version header.
+
 async def objekt_upload(
     session: AsyncSession,
     current_user: User,
