@@ -12,12 +12,12 @@ def etag_headers(etag: str) -> dict[str, str]:
     return {"ETag": f'"{etag}"'}
 
 
-def object_headers(objekt: S3Object) -> dict[str, str]:
+def object_headers(s3_object: S3Object) -> dict[str, str]:
     """
     Response headers shared by GetObject and HeadObject.
     """
     return {
-        "Content-Length": str(objekt.size_bytes),
-        **etag_headers(objekt.etag),
-        "Last-Modified": http_datetime(objekt.modified_at),
+        "Content-Length": str(s3_object.size_bytes),
+        **etag_headers(s3_object.etag),
+        "Last-Modified": http_datetime(s3_object.modified_at),
     }

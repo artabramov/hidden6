@@ -90,15 +90,15 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_completes_upload(self):
-        objekt = MagicMock()
-        objekt.etag = "abc-1"
+        s3_object = MagicMock()
+        s3_object.etag = "abc-1"
         session = MagicMock()
         user = MagicMock()
 
         with patch(
             "app.routers.multipart_create.multipart_complete",
             new_callable=AsyncMock,
-            return_value=objekt,
+            return_value=s3_object,
         ) as mock_service:
             response = await multipart_create_router(
                 bucket_name="photos",

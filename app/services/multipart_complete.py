@@ -209,7 +209,7 @@ async def multipart_complete(
 
                 await object_mkdir(object_path, resource)
 
-                objekt = await upsert_object(
+                s3_object = await upsert_object(
                     repo=repo,
                     bucket=bucket,
                     user=current_user,
@@ -357,5 +357,5 @@ async def multipart_complete(
                 cleanup_path,
             )
 
-    await hooks.emit(Events.OBJECT_UPLOADED, objekt)
-    return objekt
+    await hooks.emit(Events.OBJECT_UPLOADED, s3_object)
+    return s3_object

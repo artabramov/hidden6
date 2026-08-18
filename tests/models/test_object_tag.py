@@ -53,7 +53,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             object_key="a.txt",
@@ -61,9 +61,9 @@ class TestObjectTagModel(unittest.TestCase):
             etag="c" * 32,
             content_type="text/plain",
         )
-        self.session.add(self.objekt)
+        self.session.add(self.s3_object)
         self.session.commit()
-        self.session.refresh(self.objekt)
+        self.session.refresh(self.s3_object)
 
     def tearDown(self):
         self.session.close()
@@ -71,7 +71,7 @@ class TestObjectTagModel(unittest.TestCase):
 
     def _tag(self, **kwargs) -> ObjectTag:
         defaults = {
-            "object_id": self.objekt.id,
+            "object_id": self.s3_object.id,
             "tag_key": "color",
             "tag_value": "red",
         }
@@ -88,7 +88,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.object_id, self.objekt.id)
+        self.assertEqual(row.object_id, self.s3_object.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -145,7 +145,7 @@ class TestObjectTagModel(unittest.TestCase):
             .options(selectinload(ObjectTag.object_tag_object)),
         )
 
-        self.assertEqual(loaded.object_tag_object.id, self.objekt.id)
+        self.assertEqual(loaded.object_tag_object.id, self.s3_object.id)
         self.assertEqual(loaded.object_tag_object.object_key, "a.txt")
 
     def test_object_relationship_to_tags(self):
@@ -155,7 +155,7 @@ class TestObjectTagModel(unittest.TestCase):
 
         loaded = self.session.scalar(
             select(S3Object)
-            .where(S3Object.id == self.objekt.id)
+            .where(S3Object.id == self.s3_object.id)
             .options(selectinload(S3Object.object_tags)),
         )
 
@@ -167,7 +167,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(S3Object).where(S3Object.id == self.objekt.id),
+            select(S3Object).where(S3Object.id == self.s3_object.id),
         )
 
         with self.assertRaises(InvalidRequestError):
@@ -177,7 +177,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.session.add(self._tag())
         self.session.commit()
 
-        self.session.delete(self.objekt)
+        self.session.delete(self.s3_object)
         self.session.commit()
 
         remaining = self.session.scalars(select(ObjectTag)).all()

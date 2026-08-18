@@ -53,7 +53,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             object_key="a.txt",
@@ -61,9 +61,9 @@ class TestObjectVersionModel(unittest.TestCase):
             etag="c" * 32,
             content_type="text/plain",
         )
-        self.session.add(self.objekt)
+        self.session.add(self.s3_object)
         self.session.commit()
-        self.session.refresh(self.objekt)
+        self.session.refresh(self.s3_object)
 
     def tearDown(self):
         self.session.close()
@@ -71,7 +71,7 @@ class TestObjectVersionModel(unittest.TestCase):
 
     def _version(self, **kwargs) -> ObjectVersion:
         defaults = {
-            "object_id": self.objekt.id,
+            "object_id": self.s3_object.id,
             "user_id": self.user.id,
             "version_id": "a" * 32,
             "modified_at": 1_704_067_200,
@@ -113,7 +113,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.refresh(version)
 
         self.assertIsNotNone(version.id)
-        self.assertEqual(version.object_id, self.objekt.id)
+        self.assertEqual(version.object_id, self.s3_object.id)
         self.assertEqual(version.user_id, self.user.id)
         self.assertEqual(version.version_id, "c" * 32)
         self.assertEqual(version.modified_at, 1_704_153_600)
@@ -139,7 +139,7 @@ class TestObjectVersionModel(unittest.TestCase):
 
         rows = self.session.scalars(
             select(ObjectVersion).where(
-                ObjectVersion.object_id == self.objekt.id,
+                ObjectVersion.object_id == self.s3_object.id,
             ),
         ).all()
         self.assertEqual(len(rows), 2)
@@ -242,7 +242,7 @@ class TestObjectVersionModel(unittest.TestCase):
             .options(selectinload(ObjectVersion.object_version_object)),
         )
 
-        self.assertEqual(loaded.object_version_object.id, self.objekt.id)
+        self.assertEqual(loaded.object_version_object.id, self.s3_object.id)
         self.assertEqual(
             loaded.object_version_object.object_key,
             "a.txt",
@@ -257,7 +257,7 @@ class TestObjectVersionModel(unittest.TestCase):
 
         loaded = self.session.scalar(
             select(S3Object)
-            .where(S3Object.id == self.objekt.id)
+            .where(S3Object.id == self.s3_object.id)
             .options(selectinload(S3Object.object_versions)),
         )
 
@@ -282,7 +282,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(S3Object).where(S3Object.id == self.objekt.id),
+            select(S3Object).where(S3Object.id == self.s3_object.id),
         )
 
         with self.assertRaises(InvalidRequestError):
@@ -292,7 +292,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.add(self._version(version_id="a" * 32))
         self.session.commit()
 
-        self.session.delete(self.objekt)
+        self.session.delete(self.s3_object)
         with self.assertRaises(IntegrityError):
             self.session.commit()
 

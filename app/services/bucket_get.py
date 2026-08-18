@@ -42,7 +42,7 @@ async def bucket_get(
         escaped = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")  # noqa: E501
         filters["object_key__like"] = f"{escaped}%"
 
-    objekts = await repo.select_all(S3Object, **filters)
+    s3_objects = await repo.select_all(S3Object, **filters)
 
-    await hooks.emit(Events.OBJECT_LISTED, objekts)
-    return objekts
+    await hooks.emit(Events.OBJECT_LISTED, s3_objects)
+    return s3_objects

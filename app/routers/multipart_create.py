@@ -123,7 +123,7 @@ async def multipart_create_router(
     except ValueError as exc:
         raise S3XmlMalformedError(resource) from exc
 
-    objekt = await multipart_complete(
+    s3_object = await multipart_complete(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
@@ -135,7 +135,7 @@ async def multipart_create_router(
         render_multipart_complete(
             bucket_name=bucket_name,
             object_key=object_key,
-            etag=objekt.etag,
+            etag=s3_object.etag,
         ),
     )
 

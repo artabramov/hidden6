@@ -29,7 +29,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
     async def test_returns_200_with_list_bucket_xml(self):
         user = User(id=1, username="alice", is_root=False)
         session = MagicMock()
-        objekts = [
+        s3_objects = [
             S3Object(
                 id=3,
                 bucket_id=7,
@@ -47,7 +47,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
-                return_value=objekts,
+                return_value=s3_objects,
             ) as mock_list,
             patch(
                 "app.routers.bucket_get.bucket_versioning_retrieve",

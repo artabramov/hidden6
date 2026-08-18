@@ -26,7 +26,7 @@ class TestEtagHeaders(unittest.TestCase):
 
 class TestObjektHeaders(unittest.TestCase):
     def test_builds_get_and_head_headers(self):
-        objekt = S3Object(
+        s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -38,7 +38,7 @@ class TestObjektHeaders(unittest.TestCase):
         )
 
         self.assertEqual(
-            object_headers(objekt),
+            object_headers(s3_object),
             {
                 "Content-Length": "12",
                 "ETag": '"etag123"',

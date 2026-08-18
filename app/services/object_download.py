@@ -44,10 +44,10 @@ async def object_download(
 
     repo = ORMRepository(session)
     bucket = await load_bucket(repo, bucket_name, current_user, resource)
-    objekt = await load_object(repo, bucket, object_key, resource)
+    s3_object = await load_object(repo, bucket, object_key, resource)
 
     if not await isfile(object_path):
         raise S3ObjectNotFoundError(resource)
 
-    await hooks.emit(Events.OBJECT_DOWNLOADED, objekt)
-    return objekt, object_path
+    await hooks.emit(Events.OBJECT_DOWNLOADED, s3_object)
+    return s3_object, object_path

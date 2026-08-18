@@ -26,15 +26,15 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
         return request
 
     async def test_returns_200_with_etag(self):
-        objekt = MagicMock()
-        objekt.etag = "d41d8cd98f00b204e9800998ecf8427e"
+        s3_object = MagicMock()
+        s3_object.etag = "d41d8cd98f00b204e9800998ecf8427e"
         user = MagicMock()
         session = MagicMock()
 
         with patch(
             "app.routers.object_upload.object_upload",
             new_callable=AsyncMock,
-            return_value=objekt,
+            return_value=s3_object,
         ) as mock_service:
             response = await object_upload_router(
                 bucket_name="photos",

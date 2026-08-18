@@ -72,24 +72,24 @@ async def object_download_router(
 
     `OBJECT_DOWNLOADED` — hook executed after the object is resolved.
     """
-    objekt, object_path = await object_download(
+    s3_object, object_path = await object_download(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
         object_key=object_key,
     )
-    headers = object_headers(objekt)
+    headers = object_headers(s3_object)
 
     if request.method == "HEAD":
         return Response(
             status_code=status.HTTP_200_OK,
-            media_type=objekt.content_type,
+            media_type=s3_object.content_type,
             headers=headers,
         )
 
     return StreamingResponse(
         iter_read(object_path),
         status_code=status.HTTP_200_OK,
-        media_type=objekt.content_type,
+        media_type=s3_object.content_type,
         headers=headers,
     )

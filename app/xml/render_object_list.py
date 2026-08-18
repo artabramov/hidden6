@@ -12,7 +12,7 @@ def render_object_list(
     bucket_name: str,
     prefix: str,
     max_keys: int,
-    objekts: list[S3Object],
+    s3_objects: list[S3Object],
 ) -> str:
     """
     Render an S3-compatible ListBucketResult XML body.
@@ -21,24 +21,24 @@ def render_object_list(
     max_keys, meaning further pages may exist; the client is expected
     to re-request with a continuation token (not yet implemented).
     """
-    is_truncated = len(objekts) == max_keys
+    is_truncated = len(s3_objects) == max_keys
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<ListBucketResult xmlns="{S3_XMLNS}">',
         f"<Name>{escape(bucket_name)}</Name>",
         f"<Prefix>{escape(prefix)}</Prefix>",
         f"<MaxKeys>{max_keys}</MaxKeys>",
-        f"<KeyCount>{len(objekts)}</KeyCount>",
+        f"<KeyCount>{len(s3_objects)}</KeyCount>",
         f"<IsTruncated>{'true' if is_truncated else 'false'}</IsTruncated>",
     ]
-    for objekt in objekts:
-        last_modified = format_datetime(objekt.modified_at)
+    for s3_object in s3_objects:
+        last_modified = format_datetime(s3_object.modified_at)
         parts.extend([
             "<Contents>",
-            f"<Key>{escape(objekt.object_key)}</Key>",
+            f"<Key>{escape(s3_object.object_key)}</Key>",
             f"<LastModified>{last_modified}</LastModified>",
-            f"<ETag>&quot;{escape(objekt.etag)}&quot;</ETag>",
-            f"<Size>{objekt.size_bytes}</Size>",
+            f"<ETag>&quot;{escape(s3_object.etag)}&quot;</ETag>",
+            f"<Size>{s3_object.size_bytes}</Size>",
             "<StorageClass>STANDARD</StorageClass>",
             "</Contents>",
         ])

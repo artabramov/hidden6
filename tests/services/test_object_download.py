@@ -29,7 +29,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -62,7 +62,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self.load_object = self._patch(
             "load_object",
             new_callable=AsyncMock,
-            return_value=self.objekt,
+            return_value=self.s3_object,
         )
         self.isfile = self._patch(
             "isfile",
@@ -78,21 +78,21 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
     async def test_returns_object_and_path(self):
         self._build_mocks()
 
-        objekt, path = await object_download(
+        s3_object, path = await object_download(
             session=self.session,
             current_user=self.user,
             bucket_name="photos",
             object_key="2024/cat.png",
         )
 
-        self.assertIs(objekt, self.objekt)
+        self.assertIs(s3_object, self.s3_object)
         self.assertEqual(path, "/mnt/buckets/photos/2024/cat.png")
         self.load_bucket.assert_awaited_once()
         self.load_object.assert_awaited_once()
         self.isfile.assert_awaited_once_with("/mnt/buckets/photos/2024/cat.png")
         self.emit.assert_awaited_once_with(
             Events.OBJECT_DOWNLOADED,
-            self.objekt,
+            self.s3_object,
         )
 
     async def test_invalid_key_stops_before_storage(self):

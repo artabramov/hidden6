@@ -53,7 +53,7 @@ class TestObjectVersionMetadataModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             object_key="a.txt",
@@ -61,12 +61,12 @@ class TestObjectVersionMetadataModel(unittest.TestCase):
             etag="c" * 32,
             content_type="text/plain",
         )
-        self.session.add(self.objekt)
+        self.session.add(self.s3_object)
         self.session.commit()
-        self.session.refresh(self.objekt)
+        self.session.refresh(self.s3_object)
 
         self.version = ObjectVersion(
-            object_id=self.objekt.id,
+            object_id=self.s3_object.id,
             user_id=self.user.id,
             version_id="a" * 32,
             modified_at=1_704_067_200,
@@ -125,7 +125,7 @@ class TestObjectVersionMetadataModel(unittest.TestCase):
 
     def test_same_meta_key_allowed_on_different_versions(self):
         other = ObjectVersion(
-            object_id=self.objekt.id,
+            object_id=self.s3_object.id,
             user_id=self.user.id,
             version_id="b" * 32,
             modified_at=1_704_067_200,

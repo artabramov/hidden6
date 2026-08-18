@@ -113,7 +113,7 @@ async def object_upload_router(
             headers=etag_headers(etag),
         )
 
-    objekt = await object_upload(
+    s3_object = await object_upload(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
@@ -122,5 +122,5 @@ async def object_upload_router(
     )
     return Response(
         status_code=status.HTTP_200_OK,
-        headers=etag_headers(objekt.etag),
+        headers=etag_headers(s3_object.etag),
     )

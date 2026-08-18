@@ -25,7 +25,7 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -54,7 +54,7 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.routers.object_download.object_download",
                 new_callable=AsyncMock,
-                return_value=(self.objekt, self.object_path),
+                return_value=(self.s3_object, self.object_path),
             ) as mock_service,
             patch(
                 "app.routers.object_download.iter_read",
@@ -96,7 +96,7 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
             patch(
                 "app.routers.object_download.object_download",
                 new_callable=AsyncMock,
-                return_value=(self.objekt, self.object_path),
+                return_value=(self.s3_object, self.object_path),
             ) as mock_service,
             patch(
                 "app.routers.object_download.iter_read",

@@ -68,7 +68,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             object_key="2024/cat.png",
             content_type="image/png",
         )
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -158,7 +158,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.upsert_object = self._patch(
             "upsert_object",
             new_callable=AsyncMock,
-            return_value=self.objekt,
+            return_value=self.s3_object,
         )
         self.copy = self._patch("copy", new_callable=AsyncMock)
         self.rename = self._patch("rename", new_callable=AsyncMock)
@@ -188,7 +188,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         return [c.args[0] for c in self.delete.await_args_list]
 
     async def test_assembles_parts_into_object(self):
-        objekt = await self._complete()
+        s3_object = await self._complete()
 
         self.load_multipart_parts.assert_awaited_once()
         self.concat.assert_awaited_once_with(
@@ -221,10 +221,10 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.repo.commit.assert_awaited_once()
         self.rmtree.assert_awaited_once_with(CLEANUP_PATH)
         self.delete.assert_not_awaited()
-        self.assertIs(objekt, self.objekt)
+        self.assertIs(s3_object, self.s3_object)
         self.emit.assert_awaited_once_with(
             Events.OBJECT_UPLOADED,
-            objekt,
+            s3_object,
         )
 
     async def test_existing_object_backed_up_until_commit(self):
@@ -486,9 +486,9 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
     async def test_logs_when_post_commit_cleanup_fails(self):
         self.rmtree.side_effect = OSError("busy")
 
-        objekt = await self._complete()
+        s3_object = await self._complete()
 
-        self.assertIs(objekt, self.objekt)
+        self.assertIs(s3_object, self.s3_object)
         self.repo.commit.assert_awaited_once()
         self.assertIn(
             "msg=cleanup_failed",
@@ -503,9 +503,9 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.isfile.return_value = True
         self.delete.side_effect = OSError("busy")
 
-        objekt = await self._complete()
+        s3_object = await self._complete()
 
-        self.assertIs(objekt, self.objekt)
+        self.assertIs(s3_object, self.s3_object)
         self.emit.assert_awaited_once()
         self.assertIn(
             "msg=cleanup_failed",

@@ -26,19 +26,19 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
 
-    def _build_repo(self, bucket=None, objekts=None):
+    def _build_repo(self, bucket=None, s3_objects=None):
         repo = MagicMock()
         repo.select = AsyncMock(return_value=bucket if bucket is not None else self.bucket)
-        repo.select_all = AsyncMock(return_value=objekts or [])
+        repo.select_all = AsyncMock(return_value=s3_objects or [])
         return repo
 
     async def test_lists_all_objects_without_prefix(self):
-        objekt = S3Object(
+        s3_object = S3Object(
             id=1, bucket_id=7, user_id=1,
             object_key="photo.jpg", size_bytes=100,
             etag="abc", content_type="image/jpeg",
         )
-        repo = self._build_repo(objekts=[objekt])
+        repo = self._build_repo(s3_objects=[s3_object])
 
         with (
             patch("app.services.bucket_get.ORMRepository", return_value=repo),
@@ -65,16 +65,16 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
             order="asc",
             limit=1000,
         )
-        self.assertEqual(result, [objekt])
-        emit_mock.assert_awaited_once_with(Events.OBJECT_LISTED, [objekt])
+        self.assertEqual(result, [s3_object])
+        emit_mock.assert_awaited_once_with(Events.OBJECT_LISTED, [s3_object])
 
     async def test_lists_objects_with_prefix(self):
-        objekt = S3Object(
+        s3_object = S3Object(
             id=2, bucket_id=7, user_id=1,
             object_key="2024/cat.png", size_bytes=50,
             etag="def", content_type="image/png",
         )
-        repo = self._build_repo(objekts=[objekt])
+        repo = self._build_repo(s3_objects=[s3_object])
 
         with (
             patch("app.services.bucket_get.ORMRepository", return_value=repo),
@@ -103,10 +103,10 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
             limit=1000,
             object_key__like="2024/%",
         )
-        self.assertEqual(result, [objekt])
+        self.assertEqual(result, [s3_object])
 
     async def test_prefix_special_chars_are_escaped(self):
-        repo = self._build_repo(objekts=[])
+        repo = self._build_repo(s3_objects=[])
 
         with (
             patch("app.services.bucket_get.ORMRepository", return_value=repo),
@@ -127,7 +127,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(call_kwargs["object_key__like"], r"a\%b\_c%")
 
     async def test_respects_max_keys(self):
-        repo = self._build_repo(objekts=[])
+        repo = self._build_repo(s3_objects=[])
 
         with (
             patch("app.services.bucket_get.ORMRepository", return_value=repo),
@@ -148,7 +148,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(call_kwargs["limit"], 10)
 
     async def test_returns_empty_list(self):
-        repo = self._build_repo(objekts=[])
+        repo = self._build_repo(s3_objects=[])
 
         with (
             patch("app.services.bucket_get.ORMRepository", return_value=repo),

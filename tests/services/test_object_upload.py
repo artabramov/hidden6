@@ -39,7 +39,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.session = MagicMock()
         self.body = MagicMock()
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        self.objekt = S3Object(
+        self.s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -105,7 +105,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.upsert_object = self._patch(
             "upsert_object",
             new_callable=AsyncMock,
-            return_value=self.objekt,
+            return_value=self.s3_object,
         )
         self.upload = self._patch("upload", new_callable=AsyncMock)
         self.copy = self._patch("copy", new_callable=AsyncMock)
@@ -143,7 +143,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
     async def test_stages_and_publishes_new_object(self):
         self._build_mocks()
 
-        objekt = await self._upload()
+        s3_object = await self._upload()
 
         self.lock.assert_called_once_with(BUCKET_PATH, LockType.WRITE)
         self.isdir.assert_awaited_once_with(BUCKET_PATH)
@@ -154,8 +154,8 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.rename.assert_awaited_once_with(STAGED_PATH, OBJECT_PATH)
         self.repo.commit.assert_awaited_once()
         self.delete.assert_not_awaited()
-        self.assertIs(objekt, self.objekt)
-        self.emit.assert_awaited_once_with(Events.OBJECT_UPLOADED, objekt)
+        self.assertIs(s3_object, self.s3_object)
+        self.emit.assert_awaited_once_with(Events.OBJECT_UPLOADED, s3_object)
 
     async def test_overwrites_existing_object_and_cleans_backup(self):
         self._build_mocks(object_exists=True)
@@ -444,12 +444,12 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks(object_exists=True)
         self.delete.side_effect = OSError("busy")
 
-        objekt = await self._upload()
+        s3_object = await self._upload()
 
-        self.assertIs(objekt, self.objekt)
+        self.assertIs(s3_object, self.s3_object)
         self.emit.assert_awaited_once_with(
             Events.OBJECT_UPLOADED,
-            objekt,
+            s3_object,
         )
         self.assertIn(
             "msg=cleanup_failed",

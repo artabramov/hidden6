@@ -101,7 +101,7 @@ async def bucket_get_router(
             media_type="application/xml",
         )
 
-    objekts = await bucket_get(
+    s3_objects = await bucket_get(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
@@ -113,7 +113,7 @@ async def bucket_get_router(
             bucket_name=bucket_name,
             prefix=prefix,
             max_keys=max_keys,
-            objekts=objekts,
+            s3_objects=s3_objects,
         ),
         status_code=status.HTTP_200_OK,
         media_type="application/xml",

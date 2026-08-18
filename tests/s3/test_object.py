@@ -101,7 +101,7 @@ class TestObjektPath(unittest.TestCase):
 class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
     async def test_returns_objekt(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        objekt = S3Object(
+        s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -111,11 +111,11 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
             content_type="image/png",
         )
         repo = MagicMock()
-        repo.select = AsyncMock(return_value=objekt)
+        repo.select = AsyncMock(return_value=s3_object)
 
         result = await load_object(repo, bucket, "cat.png", "/photos/cat.png")
 
-        self.assertIs(result, objekt)
+        self.assertIs(result, s3_object)
         repo.select.assert_awaited_once_with(
             S3Object,
             bucket_id=7,
@@ -124,7 +124,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
 
     async def test_delete_marker_raises(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        objekt = S3Object(
+        s3_object = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -132,7 +132,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
             delete_marker=True,
         )
         repo = MagicMock()
-        repo.select = AsyncMock(return_value=objekt)
+        repo.select = AsyncMock(return_value=s3_object)
 
         with self.assertRaises(S3ObjectNotFoundError):
             await load_object(repo, bucket, "gone.txt", "/photos/gone.txt")
@@ -211,19 +211,19 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
     async def test_inserts_new_objekt(self):
         repo = self._build_repo(None)
 
-        objekt = await self._upsert(repo)
+        s3_object = await self._upsert(repo)
 
-        repo.insert.assert_awaited_once_with(objekt)
-        self.assertIsInstance(objekt, S3Object)
-        self.assertEqual(objekt.bucket_id, 7)
-        self.assertEqual(objekt.user_id, 1)
-        self.assertEqual(objekt.object_key, "2024/cat.png")
-        self.assertEqual(objekt.size_bytes, 12)
-        self.assertEqual(objekt.etag, "etag123")
-        self.assertEqual(objekt.content_type, "image/png")
-        self.assertFalse(objekt.delete_marker)
-        self.assertIsNone(objekt.lock_mode)
-        self.assertIsNone(objekt.retain_until)
+        repo.insert.assert_awaited_once_with(s3_object)
+        self.assertIsInstance(s3_object, S3Object)
+        self.assertEqual(s3_object.bucket_id, 7)
+        self.assertEqual(s3_object.user_id, 1)
+        self.assertEqual(s3_object.object_key, "2024/cat.png")
+        self.assertEqual(s3_object.size_bytes, 12)
+        self.assertEqual(s3_object.etag, "etag123")
+        self.assertEqual(s3_object.content_type, "image/png")
+        self.assertFalse(s3_object.delete_marker)
+        self.assertIsNone(s3_object.lock_mode)
+        self.assertIsNone(s3_object.retain_until)
 
     async def test_updates_existing_objekt(self):
         existing = S3Object(
@@ -237,9 +237,9 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         )
         repo = self._build_repo(existing)
 
-        objekt = await self._upsert(repo)
+        s3_object = await self._upsert(repo)
 
-        self.assertIs(objekt, existing)
+        self.assertIs(s3_object, existing)
         repo.insert.assert_not_awaited()
         repo.update.assert_awaited_once_with(existing)
         self.assertEqual(existing.user_id, 1)
@@ -273,11 +273,11 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(None)
 
         with patch("app.s3.bucket.time.time", return_value=1_000_000):
-            objekt = await self._upsert(repo)
+            s3_object = await self._upsert(repo)
 
-        self.assertEqual(objekt.lock_mode, "GOVERNANCE")
-        self.assertEqual(objekt.retain_until, 1_000_000 + 2 * 86400)
-        self.assertFalse(objekt.legal_hold)
+        self.assertEqual(s3_object.lock_mode, "GOVERNANCE")
+        self.assertEqual(s3_object.retain_until, 1_000_000 + 2 * 86400)
+        self.assertFalse(s3_object.legal_hold)
 
     async def test_applies_bucket_default_retention_years(self):
         self.bucket.object_lock_enabled = True
@@ -286,10 +286,10 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(None)
 
         with patch("app.s3.bucket.time.time", return_value=1_000_000):
-            objekt = await self._upsert(repo)
+            s3_object = await self._upsert(repo)
 
-        self.assertEqual(objekt.lock_mode, "COMPLIANCE")
-        self.assertEqual(objekt.retain_until, 1_000_000 + 365 * 86400)
+        self.assertEqual(s3_object.lock_mode, "COMPLIANCE")
+        self.assertEqual(s3_object.retain_until, 1_000_000 + 365 * 86400)
 
     async def test_overwrite_applies_bucket_default_retention(self):
         self.bucket.object_lock_enabled = True

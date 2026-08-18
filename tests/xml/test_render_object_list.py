@@ -32,7 +32,7 @@ class TestRenderObjektList(unittest.TestCase):
             bucket_name="photos",
             prefix="",
             max_keys=1000,
-            objekts=[],
+            s3_objects=[],
         )
 
         self.assertIn("<ListBucketResult", xml)
@@ -49,7 +49,7 @@ class TestRenderObjektList(unittest.TestCase):
             bucket_name="photos",
             prefix="",
             max_keys=1000,
-            objekts=[obj],
+            s3_objects=[obj],
         )
 
         self.assertIn("<Key>photo.jpg</Key>", xml)
@@ -66,30 +66,30 @@ class TestRenderObjektList(unittest.TestCase):
             bucket_name="my-bucket",
             prefix="",
             max_keys=1000,
-            objekts=[obj],
+            s3_objects=[obj],
         )
 
         self.assertIn("<LastModified>2024-01-02T00:00:00.000Z</LastModified>", xml)
         self.assertNotIn("2024-01-01", xml)
 
     def test_is_truncated_when_result_equals_max_keys(self):
-        objekts = [_objekt(f"file{i}.txt") for i in range(5)]
+        s3_objects = [_objekt(f"file{i}.txt") for i in range(5)]
         xml = render_object_list(
             bucket_name="my-bucket",
             prefix="",
             max_keys=5,
-            objekts=objekts,
+            s3_objects=s3_objects,
         )
 
         self.assertIn("<IsTruncated>true</IsTruncated>", xml)
 
     def test_is_not_truncated_when_result_below_max_keys(self):
-        objekts = [_objekt(f"file{i}.txt") for i in range(3)]
+        s3_objects = [_objekt(f"file{i}.txt") for i in range(3)]
         xml = render_object_list(
             bucket_name="my-bucket",
             prefix="",
             max_keys=5,
-            objekts=objekts,
+            s3_objects=s3_objects,
         )
 
         self.assertIn("<IsTruncated>false</IsTruncated>", xml)
@@ -99,7 +99,7 @@ class TestRenderObjektList(unittest.TestCase):
             bucket_name="my-bucket",
             prefix="2024/",
             max_keys=1000,
-            objekts=[],
+            s3_objects=[],
         )
 
         self.assertIn("<Prefix>2024/</Prefix>", xml)
@@ -110,14 +110,14 @@ class TestRenderObjektList(unittest.TestCase):
             bucket_name="my&bucket",
             prefix="",
             max_keys=1000,
-            objekts=[obj],
+            s3_objects=[obj],
         )
 
         self.assertIn("<Name>my&amp;bucket</Name>", xml)
         self.assertIn("<Key>a&amp;b/&lt;c&gt;.txt</Key>", xml)
 
     def test_multiple_objects_all_rendered(self):
-        objekts = [
+        s3_objects = [
             _objekt("a.txt", size=1),
             _objekt("b.txt", size=2),
             _objekt("c.txt", size=3),
@@ -126,7 +126,7 @@ class TestRenderObjektList(unittest.TestCase):
             bucket_name="my-bucket",
             prefix="",
             max_keys=1000,
-            objekts=objekts,
+            s3_objects=s3_objects,
         )
 
         self.assertIn("<Key>a.txt</Key>", xml)

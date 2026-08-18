@@ -191,7 +191,7 @@ async def object_upload(
                 await copy(object_path, backup_path)
                 backup_created = True
 
-            objekt = await upsert_object(
+            s3_object = await upsert_object(
                 repo=repo,
                 bucket=bucket,
                 user=current_user,
@@ -299,5 +299,5 @@ async def object_upload(
                 backup_path,
             )
 
-    await hooks.emit(Events.OBJECT_UPLOADED, objekt)
-    return objekt
+    await hooks.emit(Events.OBJECT_UPLOADED, s3_object)
+    return s3_object

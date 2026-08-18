@@ -67,15 +67,15 @@ async def bucket_object_lock_updated(bucket: Bucket) -> None:
     ...
 
 
-async def object_uploaded(objekt: S3Object) -> None:
+async def object_uploaded(s3_object: S3Object) -> None:
     ...
 
 
-async def object_listed(objekts: List[S3Object]) -> None:
+async def object_listed(s3_objects: List[S3Object]) -> None:
     ...
 
 
-async def object_downloaded(objekt: S3Object) -> None:
+async def object_downloaded(s3_object: S3Object) -> None:
     ...
 
 

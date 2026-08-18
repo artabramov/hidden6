@@ -28,16 +28,16 @@ async def load_object(
     uses when GetObject / HeadObject address a key with no current
     object bytes.
     """
-    objekt = await repo.select(
+    s3_object = await repo.select(
         S3Object,
         bucket_id=bucket.id,
         object_key=object_key,
     )
 
-    if objekt is None or objekt.delete_marker:
+    if s3_object is None or s3_object.delete_marker:
         raise S3ObjectNotFoundError(resource)
 
-    return objekt
+    return s3_object
 
 
 async def object_mkdir(object_path: str, resource: str) -> None:
@@ -72,14 +72,14 @@ async def upsert_object(
     """
     lock_mode, retain_until = bucket_default_object_lock(bucket)
 
-    objekt = await repo.select(
+    s3_object = await repo.select(
         S3Object,
         bucket_id=bucket.id,
         object_key=object_key,
     )
 
-    if objekt is None:
-        objekt = S3Object(
+    if s3_object is None:
+        s3_object = S3Object(
             bucket_id=bucket.id,
             user_id=user.id,
             object_key=object_key,
@@ -90,16 +90,16 @@ async def upsert_object(
             lock_mode=lock_mode,
             retain_until=retain_until,
         )
-        return await repo.insert(objekt)
+        return await repo.insert(s3_object)
 
-    objekt.user_id = user.id
-    objekt.size_bytes = size_bytes
-    objekt.etag = etag
-    objekt.content_type = content_type
-    objekt.delete_marker = False
-    objekt.lock_mode = lock_mode
-    objekt.retain_until = retain_until
-    objekt.legal_hold = False
-    objekt.modified_at = int(time.time())
+    s3_object.user_id = user.id
+    s3_object.size_bytes = size_bytes
+    s3_object.etag = etag
+    s3_object.content_type = content_type
+    s3_object.delete_marker = False
+    s3_object.lock_mode = lock_mode
+    s3_object.retain_until = retain_until
+    s3_object.legal_hold = False
+    s3_object.modified_at = int(time.time())
 
-    return await repo.update(objekt)
+    return await repo.update(s3_object)
