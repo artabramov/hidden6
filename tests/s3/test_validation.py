@@ -4,7 +4,7 @@
 import unittest
 
 from app.constants import OBJEKT_KEY_MAX_BYTES
-from app.errors import S3InvalidBucketNameError, S3ObjektKeyInvalidError
+from app.errors import S3InvalidBucketNameError, S3ObjectKeyInvalidError
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
 
@@ -97,7 +97,7 @@ class TestValidateObjektKey(unittest.TestCase):
     def _assert_rejects(self, object_key):
         resource = f"/photos/{object_key}"
 
-        with self.assertRaises(S3ObjektKeyInvalidError) as ctx:
+        with self.assertRaises(S3ObjectKeyInvalidError) as ctx:
             validate_objekt_key(object_key, resource)
 
         self.assertEqual(ctx.exception.resource, resource)

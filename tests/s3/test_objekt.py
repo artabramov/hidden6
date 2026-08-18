@@ -14,8 +14,8 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
-    S3ObjektKeyConflictError,
-    S3ObjektNotFoundError,
+    S3ObjectKeyConflictError,
+    S3ObjectNotFoundError,
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
@@ -134,7 +134,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         repo.select = AsyncMock(return_value=objekt)
 
-        with self.assertRaises(S3ObjektNotFoundError):
+        with self.assertRaises(S3ObjectNotFoundError):
             await load_objekt(repo, bucket, "gone.txt", "/photos/gone.txt")
 
     async def test_missing_objekt_raises(self):
@@ -142,7 +142,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
         repo = MagicMock()
         repo.select = AsyncMock(return_value=None)
 
-        with self.assertRaises(S3ObjektNotFoundError):
+        with self.assertRaises(S3ObjectNotFoundError):
             await load_objekt(repo, bucket, "missing.png", "/photos/missing.png")
 
 
@@ -174,11 +174,11 @@ class TestObjektMkdir(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_directory_at_key_raises_conflict(self):
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._run(isdir_value=True)
 
     async def test_file_at_key_prefix_raises_conflict(self):
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._run(
                 isdir_value=False,
                 mkdir_error=NotADirectoryError(),

@@ -12,8 +12,8 @@ set_minimal_app_config_env()
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
-    S3ObjektKeyInvalidError,
-    S3ObjektUploadNotFoundError,
+    S3ObjectKeyInvalidError,
+    S3ObjectUploadNotFoundError,
 )
 from app.locks import LockType  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
@@ -162,9 +162,9 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.rmtree.assert_not_awaited()
 
     async def test_unknown_upload_does_not_touch_filesystem(self):
-        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
+        self.load_multipart.side_effect = S3ObjectUploadNotFoundError()
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._abort()
 
         self.rename.assert_not_awaited()
@@ -181,7 +181,7 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.repo.delete.assert_not_awaited()
 
     async def test_invalid_key_stops_before_cleanup(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+        with self.assertRaises(S3ObjectKeyInvalidError) as cm:
             await multipart_abort(
                 session=self.session,
                 current_user=self.user,

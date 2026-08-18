@@ -5,8 +5,8 @@ from fastapi import Request
 
 from app.constants import FILE_CHUNK_SIZE_BYTES
 from app.errors import (
-    S3ObjektBodyIncompleteError,
-    S3ObjektTooLargeError,
+    S3ObjectBodyIncompleteError,
+    S3ObjectTooLargeError,
 )
 from app.repositories.io import AsyncReadable
 
@@ -111,7 +111,7 @@ class RequestBodyReader:
         self._received += len(chunk)
 
         if self._received > self._max_bytes:
-            raise S3ObjektTooLargeError(self._resource)
+            raise S3ObjectTooLargeError(self._resource)
 
         self._buffer.extend(chunk)
 
@@ -131,7 +131,7 @@ class RequestBodyReader:
             return
 
         if int(header) > self._max_bytes:
-            raise S3ObjektTooLargeError(self._resource)
+            raise S3ObjectTooLargeError(self._resource)
 
 
 class AwsChunkedReader:
@@ -202,7 +202,7 @@ class AwsChunkedReader:
         try:
             return int(header, 16)
         except ValueError as exc:
-            raise S3ObjektBodyIncompleteError(self._resource) from exc
+            raise S3ObjectBodyIncompleteError(self._resource) from exc
 
     async def _skip_trailer(self) -> None:
         """Consume the trailing headers after the final frame."""
@@ -226,18 +226,18 @@ class AwsChunkedReader:
                 return line
 
             if len(self._framed) > _CHUNK_LINE_MAX_BYTES:
-                raise S3ObjektBodyIncompleteError(self._resource)
+                raise S3ObjectBodyIncompleteError(self._resource)
 
             if not await self._receive():
                 if self._framed:
-                    raise S3ObjektBodyIncompleteError(self._resource)
+                    raise S3ObjectBodyIncompleteError(self._resource)
                 return None
 
     async def _read_exact(self, count: int) -> bytes:
         """Return exactly count bytes of the framed body."""
         while len(self._framed) < count:
             if not await self._receive():
-                raise S3ObjektBodyIncompleteError(self._resource)
+                raise S3ObjectBodyIncompleteError(self._resource)
 
         data = bytes(self._framed[:count])
         del self._framed[:count]

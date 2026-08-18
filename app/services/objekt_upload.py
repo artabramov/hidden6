@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
-from app.errors import S3BucketNotFoundError, S3ObjektKeyConflictError
+from app.errors import S3BucketNotFoundError, S3ObjectKeyConflictError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
 from app.models.objekt import Objekt
@@ -204,7 +204,7 @@ async def objekt_upload(
             try:
                 await rename(staged_path, objekt_path)
             except (IsADirectoryError, NotADirectoryError) as exc:
-                raise S3ObjektKeyConflictError(resource) from exc
+                raise S3ObjectKeyConflictError(resource) from exc
 
             objekt_written = True
             await repo.commit()

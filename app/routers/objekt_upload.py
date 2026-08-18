@@ -10,7 +10,7 @@ from app.config import get_config
 from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
-from app.errors import S3ObjektPartNumberInvalidError
+from app.errors import S3ObjectPartNumberInvalidError
 from app.models.user import User
 from app.s3.headers import etag_headers
 from app.services.multipart_upload import multipart_upload
@@ -97,7 +97,7 @@ async def objekt_upload_router(
 
     if upload_id is not None:
         if part_number is None:
-            raise S3ObjektPartNumberInvalidError(resource)
+            raise S3ObjectPartNumberInvalidError(resource)
 
         etag = await multipart_upload(
             session=session,

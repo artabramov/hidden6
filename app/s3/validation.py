@@ -4,7 +4,7 @@
 import re
 
 from app.constants import OBJEKT_KEY_MAX_BYTES
-from app.errors import S3InvalidBucketNameError, S3ObjektKeyInvalidError
+from app.errors import S3InvalidBucketNameError, S3ObjectKeyInvalidError
 
 # General-purpose S3 bucket name syntax, including the 3–63 character
 # length limit and the requirement for alphanumeric boundary characters.
@@ -82,18 +82,18 @@ def validate_objekt_key(object_key: str, resource: str) -> None:
     narrower than S3 itself.
 
     Raises:
-        S3ObjektKeyInvalidError: Object key cannot be represented safely.
+        S3ObjectKeyInvalidError: Object key cannot be represented safely.
     """
     try:
         object_key_bytes = object_key.encode("utf-8")
     except UnicodeEncodeError as exc:
-        raise S3ObjektKeyInvalidError(resource) from exc
+        raise S3ObjectKeyInvalidError(resource) from exc
 
     if len(object_key_bytes) > OBJEKT_KEY_MAX_BYTES:
-        raise S3ObjektKeyInvalidError(resource)
+        raise S3ObjectKeyInvalidError(resource)
 
     if "\x00" in object_key:
-        raise S3ObjektKeyInvalidError(resource)
+        raise S3ObjectKeyInvalidError(resource)
 
     if any(part in _FORBIDDEN_SEGMENTS for part in object_key.split("/")):
-        raise S3ObjektKeyInvalidError(resource)
+        raise S3ObjectKeyInvalidError(resource)

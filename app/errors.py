@@ -49,16 +49,16 @@ class S3ErrorCode:
     BUCKET_STATE_INVALID = "InvalidBucketState"
     ILLEGAL_VERSIONING_CONFIGURATION = "IllegalVersioningConfigurationException"  # noqa: E501
 
-    OBJEKT_NOT_FOUND = "NoSuchKey"
-    OBJEKT_KEY_INVALID = "InvalidArgument"
-    OBJEKT_KEY_CONFLICT = "InvalidArgument"
-    OBJEKT_TOO_LARGE = "EntityTooLarge"
-    OBJEKT_BODY_INCOMPLETE = "IncompleteBody"
-    OBJEKT_UPLOAD_NOT_FOUND = "NoSuchUpload"
-    OBJEKT_PART_NUMBER_INVALID = "InvalidArgument"
-    OBJEKT_PART_INVALID = "InvalidPart"
-    OBJEKT_PART_ORDER_INVALID = "InvalidPartOrder"
-    OBJEKT_PART_TOO_SMALL = "EntityTooSmall"
+    OBJECT_NOT_FOUND = "NoSuchKey"
+    OBJECT_KEY_INVALID = "InvalidArgument"
+    OBJECT_KEY_CONFLICT = "InvalidArgument"
+    OBJECT_TOO_LARGE = "EntityTooLarge"
+    OBJECT_BODY_INCOMPLETE = "IncompleteBody"
+    OBJECT_UPLOAD_NOT_FOUND = "NoSuchUpload"
+    OBJECT_PART_NUMBER_INVALID = "InvalidArgument"
+    OBJECT_PART_INVALID = "InvalidPart"
+    OBJECT_PART_ORDER_INVALID = "InvalidPartOrder"
+    OBJECT_PART_TOO_SMALL = "EntityTooSmall"
     OBJECT_LOCK_CONFIGURATION_NOT_FOUND = "ObjectLockConfigurationNotFoundError"  # noqa: E501
 
 
@@ -221,36 +221,36 @@ class S3IllegalVersioningConfigurationError(S3Error):
         )
 
 
-class S3ObjektNotFoundError(S3Error):
+class S3ObjectNotFoundError(S3Error):
     """Raised when the object does not exist (404)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_NOT_FOUND,
+            code=S3ErrorCode.OBJECT_NOT_FOUND,
             message="The specified key does not exist.",
             status_code=status.HTTP_404_NOT_FOUND,
             resource=resource,
         )
 
 
-class S3ObjektKeyInvalidError(S3Error):
+class S3ObjectKeyInvalidError(S3Error):
     """Raised when the object key is not a valid S3 key (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_KEY_INVALID,
+            code=S3ErrorCode.OBJECT_KEY_INVALID,
             message="The specified object key is not valid.",
             status_code=status.HTTP_400_BAD_REQUEST,
             resource=resource,
         )
 
 
-class S3ObjektKeyConflictError(S3Error):
+class S3ObjectKeyConflictError(S3Error):
     """Raised when the key collides with a stored object (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_KEY_CONFLICT,
+            code=S3ErrorCode.OBJECT_KEY_CONFLICT,
             message=(
                 "The specified object key conflicts with an object "
                 "already stored in the bucket."
@@ -260,12 +260,12 @@ class S3ObjektKeyConflictError(S3Error):
         )
 
 
-class S3ObjektTooLargeError(S3Error):
+class S3ObjectTooLargeError(S3Error):
     """Raised when the object exceeds the upload size limit (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_TOO_LARGE,
+            code=S3ErrorCode.OBJECT_TOO_LARGE,
             message=(
                 "The uploaded object exceeds the maximum size "
                 "allowed by a single upload request."
@@ -275,12 +275,12 @@ class S3ObjektTooLargeError(S3Error):
         )
 
 
-class S3ObjektBodyIncompleteError(S3Error):
+class S3ObjectBodyIncompleteError(S3Error):
     """Raised when the uploaded body ends or frames wrongly (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_BODY_INCOMPLETE,
+            code=S3ErrorCode.OBJECT_BODY_INCOMPLETE,
             message=(
                 "The request body is incomplete or does not match "
                 "the chunked encoding declared by the client."
@@ -290,12 +290,12 @@ class S3ObjektBodyIncompleteError(S3Error):
         )
 
 
-class S3ObjektUploadNotFoundError(S3Error):
+class S3ObjectUploadNotFoundError(S3Error):
     """Raised when the multipart upload is unknown (404)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_UPLOAD_NOT_FOUND,
+            code=S3ErrorCode.OBJECT_UPLOAD_NOT_FOUND,
             message=(
                 "The specified multipart upload does not exist. It "
                 "may have been completed or aborted."
@@ -305,12 +305,12 @@ class S3ObjektUploadNotFoundError(S3Error):
         )
 
 
-class S3ObjektPartNumberInvalidError(S3Error):
+class S3ObjectPartNumberInvalidError(S3Error):
     """Raised when the part number is out of the allowed range."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_PART_NUMBER_INVALID,
+            code=S3ErrorCode.OBJECT_PART_NUMBER_INVALID,
             message=(
                 "The part number must be an integer between 1 and "
                 "10000, inclusive."
@@ -320,12 +320,12 @@ class S3ObjektPartNumberInvalidError(S3Error):
         )
 
 
-class S3ObjektPartInvalidError(S3Error):
+class S3ObjectPartInvalidError(S3Error):
     """Raised when a listed part is missing or mismatched (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_PART_INVALID,
+            code=S3ErrorCode.OBJECT_PART_INVALID,
             message=(
                 "One or more of the listed parts could not be found, "
                 "or its entity tag does not match the uploaded part."
@@ -335,12 +335,12 @@ class S3ObjektPartInvalidError(S3Error):
         )
 
 
-class S3ObjektPartOrderInvalidError(S3Error):
+class S3ObjectPartOrderInvalidError(S3Error):
     """Raised when listed parts are not in ascending order (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_PART_ORDER_INVALID,
+            code=S3ErrorCode.OBJECT_PART_ORDER_INVALID,
             message=(
                 "The list of parts was not in ascending order. Parts "
                 "must be ordered by part number."
@@ -350,12 +350,12 @@ class S3ObjektPartOrderInvalidError(S3Error):
         )
 
 
-class S3ObjektPartTooSmallError(S3Error):
+class S3ObjectPartTooSmallError(S3Error):
     """Raised when a part other than the last is too small (400)."""
 
     def __init__(self, resource: str | None = None) -> None:
         super().__init__(
-            code=S3ErrorCode.OBJEKT_PART_TOO_SMALL,
+            code=S3ErrorCode.OBJECT_PART_TOO_SMALL,
             message=(
                 "Each part but the last one must be at least 5 MiB "
                 "in size."

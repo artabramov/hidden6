@@ -13,8 +13,8 @@ from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
-    S3ObjektKeyConflictError,
-    S3ObjektKeyInvalidError,
+    S3ObjectKeyConflictError,
+    S3ObjectKeyInvalidError,
 )
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
@@ -193,7 +193,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_key_escaping_the_bucket(self):
         self._build_mocks()
 
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+        with self.assertRaises(S3ObjectKeyInvalidError) as cm:
             await self._upload(key="../../etc/passwd")
 
         self.assertEqual(
@@ -241,9 +241,9 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_key_conflict_on_mkdir_cleans_staged_path(self):
         self._build_mocks()
-        self.objekt_mkdir.side_effect = S3ObjektKeyConflictError(RESOURCE)
+        self.objekt_mkdir.side_effect = S3ObjectKeyConflictError(RESOURCE)
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
         self.rename.assert_not_awaited()
@@ -254,7 +254,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks()
         self.rename.side_effect = IsADirectoryError()
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
         self.repo.commit.assert_not_awaited()
@@ -265,7 +265,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks()
         self.rename.side_effect = NotADirectoryError()
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
         self.repo.commit.assert_not_awaited()
@@ -275,7 +275,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks(object_exists=True)
         self.rename.side_effect = IsADirectoryError()
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
         self.copy.assert_awaited_once_with(OBJEKT_PATH, BACKUP_PATH)
@@ -430,7 +430,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         self.delete.side_effect = delete_side_effect
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
         messages = [
@@ -466,7 +466,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.repo.rollback.side_effect = RuntimeError("session closed")
         self.delete.side_effect = OSError("busy")
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
         messages = [

@@ -13,7 +13,7 @@ from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
-    S3ObjektKeyInvalidError,
+    S3ObjectKeyInvalidError,
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -100,7 +100,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self.rmtree.assert_not_awaited()
 
     async def test_invalid_key_stops_before_storage(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+        with self.assertRaises(S3ObjectKeyInvalidError) as cm:
             await multipart_create(
                 session=self.session,
                 current_user=self.user,

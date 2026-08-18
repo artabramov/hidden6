@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_config
 from app.errors import (
     S3BucketNotFoundError,
-    S3ObjektKeyConflictError,
-    S3ObjektPartInvalidError,
+    S3ObjectKeyConflictError,
+    S3ObjectPartInvalidError,
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -164,12 +164,12 @@ async def multipart_complete(
 
             for part, stored_etag in zip(parts, stored_etags):
                 if part.etag != stored_etag:
-                    raise S3ObjektPartInvalidError(resource)
+                    raise S3ObjectPartInvalidError(resource)
 
             actual_hashes = await concat(part_paths, staged_path)
             for stored_etag, actual_hash in zip(stored_etags, actual_hashes):
                 if stored_etag != actual_hash:
-                    raise S3ObjektPartInvalidError(resource)
+                    raise S3ObjectPartInvalidError(resource)
 
             size_bytes = await get_filesize(staged_path)
 
@@ -230,7 +230,7 @@ async def multipart_complete(
                 try:
                     await rename(staged_path, object_path)
                 except (IsADirectoryError, NotADirectoryError) as exc:
-                    raise S3ObjektKeyConflictError(resource) from exc
+                    raise S3ObjectKeyConflictError(resource) from exc
                 objekt_written = True
 
                 await rename(upload_path, cleanup_path)

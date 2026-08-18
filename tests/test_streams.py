@@ -9,8 +9,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.errors import (  # noqa: E402
-    S3ObjektBodyIncompleteError,
-    S3ObjektTooLargeError,
+    S3ObjectBodyIncompleteError,
+    S3ObjectTooLargeError,
 )
 from app.streams import (  # noqa: E402
     AwsChunkedReader,
@@ -71,7 +71,7 @@ class TestRequestBodyReader(unittest.IsolatedAsyncioTestCase):
             resource="/photos/cat.png",
         )
 
-        with self.assertRaises(S3ObjektTooLargeError) as cm:
+        with self.assertRaises(S3ObjectTooLargeError) as cm:
             await reader.read(64)
 
         self.assertEqual(cm.exception.resource, "/photos/cat.png")
@@ -80,7 +80,7 @@ class TestRequestBodyReader(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_declared_content_length(self):
         request = FakeRequest([b"abc"], {"content-length": "9000"})
 
-        with self.assertRaises(S3ObjektTooLargeError):
+        with self.assertRaises(S3ObjectTooLargeError):
             RequestBodyReader(request, max_bytes=1024)
 
     async def test_rejects_declared_decoded_content_length(self):
@@ -92,7 +92,7 @@ class TestRequestBodyReader(unittest.IsolatedAsyncioTestCase):
             },
         )
 
-        with self.assertRaises(S3ObjektTooLargeError):
+        with self.assertRaises(S3ObjectTooLargeError):
             RequestBodyReader(request, max_bytes=1024)
 
     async def test_accepts_declared_content_length_within_limit(self):
@@ -170,7 +170,7 @@ class TestAwsChunkedReader(unittest.IsolatedAsyncioTestCase):
             resource="/photos/cat.png",
         )
 
-        with self.assertRaises(S3ObjektBodyIncompleteError) as cm:
+        with self.assertRaises(S3ObjectBodyIncompleteError) as cm:
             await reader.read()
 
         self.assertEqual(cm.exception.resource, "/photos/cat.png")
@@ -178,13 +178,13 @@ class TestAwsChunkedReader(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_truncated_frame(self):
         reader = AwsChunkedReader(FakeSource(b"9\r\nhello"))
 
-        with self.assertRaises(S3ObjektBodyIncompleteError):
+        with self.assertRaises(S3ObjectBodyIncompleteError):
             await reader.read()
 
     async def test_rejects_unterminated_size_line(self):
         reader = AwsChunkedReader(FakeSource(b"5"))
 
-        with self.assertRaises(S3ObjektBodyIncompleteError):
+        with self.assertRaises(S3ObjectBodyIncompleteError):
             await reader.read()
 
 

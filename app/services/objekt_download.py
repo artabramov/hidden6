@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.errors import S3ObjektNotFoundError
+from app.errors import S3ObjectNotFoundError
 from app.hooks import Events, hooks
 from app.models.objekt import Objekt
 from app.models.user import User
@@ -47,7 +47,7 @@ async def objekt_download(
     objekt = await load_objekt(repo, bucket, objekt_key, resource)
 
     if not await isfile(object_path):
-        raise S3ObjektNotFoundError(resource)
+        raise S3ObjectNotFoundError(resource)
 
     await hooks.emit(Events.OBJEKT_DOWNLOADED, objekt)
     return objekt, object_path

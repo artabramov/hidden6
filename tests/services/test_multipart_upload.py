@@ -12,9 +12,9 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
-    S3ObjektKeyInvalidError,
-    S3ObjektPartNumberInvalidError,
-    S3ObjektUploadNotFoundError,
+    S3ObjectKeyInvalidError,
+    S3ObjectPartNumberInvalidError,
+    S3ObjectUploadNotFoundError,
 )
 from app.locks import LockType  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
@@ -243,10 +243,10 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_rejects_part_number_out_of_range(self):
-        with self.assertRaises(S3ObjektPartNumberInvalidError):
+        with self.assertRaises(S3ObjectPartNumberInvalidError):
             await self._upload(part_number=0)
 
-        with self.assertRaises(S3ObjektPartNumberInvalidError):
+        with self.assertRaises(S3ObjectPartNumberInvalidError):
             await self._upload(part_number=10001)
 
         self.lock.assert_not_called()
@@ -254,7 +254,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.part_upsert.assert_not_awaited()
 
     async def test_invalid_key_stops_before_storage(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+        with self.assertRaises(S3ObjectKeyInvalidError) as cm:
             await multipart_upload(
                 session=self.session,
                 current_user=self.user,
@@ -271,9 +271,9 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.upload.assert_not_awaited()
 
     async def test_unknown_upload_raises(self):
-        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
+        self.load_multipart.side_effect = S3ObjectUploadNotFoundError()
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._upload()
 
         self.upload.assert_not_awaited()
@@ -282,7 +282,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
     async def test_missing_upload_dir_raises(self):
         self.isdir.return_value = False
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._upload()
 
         self.load_multipart.assert_not_awaited()

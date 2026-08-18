@@ -11,11 +11,11 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
-    S3ObjektPartInvalidError,
-    S3ObjektPartNumberInvalidError,
-    S3ObjektPartOrderInvalidError,
-    S3ObjektPartTooSmallError,
-    S3ObjektUploadNotFoundError,
+    S3ObjectPartInvalidError,
+    S3ObjectPartNumberInvalidError,
+    S3ObjectPartOrderInvalidError,
+    S3ObjectPartTooSmallError,
+    S3ObjectUploadNotFoundError,
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
@@ -62,19 +62,19 @@ class TestLoadMultipart(unittest.IsolatedAsyncioTestCase):
     async def test_unknown_upload_raises(self):
         self.repo.select = AsyncMock(return_value=None)
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._load()
 
     async def test_upload_of_another_bucket_raises(self):
         self.multipart.bucket_id = 99
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._load()
 
     async def test_upload_of_another_key_raises(self):
         self.multipart.object_key = "other.png"
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._load()
 
 
@@ -259,19 +259,19 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(etags, ["etag-1", "etag-3", "etag-8"])
 
     async def test_rejects_unordered_parts(self):
-        with self.assertRaises(S3ObjektPartOrderInvalidError):
+        with self.assertRaises(S3ObjectPartOrderInvalidError):
             await self._load(numbers=(2, 1))
 
         self.repo.select.assert_awaited_once()
 
     async def test_rejects_repeated_part(self):
-        with self.assertRaises(S3ObjektPartOrderInvalidError):
+        with self.assertRaises(S3ObjectPartOrderInvalidError):
             await self._load(numbers=(1, 1))
 
         self.repo.select.assert_awaited_once()
 
     async def test_rejects_part_number_above_maximum(self):
-        with self.assertRaises(S3ObjektPartNumberInvalidError):
+        with self.assertRaises(S3ObjectPartNumberInvalidError):
             await self._load(numbers=(10001,))
 
         self.repo.select.assert_not_awaited()
@@ -279,7 +279,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_missing_part_row(self):
         self.repo.select = AsyncMock(return_value=None)
 
-        with self.assertRaises(S3ObjektPartInvalidError):
+        with self.assertRaises(S3ObjectPartInvalidError):
             await self._load()
 
         self.isfile.assert_not_awaited()
@@ -287,7 +287,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_missing_staged_file(self):
         self.isfile.return_value = False
 
-        with self.assertRaises(S3ObjektPartInvalidError):
+        with self.assertRaises(S3ObjectPartInvalidError):
             await self._load()
 
     async def test_rejects_small_non_final_part(self):
@@ -303,7 +303,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
 
         self.repo.select = AsyncMock(side_effect=_select)
 
-        with self.assertRaises(S3ObjektPartTooSmallError):
+        with self.assertRaises(S3ObjectPartTooSmallError):
             await self._load()
 
         # Size is checked inline, so the next part is never loaded.
@@ -340,7 +340,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
 
         self.repo.select = AsyncMock(side_effect=_select)
 
-        with self.assertRaises(S3ObjektPartTooSmallError):
+        with self.assertRaises(S3ObjectPartTooSmallError):
             await self._load(numbers=(1, 2))
 
         self.repo.select.assert_awaited_once()

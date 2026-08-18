@@ -12,8 +12,8 @@ set_minimal_app_config_env()
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
-    S3ObjektKeyInvalidError,
-    S3ObjektNotFoundError,
+    S3ObjectKeyInvalidError,
+    S3ObjectNotFoundError,
 )
 from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
@@ -98,7 +98,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
     async def test_invalid_key_stops_before_storage(self):
         self._build_mocks()
 
-        with self.assertRaises(S3ObjektKeyInvalidError):
+        with self.assertRaises(S3ObjectKeyInvalidError):
             await objekt_download(
                 session=self.session,
                 current_user=self.user,
@@ -125,11 +125,11 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_objekt_raises(self):
         self._build_mocks()
-        self.load_objekt.side_effect = S3ObjektNotFoundError(
+        self.load_objekt.side_effect = S3ObjectNotFoundError(
             "/photos/2024/cat.png",
         )
 
-        with self.assertRaises(S3ObjektNotFoundError):
+        with self.assertRaises(S3ObjectNotFoundError):
             await objekt_download(
                 session=self.session,
                 current_user=self.user,
@@ -143,7 +143,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
     async def test_missing_file_on_disk_raises(self):
         self._build_mocks(isfile=False)
 
-        with self.assertRaises(S3ObjektNotFoundError):
+        with self.assertRaises(S3ObjectNotFoundError):
             await objekt_download(
                 session=self.session,
                 current_user=self.user,

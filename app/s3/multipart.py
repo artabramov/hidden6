@@ -8,11 +8,11 @@ from app.constants import (
     OBJEKT_PART_SIZE_MIN_BYTES,
 )
 from app.errors import (
-    S3ObjektPartInvalidError,
-    S3ObjektPartNumberInvalidError,
-    S3ObjektPartOrderInvalidError,
-    S3ObjektPartTooSmallError,
-    S3ObjektUploadNotFoundError,
+    S3ObjectPartInvalidError,
+    S3ObjectPartNumberInvalidError,
+    S3ObjectPartOrderInvalidError,
+    S3ObjectPartTooSmallError,
+    S3ObjectUploadNotFoundError,
 )
 from app.models.bucket import Bucket
 from app.models.objekt_multipart import ObjektMultipart
@@ -39,11 +39,11 @@ async def load_multipart(
     multipart = await repo.select(ObjektMultipart, upload_id=upload_id)
 
     if multipart is None:
-        raise S3ObjektUploadNotFoundError(resource)
+        raise S3ObjectUploadNotFoundError(resource)
     if multipart.bucket_id != bucket.id:
-        raise S3ObjektUploadNotFoundError(resource)
+        raise S3ObjectUploadNotFoundError(resource)
     if multipart.object_key != object_key:
-        raise S3ObjektUploadNotFoundError(resource)
+        raise S3ObjectUploadNotFoundError(resource)
 
     return multipart
 
@@ -142,10 +142,10 @@ async def load_multipart_parts(
 
     for index, part in enumerate(parts):
         if part.part_number <= previous:
-            raise S3ObjektPartOrderInvalidError(resource)
+            raise S3ObjectPartOrderInvalidError(resource)
 
         if part.part_number > OBJEKT_PART_NUMBER_MAX:
-            raise S3ObjektPartNumberInvalidError(resource)
+            raise S3ObjectPartNumberInvalidError(resource)
 
         previous = part.part_number
 
@@ -155,20 +155,20 @@ async def load_multipart_parts(
             part_number=part.part_number,
         )
         if row is None:
-            raise S3ObjektPartInvalidError(resource)
+            raise S3ObjectPartInvalidError(resource)
 
         path = resolve_multipart_part_path(
             upload_path,
             part.part_number,
         )
         if not await isfile(path):
-            raise S3ObjektPartInvalidError(resource)
+            raise S3ObjectPartInvalidError(resource)
 
         if (
             index < len(parts) - 1
             and row.size_bytes < OBJEKT_PART_SIZE_MIN_BYTES
         ):
-            raise S3ObjektPartTooSmallError(resource)
+            raise S3ObjectPartTooSmallError(resource)
 
         paths.append(path)
         etags.append(row.etag)

@@ -13,11 +13,11 @@ set_minimal_app_config_env()
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
-    S3ObjektKeyConflictError,
-    S3ObjektKeyInvalidError,
-    S3ObjektPartInvalidError,
-    S3ObjektPartOrderInvalidError,
-    S3ObjektUploadNotFoundError,
+    S3ObjectKeyConflictError,
+    S3ObjectKeyInvalidError,
+    S3ObjectPartInvalidError,
+    S3ObjectPartOrderInvalidError,
+    S3ObjectUploadNotFoundError,
 )
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
@@ -327,7 +327,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             hashlib.md5(b"corrupt").hexdigest(),
         ]
 
-        with self.assertRaises(S3ObjektPartInvalidError):
+        with self.assertRaises(S3ObjectPartInvalidError):
             await self._complete()
 
         self.upsert_objekt.assert_not_awaited()
@@ -356,7 +356,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             hashes=[PART_HASHES[0], hashlib.md5(b"other").hexdigest()],
         )
 
-        with self.assertRaises(S3ObjektPartInvalidError):
+        with self.assertRaises(S3ObjectPartInvalidError):
             await self._complete(parts)
 
         self.concat.assert_not_awaited()
@@ -365,10 +365,10 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
 
     async def test_invalid_parts_stop_before_assembly(self):
         self.load_multipart_parts.side_effect = (
-            S3ObjektPartOrderInvalidError()
+            S3ObjectPartOrderInvalidError()
         )
 
-        with self.assertRaises(S3ObjektPartOrderInvalidError):
+        with self.assertRaises(S3ObjectPartOrderInvalidError):
             await self._complete()
 
         self.concat.assert_not_awaited()
@@ -376,16 +376,16 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_unknown_upload_raises(self):
-        self.load_multipart.side_effect = S3ObjektUploadNotFoundError()
+        self.load_multipart.side_effect = S3ObjectUploadNotFoundError()
 
-        with self.assertRaises(S3ObjektUploadNotFoundError):
+        with self.assertRaises(S3ObjectUploadNotFoundError):
             await self._complete()
 
         self.concat.assert_not_awaited()
         self.delete.assert_awaited_once_with(STAGED_PATH)
 
     async def test_invalid_key_stops_before_assembly(self):
-        with self.assertRaises(S3ObjektKeyInvalidError) as cm:
+        with self.assertRaises(S3ObjectKeyInvalidError) as cm:
             await multipart_complete(
                 session=self.session,
                 current_user=self.user,
@@ -413,7 +413,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
     async def test_directory_at_object_path_is_a_key_conflict(self):
         self.rename.side_effect = IsADirectoryError()
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._complete()
 
         self.repo.commit.assert_not_awaited()
@@ -473,7 +473,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.isfile.return_value = True
         self.rename.side_effect = IsADirectoryError()
 
-        with self.assertRaises(S3ObjektKeyConflictError):
+        with self.assertRaises(S3ObjectKeyConflictError):
             await self._complete()
 
         self.copy.assert_awaited_once_with(OBJECT_PATH, BACKUP_PATH)

@@ -12,8 +12,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.errors import (  # noqa: E402
-    S3ObjektPartNumberInvalidError,
-    S3ObjektTooLargeError,
+    S3ObjectPartNumberInvalidError,
+    S3ObjectTooLargeError,
 )
 from app.routers.objekt_upload import objekt_upload_router  # noqa: E402
 from app.streams import RequestBodyReader  # noqa: E402
@@ -86,7 +86,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.headers["ETag"], '"9b2cf5"')
 
     async def test_part_without_number_raises_s3_error(self):
-        with self.assertRaises(S3ObjektPartNumberInvalidError) as cm:
+        with self.assertRaises(S3ObjectPartNumberInvalidError) as cm:
             await objekt_upload_router(
                 bucket_name="photos",
                 object_key="cat.png",
@@ -101,7 +101,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
     async def test_oversized_content_length_raises_s3_error(self):
         request = self._build_request({"content-length": "99999999999999"})
 
-        with self.assertRaises(S3ObjektTooLargeError) as cm:
+        with self.assertRaises(S3ObjectTooLargeError) as cm:
             await objekt_upload_router(
                 bucket_name="photos",
                 object_key="cat.png",

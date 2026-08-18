@@ -5,8 +5,8 @@ import os
 import time
 
 from app.errors import (
-    S3ObjektKeyConflictError,
-    S3ObjektNotFoundError,
+    S3ObjectKeyConflictError,
+    S3ObjectNotFoundError,
 )
 from app.models.bucket import Bucket
 from app.models.objekt import Objekt
@@ -35,7 +35,7 @@ async def load_objekt(
     )
 
     if objekt is None or objekt.delete_marker:
-        raise S3ObjektNotFoundError(resource)
+        raise S3ObjectNotFoundError(resource)
 
     return objekt
 
@@ -47,12 +47,12 @@ async def objekt_mkdir(object_path: str, resource: str) -> None:
     key already used by a directory hold an object.
     """
     if await isdir(object_path):
-        raise S3ObjektKeyConflictError(resource)
+        raise S3ObjectKeyConflictError(resource)
 
     try:
         await mktree(os.path.dirname(object_path))
     except (FileExistsError, NotADirectoryError) as exc:
-        raise S3ObjektKeyConflictError(resource) from exc
+        raise S3ObjectKeyConflictError(resource) from exc
 
 
 async def upsert_objekt(
