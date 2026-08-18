@@ -71,7 +71,7 @@ class TestObjectVersionModel(unittest.TestCase):
 
     def _version(self, **kwargs) -> ObjectVersion:
         defaults = {
-            "objekt_id": self.objekt.id,
+            "object_id": self.objekt.id,
             "user_id": self.user.id,
             "version_id": "a" * 32,
             "modified_at": 1_704_067_200,
@@ -98,7 +98,7 @@ class TestObjectVersionModel(unittest.TestCase):
             self.session.commit()
 
     def test_tablename(self):
-        self.assertEqual(ObjectVersion.__tablename__, "objekts_versions")
+        self.assertEqual(ObjectVersion.__tablename__, "objects_versions")
 
     def test_persists_required_fields_and_defaults(self):
         version = self._version(
@@ -113,7 +113,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.refresh(version)
 
         self.assertIsNotNone(version.id)
-        self.assertEqual(version.objekt_id, self.objekt.id)
+        self.assertEqual(version.object_id, self.objekt.id)
         self.assertEqual(version.user_id, self.user.id)
         self.assertEqual(version.version_id, "c" * 32)
         self.assertEqual(version.modified_at, 1_704_153_600)
@@ -139,7 +139,7 @@ class TestObjectVersionModel(unittest.TestCase):
 
         rows = self.session.scalars(
             select(ObjectVersion).where(
-                ObjectVersion.objekt_id == self.objekt.id,
+                ObjectVersion.object_id == self.objekt.id,
             ),
         ).all()
         self.assertEqual(len(rows), 2)
@@ -162,7 +162,7 @@ class TestObjectVersionModel(unittest.TestCase):
 
         self.session.add(
             self._version(
-                objekt_id=other.id,
+                object_id=other.id,
                 version_id="a" * 32,
                 etag="c" * 32,
             ),
@@ -239,12 +239,12 @@ class TestObjectVersionModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectVersion)
             .where(ObjectVersion.id == version.id)
-            .options(selectinload(ObjectVersion.objekt_version_objekt)),
+            .options(selectinload(ObjectVersion.object_version_object)),
         )
 
-        self.assertEqual(loaded.objekt_version_objekt.id, self.objekt.id)
+        self.assertEqual(loaded.object_version_object.id, self.objekt.id)
         self.assertEqual(
-            loaded.objekt_version_objekt.object_key,
+            loaded.object_version_object.object_key,
             "a.txt",
         )
 
@@ -258,10 +258,10 @@ class TestObjectVersionModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Objekt)
             .where(Objekt.id == self.objekt.id)
-            .options(selectinload(Objekt.objekt_versions)),
+            .options(selectinload(Objekt.object_versions)),
         )
 
-        ids = sorted(v.version_id for v in loaded.objekt_versions)
+        ids = sorted(v.version_id for v in loaded.object_versions)
         self.assertEqual(ids, ["a" * 32, "b" * 32])
 
     def test_relationship_back_to_user(self):
@@ -272,10 +272,10 @@ class TestObjectVersionModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectVersion)
             .where(ObjectVersion.id == version.id)
-            .options(selectinload(ObjectVersion.objekt_version_user)),
+            .options(selectinload(ObjectVersion.object_version_user)),
         )
 
-        self.assertEqual(loaded.objekt_version_user.id, self.user.id)
+        self.assertEqual(loaded.object_version_user.id, self.user.id)
 
     def test_relationship_access_without_eager_load_raises(self):
         self.session.add(self._version(version_id="a" * 32))
@@ -286,7 +286,7 @@ class TestObjectVersionModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_versions
+            _ = loaded.object_versions
 
     def test_objekt_delete_is_restricted(self):
         self.session.add(self._version(version_id="a" * 32))

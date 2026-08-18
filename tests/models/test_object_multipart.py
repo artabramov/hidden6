@@ -70,7 +70,7 @@ class TestMultipartModel(unittest.TestCase):
     def test_tablename(self):
         self.assertEqual(
             ObjectMultipart.__tablename__,
-            "objekts_multiparts",
+            "objects_multiparts",
         )
 
     def test_persists_required_fields_and_defaults(self):
@@ -125,10 +125,10 @@ class TestMultipartModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectMultipart)
             .where(ObjectMultipart.id == multipart.id)
-            .options(selectinload(ObjectMultipart.objekt_multipart_bucket)),
+            .options(selectinload(ObjectMultipart.object_multipart_bucket)),
         )
 
-        self.assertEqual(loaded.objekt_multipart_bucket.id, self.bucket.id)
+        self.assertEqual(loaded.object_multipart_bucket.id, self.bucket.id)
 
     def test_relationship_back_to_user(self):
         multipart = self._multipart()
@@ -138,10 +138,10 @@ class TestMultipartModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectMultipart)
             .where(ObjectMultipart.id == multipart.id)
-            .options(selectinload(ObjectMultipart.objekt_multipart_user)),
+            .options(selectinload(ObjectMultipart.object_multipart_user)),
         )
 
-        self.assertEqual(loaded.objekt_multipart_user.username, "alice")
+        self.assertEqual(loaded.object_multipart_user.username, "alice")
 
     def test_bucket_relationship_to_multiparts(self):
         self.session.add(self._multipart(upload_id="a" * 32))
@@ -153,10 +153,10 @@ class TestMultipartModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Bucket)
             .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_objekts_multiparts)),
+            .options(selectinload(Bucket.bucket_objects_multiparts)),
         )
 
-        keys = sorted(m.object_key for m in loaded.bucket_objekts_multiparts)
+        keys = sorted(m.object_key for m in loaded.bucket_objects_multiparts)
         self.assertEqual(keys, ["a.txt", "b.txt"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -168,7 +168,7 @@ class TestMultipartModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.bucket_objekts_multiparts
+            _ = loaded.bucket_objects_multiparts
 
     def test_multipart_bucket_access_without_eager_load_raises(self):
         multipart = self._multipart()
@@ -180,7 +180,7 @@ class TestMultipartModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_multipart_bucket
+            _ = loaded.object_multipart_bucket
 
     def test_multipart_user_access_without_eager_load_raises(self):
         multipart = self._multipart()
@@ -192,7 +192,7 @@ class TestMultipartModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_multipart_user
+            _ = loaded.object_multipart_user
 
     def test_bucket_delete_is_restricted(self):
         self.session.add(self._multipart())

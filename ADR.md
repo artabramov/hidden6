@@ -26,10 +26,9 @@ ADR-19: SQLite ORM relationships do not use implicit loading.
 ADR-20: S3 request authentication uses AWS Signature Version 4.
 ADR-21: S3 authorization is owner-and-root (no IAM policies).
 ADR-22: S3 routes are excluded from the OpenAPI schema.
-ADR-23: S3 objects follow the objekt naming convention.
-ADR-24: S3 object keys map to nested filesystem paths.
-ADR-25: S3 upload bodies are decoded from aws-chunked framing.
-ADR-26: S3 multipart uploads are tracked in the database.
-ADR-27: S3 versioning keeps the current object on the key path.
-ADR-28: S3 empty key directories are kept after rollback.
-ADR-29: S3 bucket versioning follows AWS state semantics.
+ADR-23: S3 object keys map to nested filesystem paths.
+ADR-24: S3 upload bodies are decoded from aws-chunked framing.
+ADR-25: S3 multipart uploads are tracked in the database.
+ADR-26: S3 versioning keeps the current object on the key path.
+ADR-27: S3 empty key directories are kept after rollback.
+ADR-28: S3 bucket versioning follows AWS state semantics.

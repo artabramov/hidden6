@@ -21,16 +21,16 @@ class ObjectMultipartMetadata(Base):
     object when the upload is completed.
     """
 
-    __tablename__ = "objekts_multiparts_metadata"
+    __tablename__ = "objects_multiparts_metadata"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_multipart_id: Mapped[int] = mapped_column(
+    object_multipart_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts_multiparts.id", ondelete="CASCADE"),
+        ForeignKey("objects_multiparts.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -45,17 +45,17 @@ class ObjectMultipartMetadata(Base):
         nullable=False,
     )
 
-    objekt_multipart_metadata_objekt_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
-        back_populates="objekt_multipart_metadata",
-        foreign_keys=[objekt_multipart_id],
+    object_multipart_metadata_object_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
+        back_populates="object_multipart_metadata",
+        foreign_keys=[object_multipart_id],
         lazy="raise",
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "objekt_multipart_id",
+            "object_multipart_id",
             "meta_key",
-            name="uq_objekts_multiparts_metadata_multipart_meta_key",
+            name="uq_objects_multiparts_metadata_multipart_meta_key",
         ),
         {"sqlite_autoincrement": True},
     )

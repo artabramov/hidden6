@@ -21,16 +21,16 @@ class ObjectVersionMetadata(Base):
     values.
     """
 
-    __tablename__ = "objekts_versions_metadata"
+    __tablename__ = "objects_versions_metadata"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_version_id: Mapped[int] = mapped_column(
+    object_version_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts_versions.id", ondelete="CASCADE"),
+        ForeignKey("objects_versions.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -45,17 +45,17 @@ class ObjectVersionMetadata(Base):
         nullable=False,
     )
 
-    objekt_version_metadata_objekt_version: Mapped["ObjectVersion"] = relationship(  # noqa: E501, F821
-        back_populates="objekt_version_metadata",
-        foreign_keys=[objekt_version_id],
+    object_version_metadata_object_version: Mapped["ObjectVersion"] = relationship(  # noqa: E501, F821
+        back_populates="object_version_metadata",
+        foreign_keys=[object_version_id],
         lazy="raise",
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "objekt_version_id",
+            "object_version_id",
             "meta_key",
-            name="uq_objekts_versions_metadata_version_meta_key",
+            name="uq_objects_versions_metadata_version_meta_key",
         ),
         {"sqlite_autoincrement": True},
     )

@@ -21,16 +21,16 @@ class ObjectVersionTag(Base):
     version tag set.
     """
 
-    __tablename__ = "objekts_versions_tags"
+    __tablename__ = "objects_versions_tags"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_version_id: Mapped[int] = mapped_column(
+    object_version_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts_versions.id", ondelete="CASCADE"),
+        ForeignKey("objects_versions.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -45,17 +45,17 @@ class ObjectVersionTag(Base):
         nullable=False,
     )
 
-    objekt_version_tag_objekt_version: Mapped["ObjectVersion"] = relationship(  # noqa: E501, F821
-        back_populates="objekt_version_tags",
-        foreign_keys=[objekt_version_id],
+    object_version_tag_object_version: Mapped["ObjectVersion"] = relationship(  # noqa: E501, F821
+        back_populates="object_version_tags",
+        foreign_keys=[object_version_id],
         lazy="raise",
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "objekt_version_id",
+            "object_version_id",
             "tag_key",
-            name="uq_objekts_versions_tags_version_tag_key",
+            name="uq_objects_versions_tags_version_tag_key",
         ),
         {"sqlite_autoincrement": True},
     )

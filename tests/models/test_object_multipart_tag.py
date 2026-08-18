@@ -69,7 +69,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
 
     def _tag(self, **kwargs) -> ObjectMultipartTag:
         defaults = {
-            "objekt_multipart_id": self.multipart.id,
+            "object_multipart_id": self.multipart.id,
             "tag_key": "color",
             "tag_value": "red",
         }
@@ -79,7 +79,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
     def test_tablename(self):
         self.assertEqual(
             ObjectMultipartTag.__tablename__,
-            "objekts_multiparts_tags",
+            "objects_multiparts_tags",
         )
 
     def test_persists_required_fields(self):
@@ -89,7 +89,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_multipart_id, self.multipart.id)
+        self.assertEqual(row.object_multipart_id, self.multipart.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -123,7 +123,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(
             self._tag(
-                objekt_multipart_id=other.id,
+                object_multipart_id=other.id,
                 tag_key="color",
                 tag_value="blue",
             ),
@@ -143,17 +143,17 @@ class TestObjectMultipartTagModel(unittest.TestCase):
             .where(ObjectMultipartTag.id == row.id)
             .options(
                 selectinload(
-                    ObjectMultipartTag.objekt_multipart_tag_objekt_multipart,
+                    ObjectMultipartTag.object_multipart_tag_object_multipart,
                 ),
             ),
         )
 
         self.assertEqual(
-            loaded.objekt_multipart_tag_objekt_multipart.id,
+            loaded.object_multipart_tag_object_multipart.id,
             self.multipart.id,
         )
         self.assertEqual(
-            loaded.objekt_multipart_tag_objekt_multipart.upload_id,
+            loaded.object_multipart_tag_object_multipart.upload_id,
             "a" * 32,
         )
 
@@ -165,10 +165,10 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectMultipart)
             .where(ObjectMultipart.id == self.multipart.id)
-            .options(selectinload(ObjectMultipart.objekt_multipart_tags)),
+            .options(selectinload(ObjectMultipart.object_multipart_tags)),
         )
 
-        keys = sorted(item.tag_key for item in loaded.objekt_multipart_tags)
+        keys = sorted(item.tag_key for item in loaded.object_multipart_tags)
         self.assertEqual(keys, ["color", "owner"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -182,7 +182,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_multipart_tags
+            _ = loaded.object_multipart_tags
 
     def test_cascade_delete_with_multipart(self):
         self.session.add(self._tag())

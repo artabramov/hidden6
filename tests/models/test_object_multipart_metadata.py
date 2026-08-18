@@ -69,7 +69,7 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
 
     def _metadata(self, **kwargs) -> ObjectMultipartMetadata:
         defaults = {
-            "objekt_multipart_id": self.multipart.id,
+            "object_multipart_id": self.multipart.id,
             "meta_key": "x-amz-meta-color",
             "meta_value": "red",
         }
@@ -79,7 +79,7 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
     def test_tablename(self):
         self.assertEqual(
             ObjectMultipartMetadata.__tablename__,
-            "objekts_multiparts_metadata",
+            "objects_multiparts_metadata",
         )
 
     def test_persists_required_fields(self):
@@ -92,7 +92,7 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_multipart_id, self.multipart.id)
+        self.assertEqual(row.object_multipart_id, self.multipart.id)
         self.assertEqual(row.meta_key, "x-amz-meta-owner")
         self.assertEqual(row.meta_value, "alice")
 
@@ -127,7 +127,7 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
         )
         self.session.add(
             self._metadata(
-                objekt_multipart_id=other.id,
+                object_multipart_id=other.id,
                 meta_key="x-amz-meta-color",
                 meta_value="blue",
             ),
@@ -147,17 +147,17 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
             .where(ObjectMultipartMetadata.id == row.id)
             .options(
                 selectinload(
-                    ObjectMultipartMetadata.objekt_multipart_metadata_objekt_multipart,
+                    ObjectMultipartMetadata.object_multipart_metadata_object_multipart,
                 ),
             ),
         )
 
         self.assertEqual(
-            loaded.objekt_multipart_metadata_objekt_multipart.id,
+            loaded.object_multipart_metadata_object_multipart.id,
             self.multipart.id,
         )
         self.assertEqual(
-            loaded.objekt_multipart_metadata_objekt_multipart.upload_id,
+            loaded.object_multipart_metadata_object_multipart.upload_id,
             "a" * 32,
         )
 
@@ -173,11 +173,11 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectMultipart)
             .where(ObjectMultipart.id == self.multipart.id)
-            .options(selectinload(ObjectMultipart.objekt_multipart_metadata)),
+            .options(selectinload(ObjectMultipart.object_multipart_metadata)),
         )
 
         keys = sorted(
-            item.meta_key for item in loaded.objekt_multipart_metadata
+            item.meta_key for item in loaded.object_multipart_metadata
         )
         self.assertEqual(keys, ["Cache-Control", "x-amz-meta-color"])
 
@@ -192,7 +192,7 @@ class TestObjectMultipartMetadataModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_multipart_metadata
+            _ = loaded.object_multipart_metadata
 
     def test_cascade_delete_with_multipart(self):
         self.session.add(self._metadata())

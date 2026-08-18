@@ -16,12 +16,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
-# NOTE (ADR-23): S3 objects follow the objekt naming convention.
-# S3 objects are named "objekt" throughout the internal codebase,
-# including models, variables, functions, modules, and database tables,
-# so project-local names never shadow the builtin object. Wire protocol
-# names such as PutObject and object key remain S3-native.
-
 
 class Objekt(Base):
     """
@@ -170,30 +164,30 @@ class Objekt(Base):
         server_default=text("0"),
     )
 
-    objekt_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
-        back_populates="bucket_objekts",
+    object_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
+        back_populates="bucket_objects",
         lazy="raise",
     )
 
-    objekt_user: Mapped["User"] = relationship(  # noqa: F821
-        back_populates="user_objekts",
+    object_user: Mapped["User"] = relationship(  # noqa: F821
+        back_populates="user_objects",
         lazy="raise",
     )
 
-    objekt_versions: Mapped[list["ObjectVersion"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_version_objekt",
-        foreign_keys="ObjectVersion.objekt_id",
+    object_versions: Mapped[list["ObjectVersion"]] = relationship(  # noqa: E501, F821
+        back_populates="object_version_object",
+        foreign_keys="ObjectVersion.object_id",
         lazy="raise",
     )
 
-    objekt_metadata: Mapped[list["ObjectMetadata"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_metadata_objekt",
+    object_metadata: Mapped[list["ObjectMetadata"]] = relationship(  # noqa: E501, F821
+        back_populates="object_metadata_object",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    objekt_tags: Mapped[list["ObjectTag"]] = relationship(  # noqa: F821
-        back_populates="objekt_tag_objekt",
+    object_tags: Mapped[list["ObjectTag"]] = relationship(  # noqa: F821
+        back_populates="object_tag_object",
         cascade="all, delete-orphan",
         lazy="raise",
     )
@@ -215,7 +209,7 @@ class Objekt(Base):
                 AND content_type IS NULL
             )
             """,
-            name="ck_objekts_delete_marker_payload",
+            name="ck_objects_delete_marker_payload",
         ),
         CheckConstraint(
             """
@@ -229,7 +223,7 @@ class Objekt(Base):
                 AND retain_until IS NOT NULL
             )
             """,
-            name="ck_objekts_object_lock_retention",
+            name="ck_objects_object_lock_retention",
         ),
         CheckConstraint(
             """
@@ -240,16 +234,16 @@ class Objekt(Base):
                 AND legal_hold = 0
             )
             """,
-            name="ck_objekts_delete_marker_object_lock",
+            name="ck_objects_delete_marker_object_lock",
         ),
         CheckConstraint(
             "size_bytes IS NULL OR size_bytes >= 0",
-            name="ck_objekts_size_bytes_nonnegative",
+            name="ck_objects_size_bytes_nonnegative",
         ),
         UniqueConstraint(
             "bucket_id",
             "object_key",
-            name="uq_objekts_bucket_id_object_key",
+            name="uq_objects_bucket_id_object_key",
         ),
         {"sqlite_autoincrement": True},
     )

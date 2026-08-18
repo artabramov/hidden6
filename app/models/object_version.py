@@ -15,12 +15,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
-# NOTE (ADR-27): S3 versioning keeps the current object on the key path.
+# NOTE (ADR-26): S3 versioning keeps the current object on the key path.
 # Current object bytes remain under the bucket directory at the S3 key,
 # keeping a gocryptfs mount human-recoverable without the application.
-# Non-current versions are indexed in objekts_versions and stored
-# separately. The objekts row represents the current state of a key,
-# while objekts_versions stores its retained version history.
+# Non-current versions are indexed in objects_versions and stored
+# separately. The objects row represents the current state of a key,
+# while objects_versions stores its retained version history.
 
 
 class ObjectVersion(Base):
@@ -33,14 +33,14 @@ class ObjectVersion(Base):
     object bytes.
     """
 
-    __tablename__ = "objekts_versions"
+    __tablename__ = "objects_versions"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_id: Mapped[int] = mapped_column(
+    object_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("objekts.id"),
         nullable=False,
@@ -129,26 +129,26 @@ class ObjectVersion(Base):
         server_default=text("0"),
     )
 
-    objekt_version_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
-        back_populates="objekt_versions",
-        foreign_keys=[objekt_id],
+    object_version_object: Mapped["Objekt"] = relationship(  # noqa: F821
+        back_populates="object_versions",
+        foreign_keys=[object_id],
         lazy="raise",
     )
 
-    objekt_version_user: Mapped["User"] = relationship(  # noqa: F821
-        back_populates="user_objekts_versions",
+    object_version_user: Mapped["User"] = relationship(  # noqa: F821
+        back_populates="user_objects_versions",
         foreign_keys=[user_id],
         lazy="raise",
     )
 
-    objekt_version_metadata: Mapped[list["ObjectVersionMetadata"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_version_metadata_objekt_version",
+    object_version_metadata: Mapped[list["ObjectVersionMetadata"]] = relationship(  # noqa: E501, F821
+        back_populates="object_version_metadata_object_version",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    objekt_version_tags: Mapped[list["ObjectVersionTag"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_version_tag_objekt_version",
+    object_version_tags: Mapped[list["ObjectVersionTag"]] = relationship(  # noqa: E501, F821
+        back_populates="object_version_tag_object_version",
         cascade="all, delete-orphan",
         lazy="raise",
     )
@@ -170,7 +170,7 @@ class ObjectVersion(Base):
                 AND content_type IS NULL
             )
             """,
-            name="ck_objekts_versions_delete_marker_payload",
+            name="ck_objects_versions_delete_marker_payload",
         ),
         CheckConstraint(
             """
@@ -184,7 +184,7 @@ class ObjectVersion(Base):
                 AND retain_until IS NOT NULL
             )
             """,
-            name="ck_objekts_versions_object_lock_retention",
+            name="ck_objects_versions_object_lock_retention",
         ),
         CheckConstraint(
             """
@@ -195,11 +195,11 @@ class ObjectVersion(Base):
                 AND legal_hold = 0
             )
             """,
-            name="ck_objekts_versions_delete_marker_object_lock",
+            name="ck_objects_versions_delete_marker_object_lock",
         ),
         CheckConstraint(
             "size_bytes IS NULL OR size_bytes >= 0",
-            name="ck_objekts_versions_size_bytes_nonnegative",
+            name="ck_objects_versions_size_bytes_nonnegative",
         ),
         {"sqlite_autoincrement": True},
     )

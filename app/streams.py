@@ -10,7 +10,7 @@ from app.errors import (
 )
 from app.repositories.io import AsyncReadable
 
-# NOTE (ADR-25): S3 upload bodies are decoded from aws-chunked framing.
+# NOTE (ADR-24): S3 upload bodies are decoded from aws-chunked framing.
 # AWS SDKs and the AWS CLI stream PutObject bodies as sized frames
 # carrying an optional chunk signature and trailing headers, announced
 # by Content-Encoding: aws-chunked or by a STREAMING- payload marker in

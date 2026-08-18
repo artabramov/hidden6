@@ -70,7 +70,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
 
     def _part(self, **kwargs) -> ObjectMultipartPart:
         defaults = {
-            "objekt_multipart_id": self.multipart.id,
+            "object_multipart_id": self.multipart.id,
             "part_number": 1,
             "size_bytes": 5 * 1024 * 1024,
             "etag": "a" * 32,
@@ -86,7 +86,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
     def test_tablename(self):
         self.assertEqual(
             ObjectMultipartPart.__tablename__,
-            "objekts_multiparts_parts",
+            "objects_multiparts_parts",
         )
 
     def test_persists_required_fields_and_defaults(self):
@@ -100,7 +100,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_multipart_id, self.multipart.id)
+        self.assertEqual(row.object_multipart_id, self.multipart.id)
         self.assertEqual(row.part_number, 3)
         self.assertEqual(row.size_bytes, 1024)
         self.assertEqual(row.etag, "b" * 32)
@@ -136,7 +136,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.add(self._part(part_number=1, etag="a" * 32))
         self.session.add(
             self._part(
-                objekt_multipart_id=other.id,
+                object_multipart_id=other.id,
                 part_number=1,
                 etag="b" * 32,
             ),
@@ -181,17 +181,17 @@ class TestObjectMultipartPartModel(unittest.TestCase):
             .where(ObjectMultipartPart.id == row.id)
             .options(
                 selectinload(
-                    ObjectMultipartPart.objekt_multipart_part_objekt_multipart,
+                    ObjectMultipartPart.object_multipart_part_object_multipart,
                 ),
             ),
         )
 
         self.assertEqual(
-            loaded.objekt_multipart_part_objekt_multipart.id,
+            loaded.object_multipart_part_object_multipart.id,
             self.multipart.id,
         )
         self.assertEqual(
-            loaded.objekt_multipart_part_objekt_multipart.upload_id,
+            loaded.object_multipart_part_object_multipart.upload_id,
             "a" * 32,
         )
 
@@ -203,10 +203,10 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectMultipart)
             .where(ObjectMultipart.id == self.multipart.id)
-            .options(selectinload(ObjectMultipart.objekt_multipart_parts)),
+            .options(selectinload(ObjectMultipart.object_multipart_parts)),
         )
 
-        numbers = sorted(item.part_number for item in loaded.objekt_multipart_parts)
+        numbers = sorted(item.part_number for item in loaded.object_multipart_parts)
         self.assertEqual(numbers, [1, 2])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -220,7 +220,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_multipart_parts
+            _ = loaded.object_multipart_parts
 
     def test_multipart_delete_is_restricted(self):
         self.session.add(self._part())

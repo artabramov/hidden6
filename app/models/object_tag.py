@@ -21,14 +21,14 @@ class ObjectTag(Base):
     the object tag set.
     """
 
-    __tablename__ = "objekts_tags"
+    __tablename__ = "objects_tags"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_id: Mapped[int] = mapped_column(
+    object_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("objekts.id", ondelete="CASCADE"),
         nullable=False,
@@ -45,17 +45,17 @@ class ObjectTag(Base):
         nullable=False,
     )
 
-    objekt_tag_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
-        back_populates="objekt_tags",
-        foreign_keys=[objekt_id],
+    object_tag_object: Mapped["Objekt"] = relationship(  # noqa: F821
+        back_populates="object_tags",
+        foreign_keys=[object_id],
         lazy="raise",
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "objekt_id",
+            "object_id",
             "tag_key",
-            name="uq_objekts_tags_objekt_tag_key",
+            name="uq_objects_tags_object_tag_key",
         ),
         {"sqlite_autoincrement": True},
     )

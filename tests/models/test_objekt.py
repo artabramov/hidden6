@@ -244,11 +244,11 @@ class TestObjektModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Objekt)
             .where(Objekt.id == objekt.id)
-            .options(selectinload(Objekt.objekt_bucket)),
+            .options(selectinload(Objekt.object_bucket)),
         )
 
-        self.assertEqual(loaded.objekt_bucket.id, self.bucket.id)
-        self.assertEqual(loaded.objekt_bucket.bucket_name, "photos")
+        self.assertEqual(loaded.object_bucket.id, self.bucket.id)
+        self.assertEqual(loaded.object_bucket.bucket_name, "photos")
 
     def test_relationship_back_to_user(self):
         objekt = self._objekt(object_key="x.bin", size_bytes=0, etag="c" * 32)
@@ -258,11 +258,11 @@ class TestObjektModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Objekt)
             .where(Objekt.id == objekt.id)
-            .options(selectinload(Objekt.objekt_user)),
+            .options(selectinload(Objekt.object_user)),
         )
 
-        self.assertEqual(loaded.objekt_user.id, self.user.id)
-        self.assertEqual(loaded.objekt_user.username, "alice")
+        self.assertEqual(loaded.object_user.id, self.user.id)
+        self.assertEqual(loaded.object_user.username, "alice")
 
     def test_bucket_relationship_to_objekts(self):
         self.session.add(self._objekt(object_key="a.txt", etag="a" * 32))
@@ -274,10 +274,10 @@ class TestObjektModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Bucket)
             .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_objekts)),
+            .options(selectinload(Bucket.bucket_objects)),
         )
 
-        keys = sorted(o.object_key for o in loaded.bucket_objekts)
+        keys = sorted(o.object_key for o in loaded.bucket_objects)
         self.assertEqual(keys, ["a.txt", "b.txt"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -289,9 +289,9 @@ class TestObjektModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.bucket_objekts
+            _ = loaded.bucket_objects
 
-    def test_objekt_bucket_access_without_eager_load_raises(self):
+    def test_object_bucket_access_without_eager_load_raises(self):
         objekt = self._objekt()
         self.session.add(objekt)
         self.session.commit()
@@ -301,9 +301,9 @@ class TestObjektModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_bucket
+            _ = loaded.object_bucket
 
-    def test_objekt_user_access_without_eager_load_raises(self):
+    def test_object_user_access_without_eager_load_raises(self):
         objekt = self._objekt()
         self.session.add(objekt)
         self.session.commit()
@@ -313,7 +313,7 @@ class TestObjektModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_user
+            _ = loaded.object_user
 
     def test_bucket_delete_is_restricted(self):
         self.session.add(self._objekt())

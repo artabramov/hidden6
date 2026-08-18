@@ -21,14 +21,14 @@ class ObjectMetadata(Base):
     values.
     """
 
-    __tablename__ = "objekts_metadata"
+    __tablename__ = "objects_metadata"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_id: Mapped[int] = mapped_column(
+    object_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("objekts.id", ondelete="CASCADE"),
         nullable=False,
@@ -45,17 +45,17 @@ class ObjectMetadata(Base):
         nullable=False,
     )
 
-    objekt_metadata_objekt: Mapped["Objekt"] = relationship(  # noqa: F821
-        back_populates="objekt_metadata",
-        foreign_keys=[objekt_id],
+    object_metadata_object: Mapped["Objekt"] = relationship(  # noqa: F821
+        back_populates="object_metadata",
+        foreign_keys=[object_id],
         lazy="raise",
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "objekt_id",
+            "object_id",
             "meta_key",
-            name="uq_objekts_metadata_objekt_meta_key",
+            name="uq_objects_metadata_object_meta_key",
         ),
         {"sqlite_autoincrement": True},
     )

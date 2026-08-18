@@ -103,7 +103,7 @@ class TestUpsertMultipartPart(unittest.IsolatedAsyncioTestCase):
         )
 
         self.repo.insert.assert_awaited_once()
-        self.assertEqual(row.objekt_multipart_id, 5)
+        self.assertEqual(row.object_multipart_id, 5)
         self.assertEqual(row.part_number, 1)
         self.assertEqual(row.size_bytes, 1024)
         self.assertEqual(row.etag, "abc")
@@ -114,7 +114,7 @@ class TestUpsertMultipartPart(unittest.IsolatedAsyncioTestCase):
     async def test_updates_existing_part_row(self):
         existing = ObjectMultipartPart(
             id=9,
-            objekt_multipart_id=5,
+            object_multipart_id=5,
             part_number=1,
             size_bytes=10,
             etag="old",
@@ -155,7 +155,7 @@ class TestListMultipartParts(unittest.IsolatedAsyncioTestCase):
 
         repo.select_all.assert_awaited_once_with(
             ObjectMultipartPart,
-            objekt_multipart_id=5,
+            object_multipart_id=5,
             order_by="part_number",
             order="asc",
             part_number__gt=2,
@@ -209,7 +209,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
             number = filters["part_number"]
             return ObjectMultipartPart(
                 id=number,
-                objekt_multipart_id=5,
+                object_multipart_id=5,
                 part_number=number,
                 size_bytes=1024 * 1024 * 6,
                 etag=f"etag-{number}",
@@ -295,7 +295,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
             number = filters["part_number"]
             return ObjectMultipartPart(
                 id=number,
-                objekt_multipart_id=5,
+                object_multipart_id=5,
                 part_number=number,
                 size_bytes=1024,
                 etag=f"etag-{number}",
@@ -313,7 +313,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
         async def _select(_cls, **filters):
             return ObjectMultipartPart(
                 id=1,
-                objekt_multipart_id=5,
+                object_multipart_id=5,
                 part_number=1,
                 size_bytes=1024,
                 etag="etag-1",
@@ -332,7 +332,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
             size = 1024 if number == 1 else 1024 * 1024 * 6
             return ObjectMultipartPart(
                 id=number,
-                objekt_multipart_id=5,
+                object_multipart_id=5,
                 part_number=number,
                 size_bytes=size,
                 etag=f"etag-{number}",

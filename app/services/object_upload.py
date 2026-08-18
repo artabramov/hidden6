@@ -34,7 +34,7 @@ from app.s3.validation import validate_bucket_name, validate_objekt_key
 log = logging.getLogger(__name__)
 
 
-# NOTE (ADR-28): S3 empty key directories are kept after rollback.
+# NOTE (ADR-27): S3 empty key directories are kept after rollback.
 # Key prefixes are represented as filesystem directories but have no
 # independent meaning in the S3 namespace. Tracking and removing
 # directories created by a failed operation would complicate filesystem

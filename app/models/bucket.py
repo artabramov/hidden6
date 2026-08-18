@@ -21,7 +21,7 @@ from app.db.base import Base
 # only their own buckets; root may access any bucket. IAM and bucket
 # policies are not evaluated.
 
-# NOTE (ADR-29): S3 bucket versioning follows AWS state semantics.
+# NOTE (ADR-28): S3 bucket versioning follows AWS state semantics.
 # Buckets have three internal states: Disabled, Enabled, and Suspended.
 # Enabled and Suspended may be reapplied or transition to each other,
 # except that versioning cannot be suspended while Object Lock is
@@ -144,13 +144,13 @@ class Bucket(Base):
         lazy="raise",
     )
 
-    bucket_objekts: Mapped[list["Objekt"]] = relationship(  # noqa: F821
-        back_populates="objekt_bucket",
+    bucket_objects: Mapped[list["Objekt"]] = relationship(  # noqa: F821
+        back_populates="object_bucket",
         lazy="raise",
     )
 
-    bucket_objekts_multiparts: Mapped[list["ObjectMultipart"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_multipart_bucket",
+    bucket_objects_multiparts: Mapped[list["ObjectMultipart"]] = relationship(  # noqa: E501, F821
+        back_populates="object_multipart_bucket",
         lazy="raise",
     )
 

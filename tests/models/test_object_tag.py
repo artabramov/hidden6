@@ -71,7 +71,7 @@ class TestObjectTagModel(unittest.TestCase):
 
     def _tag(self, **kwargs) -> ObjectTag:
         defaults = {
-            "objekt_id": self.objekt.id,
+            "object_id": self.objekt.id,
             "tag_key": "color",
             "tag_value": "red",
         }
@@ -79,7 +79,7 @@ class TestObjectTagModel(unittest.TestCase):
         return ObjectTag(**defaults)
 
     def test_tablename(self):
-        self.assertEqual(ObjectTag.__tablename__, "objekts_tags")
+        self.assertEqual(ObjectTag.__tablename__, "objects_tags")
 
     def test_persists_required_fields(self):
         row = self._tag(tag_key="owner", tag_value="alice")
@@ -88,7 +88,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_id, self.objekt.id)
+        self.assertEqual(row.object_id, self.objekt.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -124,7 +124,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(
             self._tag(
-                objekt_id=other.id,
+                object_id=other.id,
                 tag_key="color",
                 tag_value="blue",
             ),
@@ -142,11 +142,11 @@ class TestObjectTagModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectTag)
             .where(ObjectTag.id == row.id)
-            .options(selectinload(ObjectTag.objekt_tag_objekt)),
+            .options(selectinload(ObjectTag.object_tag_object)),
         )
 
-        self.assertEqual(loaded.objekt_tag_objekt.id, self.objekt.id)
-        self.assertEqual(loaded.objekt_tag_objekt.object_key, "a.txt")
+        self.assertEqual(loaded.object_tag_object.id, self.objekt.id)
+        self.assertEqual(loaded.object_tag_object.object_key, "a.txt")
 
     def test_objekt_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
@@ -156,10 +156,10 @@ class TestObjectTagModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(Objekt)
             .where(Objekt.id == self.objekt.id)
-            .options(selectinload(Objekt.objekt_tags)),
+            .options(selectinload(Objekt.object_tags)),
         )
 
-        keys = sorted(item.tag_key for item in loaded.objekt_tags)
+        keys = sorted(item.tag_key for item in loaded.object_tags)
         self.assertEqual(keys, ["color", "owner"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -171,7 +171,7 @@ class TestObjectTagModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_tags
+            _ = loaded.object_tags
 
     def test_cascade_delete_with_objekt(self):
         self.session.add(self._tag())

@@ -34,7 +34,7 @@ _BUCKET_RESERVED_SUFFIXES = (
 # slashes, and repeated slashes.
 _FORBIDDEN_SEGMENTS = frozenset({"", ".", ".."})
 
-# NOTE (ADR-24): S3 object keys map to nested filesystem paths.
+# NOTE (ADR-23): S3 object keys map to nested filesystem paths.
 # A key is stored as a path relative to the bucket directory, so the
 # key photos/2024/cat.png becomes a file in nested directories that
 # are created on upload. Because directories and files share one

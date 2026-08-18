@@ -61,14 +61,14 @@ async def upsert_multipart_part(
     """
     existing = await repo.select(
         ObjectMultipartPart,
-        objekt_multipart_id=multipart.id,
+        object_multipart_id=multipart.id,
         part_number=part_number,
     )
 
     if existing is None:
         return await repo.insert(
             ObjectMultipartPart(
-                objekt_multipart_id=multipart.id,
+                object_multipart_id=multipart.id,
                 part_number=part_number,
                 size_bytes=size_bytes,
                 etag=etag,
@@ -94,7 +94,7 @@ async def list_multipart_parts(
     number. Optional marker and limit support a future ListParts API.
     """
     filters: dict = {
-        "objekt_multipart_id": multipart.id,
+        "object_multipart_id": multipart.id,
         "order_by": "part_number",
         "order": "asc",
     }
@@ -151,7 +151,7 @@ async def load_multipart_parts(
 
         row = await repo.select(
             ObjectMultipartPart,
-            objekt_multipart_id=multipart.id,
+            object_multipart_id=multipart.id,
             part_number=part.part_number,
         )
         if row is None:

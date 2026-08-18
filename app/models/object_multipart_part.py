@@ -24,16 +24,16 @@ class ObjectMultipartPart(Base):
     uploaded again for the same multipart upload.
     """
 
-    __tablename__ = "objekts_multiparts_parts"
+    __tablename__ = "objects_multiparts_parts"
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
     )
 
-    objekt_multipart_id: Mapped[int] = mapped_column(
+    object_multipart_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts_multiparts.id"),
+        ForeignKey("objects_multiparts.id"),
         nullable=False,
         index=True,
     )
@@ -66,25 +66,25 @@ class ObjectMultipartPart(Base):
         nullable=False,
     )
 
-    objekt_multipart_part_objekt_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
-        back_populates="objekt_multipart_parts",
-        foreign_keys=[objekt_multipart_id],
+    object_multipart_part_object_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
+        back_populates="object_multipart_parts",
+        foreign_keys=[object_multipart_id],
         lazy="raise",
     )
 
     __table_args__ = (
         CheckConstraint(
             "part_number >= 1 AND part_number <= 10000",
-            name="ck_objekts_multiparts_parts_part_number",
+            name="ck_objects_multiparts_parts_part_number",
         ),
         CheckConstraint(
             "size_bytes >= 0",
-            name="ck_objekts_multiparts_parts_size_bytes_nonnegative",
+            name="ck_objects_multiparts_parts_size_bytes_nonnegative",
         ),
         UniqueConstraint(
-            "objekt_multipart_id",
+            "object_multipart_id",
             "part_number",
-            name="uq_objekts_multiparts_parts_multipart_part_number",
+            name="uq_objects_multiparts_parts_multipart_part_number",
         ),
         {"sqlite_autoincrement": True},
     )

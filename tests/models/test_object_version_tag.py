@@ -66,7 +66,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
         self.session.refresh(self.objekt)
 
         self.version = ObjectVersion(
-            objekt_id=self.objekt.id,
+            object_id=self.objekt.id,
             user_id=self.user.id,
             version_id="a" * 32,
             modified_at=1_704_067_200,
@@ -84,7 +84,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
 
     def _tag(self, **kwargs) -> ObjectVersionTag:
         defaults = {
-            "objekt_version_id": self.version.id,
+            "object_version_id": self.version.id,
             "tag_key": "color",
             "tag_value": "red",
         }
@@ -94,7 +94,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
     def test_tablename(self):
         self.assertEqual(
             ObjectVersionTag.__tablename__,
-            "objekts_versions_tags",
+            "objects_versions_tags",
         )
 
     def test_persists_required_fields(self):
@@ -104,7 +104,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.objekt_version_id, self.version.id)
+        self.assertEqual(row.object_version_id, self.version.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -126,7 +126,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
 
     def test_same_tag_key_allowed_on_different_versions(self):
         other = ObjectVersion(
-            objekt_id=self.objekt.id,
+            object_id=self.objekt.id,
             user_id=self.user.id,
             version_id="b" * 32,
             modified_at=1_704_067_200,
@@ -141,7 +141,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(
             self._tag(
-                objekt_version_id=other.id,
+                object_version_id=other.id,
                 tag_key="color",
                 tag_value="blue",
             ),
@@ -161,17 +161,17 @@ class TestObjectVersionTagModel(unittest.TestCase):
             .where(ObjectVersionTag.id == row.id)
             .options(
                 selectinload(
-                    ObjectVersionTag.objekt_version_tag_objekt_version,
+                    ObjectVersionTag.object_version_tag_object_version,
                 ),
             ),
         )
 
         self.assertEqual(
-            loaded.objekt_version_tag_objekt_version.id,
+            loaded.object_version_tag_object_version.id,
             self.version.id,
         )
         self.assertEqual(
-            loaded.objekt_version_tag_objekt_version.version_id,
+            loaded.object_version_tag_object_version.version_id,
             "a" * 32,
         )
 
@@ -183,10 +183,10 @@ class TestObjectVersionTagModel(unittest.TestCase):
         loaded = self.session.scalar(
             select(ObjectVersion)
             .where(ObjectVersion.id == self.version.id)
-            .options(selectinload(ObjectVersion.objekt_version_tags)),
+            .options(selectinload(ObjectVersion.object_version_tags)),
         )
 
-        keys = sorted(item.tag_key for item in loaded.objekt_version_tags)
+        keys = sorted(item.tag_key for item in loaded.object_version_tags)
         self.assertEqual(keys, ["color", "owner"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -198,7 +198,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.objekt_version_tags
+            _ = loaded.object_version_tags
 
     def test_cascade_delete_with_version(self):
         self.session.add(self._tag())

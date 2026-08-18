@@ -13,7 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
-# NOTE (ADR-26): S3 multipart uploads are tracked in the database.
+# NOTE (ADR-25): S3 multipart uploads are tracked in the database.
 # A row binds the upload id issued to the client to its bucket, key,
 # and initiating user, so every part and the final assembly can be
 # authorized. Part bytes are staged in the mountpoint tmp dir and
@@ -29,7 +29,7 @@ class ObjectMultipart(Base):
     staged separately and assembled into the final object on completion.
     """
 
-    __tablename__ = "objekts_multiparts"
+    __tablename__ = "objects_multiparts"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -77,29 +77,29 @@ class ObjectMultipart(Base):
         server_default=text("'application/octet-stream'"),
     )
 
-    objekt_multipart_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
-        back_populates="bucket_objekts_multiparts",
+    object_multipart_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
+        back_populates="bucket_objects_multiparts",
         lazy="raise",
     )
 
-    objekt_multipart_user: Mapped["User"] = relationship(  # noqa: F821
-        back_populates="user_objekts_multiparts",
+    object_multipart_user: Mapped["User"] = relationship(  # noqa: F821
+        back_populates="user_objects_multiparts",
         lazy="raise",
     )
 
-    objekt_multipart_parts: Mapped[list["ObjectMultipartPart"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_multipart_part_objekt_multipart",
+    object_multipart_parts: Mapped[list["ObjectMultipartPart"]] = relationship(  # noqa: E501, F821
+        back_populates="object_multipart_part_object_multipart",
         lazy="raise",
     )
 
-    objekt_multipart_metadata: Mapped[list["ObjectMultipartMetadata"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_multipart_metadata_objekt_multipart",
+    object_multipart_metadata: Mapped[list["ObjectMultipartMetadata"]] = relationship(  # noqa: E501, F821
+        back_populates="object_multipart_metadata_object_multipart",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    objekt_multipart_tags: Mapped[list["ObjectMultipartTag"]] = relationship(  # noqa: E501, F821
-        back_populates="objekt_multipart_tag_objekt_multipart",
+    object_multipart_tags: Mapped[list["ObjectMultipartTag"]] = relationship(  # noqa: E501, F821
+        back_populates="object_multipart_tag_object_multipart",
         cascade="all, delete-orphan",
         lazy="raise",
     )
