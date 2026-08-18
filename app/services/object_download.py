@@ -16,7 +16,7 @@ from app.s3.paths import resolve_object_path
 from app.s3.validation import validate_bucket_name, validate_object_key
 
 
-async def objekt_download(
+async def object_download(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,

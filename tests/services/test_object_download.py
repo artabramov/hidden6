@@ -19,7 +19,7 @@ from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.object import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.object_download import objekt_download  # noqa: E402
+from app.services.object_download import object_download  # noqa: E402
 
 load_all_models()
 
@@ -78,7 +78,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
     async def test_returns_objekt_and_path(self):
         self._build_mocks()
 
-        objekt, path = await objekt_download(
+        objekt, path = await object_download(
             session=self.session,
             current_user=self.user,
             bucket_name="photos",
@@ -99,7 +99,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks()
 
         with self.assertRaises(S3ObjectKeyInvalidError):
-            await objekt_download(
+            await object_download(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -114,7 +114,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self.load_bucket.side_effect = S3BucketNotFoundError("/photos/x")
 
         with self.assertRaises(S3BucketNotFoundError):
-            await objekt_download(
+            await object_download(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -130,7 +130,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         )
 
         with self.assertRaises(S3ObjectNotFoundError):
-            await objekt_download(
+            await object_download(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -144,7 +144,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self._build_mocks(isfile=False)
 
         with self.assertRaises(S3ObjectNotFoundError):
-            await objekt_download(
+            await object_download(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",

@@ -52,7 +52,7 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.object_download.objekt_download",
+                "app.routers.object_download.object_download",
                 new_callable=AsyncMock,
                 return_value=(self.objekt, self.object_path),
             ) as mock_service,
@@ -94,7 +94,7 @@ class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
     async def test_head_returns_metadata_without_body(self):
         with (
             patch(
-                "app.routers.object_download.objekt_download",
+                "app.routers.object_download.object_download",
                 new_callable=AsyncMock,
                 return_value=(self.objekt, self.object_path),
             ) as mock_service,

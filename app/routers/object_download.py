@@ -11,7 +11,7 @@ from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.repositories.io import iter_read
 from app.s3.headers import object_headers
-from app.services.object_download import objekt_download
+from app.services.object_download import object_download
 
 router = APIRouter(include_in_schema=False)
 
@@ -72,7 +72,7 @@ async def object_download_router(
 
     `OBJECT_DOWNLOADED` — hook executed after the object is resolved.
     """
-    objekt, object_path = await objekt_download(
+    objekt, object_path = await object_download(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
