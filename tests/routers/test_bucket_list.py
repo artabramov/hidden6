@@ -12,7 +12,7 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.routers.bucket_list import bucket_list_router  # noqa: E402
 
@@ -24,7 +24,7 @@ class TestBucketListRouter(unittest.IsolatedAsyncioTestCase):
         user = User(id=1, username="root", is_root=True)
         session = MagicMock()
         buckets = [
-            Bucket(
+            S3Bucket(
                 user_id=1,
                 bucket_name="my-bucket",
                 created_at=1_704_067_200,

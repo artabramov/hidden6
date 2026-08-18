@@ -22,7 +22,7 @@ from app.errors import (  # noqa: E402
     S3IllegalVersioningConfigurationError,
     S3XmlMalformedError,
 )
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_versioning_update import bucket_versioning_update  # noqa: E402
 
@@ -52,8 +52,8 @@ class TestBucketVersioningUpdate(unittest.IsolatedAsyncioTestCase):
         versioning_status: str,
         *,
         object_lock_enabled: bool = False,
-    ) -> Bucket:
-        return Bucket(
+    ) -> S3Bucket:
+        return S3Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",

@@ -22,7 +22,7 @@ from app.errors import (  # noqa: E402
     S3XmlMalformedError,
 )
 from app.hooks import Events  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_object_lock_update import (  # noqa: E402
     bucket_object_lock_update,
@@ -70,7 +70,7 @@ class TestBucketObjectLockUpdate(unittest.IsolatedAsyncioTestCase):
     def tearDown(self):
         self.log_patcher.stop()
 
-    def _bucket(self, **kwargs) -> Bucket:
+    def _bucket(self, **kwargs) -> S3Bucket:
         values = {
             "id": 7,
             "user_id": 1,
@@ -79,7 +79,7 @@ class TestBucketObjectLockUpdate(unittest.IsolatedAsyncioTestCase):
             "object_lock_enabled": False,
         }
         values.update(kwargs)
-        return Bucket(**values)
+        return S3Bucket(**values)
 
     def _repo(self):
         repo = MagicMock()

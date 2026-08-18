@@ -77,7 +77,7 @@ class S3ObjectMultipart(Base):
         server_default=text("'application/octet-stream'"),
     )
 
-    object_multipart_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
+    object_multipart_bucket: Mapped["S3Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objects_multiparts",
         lazy="raise",
     )

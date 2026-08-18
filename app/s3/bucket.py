@@ -7,7 +7,7 @@ from app.errors import (
     S3AccessDeniedError,
     S3BucketNotFoundError,
 )
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 
@@ -20,12 +20,12 @@ async def load_bucket(
     bucket_name: str,
     user: User,
     resource: str,
-) -> Bucket:
+) -> S3Bucket:
     """
     Load the bucket addressed by an object operation and authorize the
     caller against it (ADR-21): the owner and root are allowed.
     """
-    bucket = await repo.select(Bucket, bucket_name=bucket_name)
+    bucket = await repo.select(S3Bucket, bucket_name=bucket_name)
 
     if bucket is None:
         raise S3BucketNotFoundError(resource)
@@ -36,7 +36,7 @@ async def load_bucket(
 
 
 def bucket_default_object_lock(
-    bucket: Bucket,
+    bucket: S3Bucket,
     now: int | None = None,
 ) -> tuple[str | None, int | None]:
     """

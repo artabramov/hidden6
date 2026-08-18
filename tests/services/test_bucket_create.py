@@ -19,7 +19,7 @@ from app.errors import (  # noqa: E402
 )
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_create import bucket_create  # noqa: E402
 
@@ -96,7 +96,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         mkdir_mock.assert_awaited_once_with("/mnt/buckets/photos")
         repo.insert.assert_awaited_once()
         inserted = repo.insert.await_args.args[0]
-        self.assertIsInstance(inserted, Bucket)
+        self.assertIsInstance(inserted, S3Bucket)
         self.assertEqual(inserted.bucket_name, "photos")
         self.assertEqual(inserted.user_id, 1)
         repo.commit.assert_awaited_once()
@@ -106,7 +106,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         config = MagicMock()
         config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
         lock_ctx = self._build_lock_context()
-        existing = Bucket(user_id=1, bucket_name="photos")
+        existing = S3Bucket(user_id=1, bucket_name="photos")
         repo = MagicMock()
         repo.select = AsyncMock(return_value=existing)
 
@@ -135,7 +135,7 @@ class TestBucketCreate(unittest.IsolatedAsyncioTestCase):
         config = MagicMock()
         config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
         lock_ctx = self._build_lock_context()
-        existing = Bucket(user_id=99, bucket_name="photos")
+        existing = S3Bucket(user_id=99, bucket_name="photos")
         repo = MagicMock()
         repo.select = AsyncMock(return_value=existing)
 

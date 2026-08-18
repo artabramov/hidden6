@@ -15,7 +15,7 @@ from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
     S3ObjectKeyInvalidError,
 )
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.multipart_create import multipart_create  # noqa: E402
 
@@ -38,7 +38,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
-        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
 
         config = MagicMock()
         config.MOUNTPOINT_TMP_DIR = "/mnt/tmp"

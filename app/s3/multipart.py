@@ -14,7 +14,7 @@ from app.errors import (
     S3ObjectPartTooSmallError,
     S3ObjectUploadNotFoundError,
 )
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.object_multipart import S3ObjectMultipart
 from app.models.object_multipart_part import S3ObjectMultipartPart
 from app.repositories.io import isfile
@@ -25,7 +25,7 @@ from app.schemas.multipart_complete import MultipartPart
 
 async def load_multipart(
     repo: ORMRepository,
-    bucket: Bucket,
+    bucket: S3Bucket,
     object_key: str,
     upload_id: str,
     resource: str,

@@ -13,8 +13,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
+from app.models.bucket_tag import S3BucketTag  # noqa: E402
 from app.models.object import S3Object  # noqa: E402, F401
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
@@ -45,7 +45,7 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.user)
 
-        self.bucket = Bucket(
+        self.bucket = S3Bucket(
             user_id=self.user.id,
             bucket_name="photos",
         )
@@ -57,17 +57,17 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _tag(self, **kwargs) -> BucketTag:
+    def _tag(self, **kwargs) -> S3BucketTag:
         defaults = {
             "bucket_id": self.bucket.id,
             "tag_key": "color",
             "tag_value": "red",
         }
         defaults.update(kwargs)
-        return BucketTag(**defaults)
+        return S3BucketTag(**defaults)
 
     def test_tablename(self):
-        self.assertEqual(BucketTag.__tablename__, "buckets_tags")
+        self.assertEqual(S3BucketTag.__tablename__, "buckets_tags")
 
     def test_persists_required_fields(self):
         row = self._tag(tag_key="owner", tag_value="alice")
@@ -97,7 +97,7 @@ class TestBucketTagModel(unittest.TestCase):
             self.session.commit()
 
     def test_same_tag_key_allowed_on_different_buckets(self):
-        other = Bucket(
+        other = S3Bucket(
             user_id=self.user.id,
             bucket_name="docs",
         )
@@ -115,7 +115,7 @@ class TestBucketTagModel(unittest.TestCase):
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(BucketTag)).all()
+        rows = self.session.scalars(select(S3BucketTag)).all()
         self.assertEqual(len(rows), 2)
 
     def test_relationship_back_to_bucket(self):
@@ -124,9 +124,9 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(BucketTag)
-            .where(BucketTag.id == row.id)
-            .options(selectinload(BucketTag.bucket_tag_bucket)),
+            select(S3BucketTag)
+            .where(S3BucketTag.id == row.id)
+            .options(selectinload(S3BucketTag.bucket_tag_bucket)),
         )
 
         self.assertEqual(loaded.bucket_tag_bucket.id, self.bucket.id)
@@ -138,9 +138,9 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket)
-            .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_tags)),
+            select(S3Bucket)
+            .where(S3Bucket.id == self.bucket.id)
+            .options(selectinload(S3Bucket.bucket_tags)),
         )
 
         keys = sorted(item.tag_key for item in loaded.bucket_tags)
@@ -151,7 +151,7 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket).where(Bucket.id == self.bucket.id),
+            select(S3Bucket).where(S3Bucket.id == self.bucket.id),
         )
 
         with self.assertRaises(InvalidRequestError):
@@ -164,5 +164,5 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.delete(self.bucket)
         self.session.commit()
 
-        remaining = self.session.scalars(select(BucketTag)).all()
+        remaining = self.session.scalars(select(S3BucketTag)).all()
         self.assertEqual(remaining, [])

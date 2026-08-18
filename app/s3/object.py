@@ -8,7 +8,7 @@ from app.errors import (
     S3ObjectKeyConflictError,
     S3ObjectNotFoundError,
 )
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.io import isdir, mktree
@@ -18,7 +18,7 @@ from app.s3.bucket import bucket_default_object_lock
 
 async def load_object(
     repo: ORMRepository,
-    bucket: Bucket,
+    bucket: S3Bucket,
     object_key: str,
     resource: str,
 ) -> S3Object:
@@ -57,7 +57,7 @@ async def object_mkdir(object_path: str, resource: str) -> None:
 
 async def upsert_object(
     repo: ORMRepository,
-    bucket: Bucket,
+    bucket: S3Bucket,
     user: User,
     object_key: str,
     size_bytes: int,

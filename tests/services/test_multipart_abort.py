@@ -16,7 +16,7 @@ from app.errors import (  # noqa: E402
     S3ObjectUploadNotFoundError,
 )
 from app.locks import LockType  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.multipart_abort import multipart_abort  # noqa: E402
@@ -41,7 +41,7 @@ class TestMultipartAbort(unittest.IsolatedAsyncioTestCase):
         self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
-        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
         self.multipart = S3ObjectMultipart(
             id=5,
             bucket_id=7,

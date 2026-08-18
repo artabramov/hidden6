@@ -12,7 +12,7 @@ from app.errors import (
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.user import User
 from app.repositories.io import isdir, isfile, mktree, rmdir
 from app.repositories.orm import ORMRepository
@@ -26,7 +26,7 @@ async def bucket_create(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-) -> Bucket:
+) -> S3Bucket:
     """
     Create an S3 bucket for the specified user.
 
@@ -47,7 +47,7 @@ async def bucket_create(
 
     async with locks.lock_directory(bucket_path, LockType.WRITE):
         repo = ORMRepository(session)
-        existing = await repo.select(Bucket, bucket_name=bucket_name)
+        existing = await repo.select(S3Bucket, bucket_name=bucket_name)
 
         if existing is not None:
             if existing.user_id == current_user.id:
@@ -64,7 +64,7 @@ async def bucket_create(
         try:
             directory_created = False
 
-            bucket = Bucket(user_id=current_user.id, bucket_name=bucket_name)
+            bucket = S3Bucket(user_id=current_user.id, bucket_name=bucket_name)
             await repo.insert(bucket)
 
             await mktree(bucket_path)

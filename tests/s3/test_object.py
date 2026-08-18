@@ -17,7 +17,7 @@ from app.errors import (  # noqa: E402
     S3ObjectKeyConflictError,
     S3ObjectNotFoundError,
 )
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.s3.object import load_object, object_mkdir, upsert_object  # noqa: E402
@@ -100,7 +100,7 @@ class TestObjectPath(unittest.TestCase):
 
 class TestObjectLoad(unittest.IsolatedAsyncioTestCase):
     async def test_returns_object(self):
-        bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
         s3_object = S3Object(
             id=3,
             bucket_id=7,
@@ -123,7 +123,7 @@ class TestObjectLoad(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_delete_marker_raises(self):
-        bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
         s3_object = S3Object(
             id=3,
             bucket_id=7,
@@ -138,7 +138,7 @@ class TestObjectLoad(unittest.IsolatedAsyncioTestCase):
             await load_object(repo, bucket, "gone.txt", "/photos/gone.txt")
 
     async def test_missing_object_raises(self):
-        bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
         repo = MagicMock()
         repo.select = AsyncMock(return_value=None)
 
@@ -188,7 +188,7 @@ class TestObjectMkdir(unittest.IsolatedAsyncioTestCase):
 class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.user = User(id=1, username="alice", is_root=False)
-        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
 
     def _build_repo(self, existing):
         repo = MagicMock()

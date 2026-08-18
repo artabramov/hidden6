@@ -12,7 +12,7 @@ set_minimal_app_config_env()
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import S3BucketNotFoundError, S3AccessDeniedError  # noqa: E402
 from app.hooks import Events  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_get import bucket_get  # noqa: E402
@@ -24,7 +24,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
-        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
 
     def _build_repo(self, bucket=None, s3_objects=None):
         repo = MagicMock()

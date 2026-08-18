@@ -64,7 +64,7 @@ class User(Base):
         lazy="raise",
     )
 
-    user_buckets: Mapped[list["Bucket"]] = relationship(  # noqa: F821
+    user_buckets: Mapped[list["S3Bucket"]] = relationship(  # noqa: F821
         back_populates="bucket_user",
         lazy="raise",
     )

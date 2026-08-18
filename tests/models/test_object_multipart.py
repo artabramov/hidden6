@@ -13,8 +13,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.bucket import S3Bucket  # noqa: E402
+from app.models.bucket_tag import S3BucketTag  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
 from app.models.object_multipart_metadata import S3ObjectMultipartMetadata  # noqa: E402, F401
 from app.models.object_multipart_tag import S3ObjectMultipartTag  # noqa: E402, F401
@@ -45,7 +45,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.user)
 
-        self.bucket = Bucket(
+        self.bucket = S3Bucket(
             user_id=self.user.id,
             bucket_name="photos",
         )
@@ -151,9 +151,9 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket)
-            .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_objects_multiparts)),
+            select(S3Bucket)
+            .where(S3Bucket.id == self.bucket.id)
+            .options(selectinload(S3Bucket.bucket_objects_multiparts)),
         )
 
         keys = sorted(m.object_key for m in loaded.bucket_objects_multiparts)
@@ -164,7 +164,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket).where(Bucket.id == self.bucket.id),
+            select(S3Bucket).where(S3Bucket.id == self.bucket.id),
         )
 
         with self.assertRaises(InvalidRequestError):

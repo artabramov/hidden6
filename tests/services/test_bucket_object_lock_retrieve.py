@@ -16,7 +16,7 @@ from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
     S3ObjectLockConfigurationNotFoundError,
 )
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_object_lock_retrieve import (  # noqa: E402
     bucket_object_lock_retrieve,
@@ -30,8 +30,8 @@ class TestBucketObjectLockRetrieve(unittest.IsolatedAsyncioTestCase):
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
 
-    def _bucket(self, *, object_lock_enabled: bool) -> Bucket:
-        return Bucket(
+    def _bucket(self, *, object_lock_enabled: bool) -> S3Bucket:
+        return S3Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",

@@ -17,7 +17,7 @@ from app.errors import (  # noqa: E402
     S3ObjectPartTooSmallError,
     S3ObjectUploadNotFoundError,
 )
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
 from app.models.object_multipart_part import S3ObjectMultipartPart  # noqa: E402
 from app.s3.multipart import (  # noqa: E402
@@ -34,7 +34,7 @@ load_all_models()
 
 class TestLoadMultipart(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
         self.multipart = S3ObjectMultipart(
             id=5,
             bucket_id=7,

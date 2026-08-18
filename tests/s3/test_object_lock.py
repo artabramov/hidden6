@@ -15,7 +15,7 @@ from app.constants import (  # noqa: E402
 )
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import S3BucketStateInvalidError  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import (  # noqa: E402, F401
     S3ObjectVersionMetadata,
@@ -29,7 +29,7 @@ RESOURCE = "/photos"
 
 
 class TestSetBucketObjectLockConfiguration(unittest.TestCase):
-    def _bucket(self, **kwargs) -> Bucket:
+    def _bucket(self, **kwargs) -> S3Bucket:
         values = {
             "id": 1,
             "user_id": 1,
@@ -38,7 +38,7 @@ class TestSetBucketObjectLockConfiguration(unittest.TestCase):
             "object_lock_enabled": False,
         }
         values.update(kwargs)
-        return Bucket(**values)
+        return S3Bucket(**values)
 
     def _set(self, bucket, **kwargs) -> None:
         defaults = {

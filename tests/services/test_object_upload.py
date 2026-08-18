@@ -18,7 +18,7 @@ from app.errors import (  # noqa: E402
 )
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.object_upload import object_upload  # noqa: E402
@@ -38,7 +38,7 @@ class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.body = MagicMock()
-        self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
         self.s3_object = S3Object(
             id=3,
             bucket_id=7,

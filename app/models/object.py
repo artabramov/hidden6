@@ -164,7 +164,7 @@ class S3Object(Base):
         server_default=text("0"),
     )
 
-    object_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
+    object_bucket: Mapped["S3Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_objects",
         lazy="raise",
     )

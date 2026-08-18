@@ -13,8 +13,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.bucket import S3Bucket  # noqa: E402
+from app.models.bucket_tag import S3BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402, F401
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
@@ -87,7 +87,7 @@ class TestUserModel(unittest.TestCase):
             access_key_id="AKIAEXAMPLE000001",
             secret_access_key_encrypted="enc-secret",
         )
-        bucket = Bucket(user_id=user.id, bucket_name="photos")
+        bucket = S3Bucket(user_id=user.id, bucket_name="photos")
         self.session.add_all([key, bucket])
         self.session.commit()
 

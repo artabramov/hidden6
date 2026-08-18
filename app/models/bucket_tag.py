@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class BucketTag(Base):
+class S3BucketTag(Base):
     """
     S3 tag associated with a bucket.
 
@@ -44,7 +44,7 @@ class BucketTag(Base):
         nullable=False,
     )
 
-    bucket_tag_bucket: Mapped["Bucket"] = relationship(  # noqa: F821
+    bucket_tag_bucket: Mapped["S3Bucket"] = relationship(  # noqa: F821
         back_populates="bucket_tags",
         foreign_keys=[bucket_id],
         lazy="raise",

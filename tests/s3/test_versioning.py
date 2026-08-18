@@ -18,7 +18,7 @@ from app.errors import (  # noqa: E402
     S3BucketStateInvalidError,
     S3IllegalVersioningConfigurationError,
 )
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import (  # noqa: E402, F401
     S3ObjectVersionMetadata,
@@ -36,7 +36,7 @@ RESOURCE = "/photos"
 
 class TestGetBucketVersioningStatus(unittest.TestCase):
     def test_disabled_exposes_no_status(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -46,7 +46,7 @@ class TestGetBucketVersioningStatus(unittest.TestCase):
         self.assertIsNone(get_bucket_versioning_status(bucket))
 
     def test_enabled_returns_s3_status(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -59,7 +59,7 @@ class TestGetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_suspended_returns_s3_status(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -74,7 +74,7 @@ class TestGetBucketVersioningStatus(unittest.TestCase):
 
 class TestSetBucketVersioningStatus(unittest.TestCase):
     def test_enables_from_disabled(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -93,7 +93,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_suspends_from_disabled(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -112,7 +112,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_suspends_from_enabled(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -131,7 +131,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_reenables_from_suspended(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -150,7 +150,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_enables_when_object_lock_enabled(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -170,7 +170,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_rejects_suspend_when_object_lock_enabled(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -192,7 +192,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_rejects_disabled_status(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",
@@ -213,7 +213,7 @@ class TestSetBucketVersioningStatus(unittest.TestCase):
         )
 
     def test_rejects_unknown_status(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=1,
             user_id=1,
             bucket_name="photos",

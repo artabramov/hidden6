@@ -49,7 +49,7 @@ from app.db.base import Base
 #     versionId permanently removes the specified version.
 
 
-class Bucket(Base):
+class S3Bucket(Base):
     """
     S3 bucket owned by a user.
 
@@ -154,7 +154,7 @@ class Bucket(Base):
         lazy="raise",
     )
 
-    bucket_tags: Mapped[list["BucketTag"]] = relationship(  # noqa: F821
+    bucket_tags: Mapped[list["S3BucketTag"]] = relationship(  # noqa: F821
         back_populates="bucket_tag_bucket",
         cascade="all, delete-orphan",
         lazy="raise",

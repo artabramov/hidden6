@@ -10,10 +10,10 @@ from app.errors import (
     S3BucketStateInvalidError,
     S3IllegalVersioningConfigurationError,
 )
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 
 
-def get_bucket_versioning_status(bucket: Bucket) -> str | None:
+def get_bucket_versioning_status(bucket: S3Bucket) -> str | None:
     """
     Return the S3 versioning status for a bucket.
 
@@ -28,7 +28,7 @@ def get_bucket_versioning_status(bucket: Bucket) -> str | None:
 
 
 def set_bucket_versioning_status(
-    bucket: Bucket,
+    bucket: S3Bucket,
     versioning_status: str,
     resource: str,
 ) -> None:

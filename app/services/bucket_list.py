@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.hooks import Events, hooks
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 
@@ -12,7 +12,7 @@ from app.repositories.orm import ORMRepository
 async def bucket_list(
     session: AsyncSession,
     current_user: User,
-) -> list[Bucket]:
+) -> list[S3Bucket]:
     """
     List S3 buckets visible to the authenticated user.
 
@@ -28,7 +28,7 @@ async def bucket_list(
         filters["user_id"] = current_user.id
 
     repo = ORMRepository(session)
-    buckets = await repo.select_all(Bucket, **filters)
+    buckets = await repo.select_all(S3Bucket, **filters)
 
     await hooks.emit(Events.BUCKET_LISTED, buckets)
     return buckets

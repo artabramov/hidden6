@@ -17,7 +17,7 @@ from app.constants import (  # noqa: E402
     S3_XMLNS,
 )
 from app.db.engine import load_all_models  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.routers.bucket_get import bucket_get_router  # noqa: E402
@@ -237,7 +237,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
     async def test_returns_object_lock_xml_without_default_rule(self):
         user = User(id=1, username="alice", is_root=False)
         session = MagicMock()
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",
@@ -286,7 +286,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
     async def test_returns_object_lock_xml_with_default_retention(self):
         user = User(id=1, username="alice", is_root=False)
         session = MagicMock()
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",
@@ -322,7 +322,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
     async def test_object_lock_query_takes_precedence_over_versioning(self):
         user = User(id=1, username="alice", is_root=False)
         session = MagicMock()
-        bucket = Bucket(
+        bucket = S3Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",

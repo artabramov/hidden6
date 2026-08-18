@@ -11,7 +11,7 @@ set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
 from app.hooks import Events  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_list import bucket_list  # noqa: E402
 
@@ -24,7 +24,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
 
     async def test_non_root_lists_own_buckets_only(self):
         user = User(id=1, username="alice", is_root=False)
-        buckets = [Bucket(user_id=1, bucket_name="photos")]
+        buckets = [S3Bucket(user_id=1, bucket_name="photos")]
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=buckets)
 
@@ -41,7 +41,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
             result = await bucket_list(session=self.session, current_user=user)
 
         repo.select_all.assert_awaited_once_with(
-            Bucket,
+            S3Bucket,
             order_by="bucket_name",
             order="asc",
             user_id=1,
@@ -52,8 +52,8 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
     async def test_root_lists_all_buckets(self):
         user = User(id=1, username="root", is_root=True)
         buckets = [
-            Bucket(user_id=1, bucket_name="a"),
-            Bucket(user_id=2, bucket_name="b"),
+            S3Bucket(user_id=1, bucket_name="a"),
+            S3Bucket(user_id=2, bucket_name="b"),
         ]
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=buckets)
@@ -71,7 +71,7 @@ class TestBucketList(unittest.IsolatedAsyncioTestCase):
             result = await bucket_list(session=self.session, current_user=user)
 
         repo.select_all.assert_awaited_once_with(
-            Bucket,
+            S3Bucket,
             order_by="bucket_name",
             order="asc",
         )

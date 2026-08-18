@@ -16,7 +16,7 @@ from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
 )
 from app.constants import BUCKET_VERSIONING_ENABLED  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.s3.bucket import bucket_default_object_lock, load_bucket  # noqa: E402
 
@@ -55,7 +55,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
         return repo
 
     async def test_returns_own_bucket(self):
-        bucket = Bucket(id=7, user_id=1, bucket_name="photos")
+        bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
 
         result = await load_bucket(
             self._build_repo(bucket),
@@ -67,7 +67,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
         self.assertIs(result, bucket)
 
     async def test_returns_foreign_bucket_for_root(self):
-        bucket = Bucket(id=7, user_id=99, bucket_name="photos")
+        bucket = S3Bucket(id=7, user_id=99, bucket_name="photos")
 
         result = await load_bucket(
             self._build_repo(bucket),
@@ -88,7 +88,7 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_foreign_bucket_is_denied(self):
-        bucket = Bucket(id=7, user_id=99, bucket_name="photos")
+        bucket = S3Bucket(id=7, user_id=99, bucket_name="photos")
 
         with self.assertRaises(S3AccessDeniedError):
             await load_bucket(
@@ -101,12 +101,12 @@ class TestBucketLoad(unittest.IsolatedAsyncioTestCase):
 
 class TestBucketDefaultObjectLock(unittest.TestCase):
     def test_returns_none_when_lock_disabled(self):
-        bucket = Bucket(user_id=1, bucket_name="photos")
+        bucket = S3Bucket(user_id=1, bucket_name="photos")
 
         self.assertEqual(bucket_default_object_lock(bucket), (None, None))
 
     def test_returns_none_when_no_default_rule(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             user_id=1,
             bucket_name="photos",
             versioning_status=BUCKET_VERSIONING_ENABLED,
@@ -116,7 +116,7 @@ class TestBucketDefaultObjectLock(unittest.TestCase):
         self.assertEqual(bucket_default_object_lock(bucket), (None, None))
 
     def test_computes_retain_until_from_days(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             user_id=1,
             bucket_name="photos",
             versioning_status=BUCKET_VERSIONING_ENABLED,
@@ -131,7 +131,7 @@ class TestBucketDefaultObjectLock(unittest.TestCase):
         self.assertEqual(until, 1000 + 10 * 86400)
 
     def test_computes_retain_until_from_years(self):
-        bucket = Bucket(
+        bucket = S3Bucket(
             user_id=1,
             bucket_name="photos",
             versioning_status=BUCKET_VERSIONING_ENABLED,

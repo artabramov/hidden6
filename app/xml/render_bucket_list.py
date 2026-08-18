@@ -4,14 +4,14 @@
 from xml.sax.saxutils import escape
 
 from app.constants import S3_XMLNS
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.user import User
 from app.s3.datetime import format_datetime
 
 
 def render_bucket_list(
     owner: User,
-    buckets: list[Bucket],
+    buckets: list[S3Bucket],
 ) -> str:
     """
     Render an S3-compatible XML response containing the bucket list.

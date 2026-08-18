@@ -13,8 +13,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.bucket import S3Bucket  # noqa: E402
+from app.models.bucket_tag import S3BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
@@ -45,7 +45,7 @@ class TestS3ObjectTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.user)
 
-        self.bucket = Bucket(
+        self.bucket = S3Bucket(
             user_id=self.user.id,
             bucket_name="photos",
         )

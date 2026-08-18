@@ -8,7 +8,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.xml.render_bucket_list import render_bucket_list  # noqa: E402
 
@@ -27,8 +27,8 @@ class TestRenderBucketList(unittest.TestCase):
     def test_render_buckets_sorted_by_caller(self):
         owner = User(id=2, username="alice", is_root=False)
         buckets = [
-            Bucket(user_id=2, bucket_name="alpha", created_at=1_704_067_200),
-            Bucket(user_id=2, bucket_name="beta", created_at=1_704_153_600),
+            S3Bucket(user_id=2, bucket_name="alpha", created_at=1_704_067_200),
+            S3Bucket(user_id=2, bucket_name="beta", created_at=1_704_153_600),
         ]
         xml = render_bucket_list(owner=owner, buckets=buckets)
 
@@ -46,7 +46,7 @@ class TestRenderBucketList(unittest.TestCase):
     def test_escapes_xml_special_characters(self):
         owner = User(id=1, username="a&b", is_root=True)
         buckets = [
-            Bucket(user_id=1, bucket_name="x<y", created_at=1_704_067_200),
+            S3Bucket(user_id=1, bucket_name="x<y", created_at=1_704_067_200),
         ]
         xml = render_bucket_list(owner=owner, buckets=buckets)
 

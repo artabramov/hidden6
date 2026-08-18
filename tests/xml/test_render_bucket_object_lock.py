@@ -10,7 +10,7 @@ set_minimal_app_config_env()
 
 from app.constants import BUCKET_VERSIONING_ENABLED, S3_XMLNS  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.xml.render_bucket_object_lock import (  # noqa: E402
     render_bucket_object_lock,
 )
@@ -19,7 +19,7 @@ load_all_models()
 
 
 class TestRenderBucketObjectLock(unittest.TestCase):
-    def _bucket(self, **kwargs) -> Bucket:
+    def _bucket(self, **kwargs) -> S3Bucket:
         values = {
             "id": 1,
             "user_id": 1,
@@ -28,7 +28,7 @@ class TestRenderBucketObjectLock(unittest.TestCase):
             "object_lock_enabled": True,
         }
         values.update(kwargs)
-        return Bucket(**values)
+        return S3Bucket(**values)
 
     def test_renders_enabled_without_default_rule(self):
         xml = render_bucket_object_lock(self._bucket())

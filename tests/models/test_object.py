@@ -13,8 +13,8 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.bucket import S3Bucket  # noqa: E402
+from app.models.bucket_tag import S3BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
@@ -45,7 +45,7 @@ class TestObjectModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.user)
 
-        self.bucket = Bucket(
+        self.bucket = S3Bucket(
             user_id=self.user.id,
             bucket_name="photos",
         )
@@ -128,7 +128,7 @@ class TestObjectModel(unittest.TestCase):
             self.session.commit()
 
     def test_same_key_allowed_in_different_buckets(self):
-        other = Bucket(user_id=self.user.id, bucket_name="docs")
+        other = S3Bucket(user_id=self.user.id, bucket_name="docs")
         self.session.add(other)
         self.session.commit()
         self.session.refresh(other)
@@ -272,9 +272,9 @@ class TestObjectModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket)
-            .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_objects)),
+            select(S3Bucket)
+            .where(S3Bucket.id == self.bucket.id)
+            .options(selectinload(S3Bucket.bucket_objects)),
         )
 
         keys = sorted(o.object_key for o in loaded.bucket_objects)
@@ -285,7 +285,7 @@ class TestObjectModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket).where(Bucket.id == self.bucket.id),
+            select(S3Bucket).where(S3Bucket.id == self.bucket.id),
         )
 
         with self.assertRaises(InvalidRequestError):

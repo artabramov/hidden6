@@ -18,8 +18,8 @@ from app.constants import (  # noqa: E402
     BUCKET_VERSIONING_ENABLED,
     BUCKET_VERSIONING_SUSPENDED,
 )
-from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.bucket import S3Bucket  # noqa: E402
+from app.models.bucket_tag import S3BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402, F401
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
@@ -54,15 +54,15 @@ class TestBucketModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _bucket(self, **kwargs) -> Bucket:
+    def _bucket(self, **kwargs) -> S3Bucket:
         defaults = {
             "user_id": self.user.id,
             "bucket_name": "photos",
         }
         defaults.update(kwargs)
-        return Bucket(**defaults)
+        return S3Bucket(**defaults)
 
-    def _lock_bucket(self, **kwargs) -> Bucket:
+    def _lock_bucket(self, **kwargs) -> S3Bucket:
         defaults = {
             "versioning_status": BUCKET_VERSIONING_ENABLED,
             "object_lock_enabled": True,
@@ -76,7 +76,7 @@ class TestBucketModel(unittest.TestCase):
             self.session.commit()
 
     def test_tablename(self):
-        self.assertEqual(Bucket.__tablename__, "buckets")
+        self.assertEqual(S3Bucket.__tablename__, "buckets")
 
     def test_persists_required_fields_and_defaults(self):
         bucket = self._bucket()
@@ -155,7 +155,7 @@ class TestBucketModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(other)
 
-        self.session.add(Bucket(user_id=other.id, bucket_name="photos"))
+        self.session.add(S3Bucket(user_id=other.id, bucket_name="photos"))
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
@@ -223,9 +223,9 @@ class TestBucketModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket)
-            .where(Bucket.id == bucket.id)
-            .options(selectinload(Bucket.bucket_user)),
+            select(S3Bucket)
+            .where(S3Bucket.id == bucket.id)
+            .options(selectinload(S3Bucket.bucket_user)),
         )
 
         self.assertEqual(loaded.bucket_user.id, self.user.id)
@@ -257,7 +257,7 @@ class TestBucketModel(unittest.TestCase):
             _ = loaded_user.user_buckets
 
         loaded_bucket = self.session.scalar(
-            select(Bucket).where(Bucket.bucket_name == "photos"),
+            select(S3Bucket).where(S3Bucket.bucket_name == "photos"),
         )
 
         with self.assertRaises(InvalidRequestError):

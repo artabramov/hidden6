@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import S3ObjectLockConfigurationNotFoundError
 from app.hooks import Events, hooks
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
@@ -15,7 +15,7 @@ async def bucket_object_lock_retrieve(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-) -> Bucket:
+) -> S3Bucket:
     """
     Retrieve the S3 Object Lock configuration for a bucket.
 

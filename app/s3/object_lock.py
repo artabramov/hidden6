@@ -3,11 +3,11 @@
 
 from app.constants import BUCKET_VERSIONING_ENABLED
 from app.errors import S3BucketStateInvalidError
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 
 
 def set_bucket_object_lock_configuration(
-    bucket: Bucket,
+    bucket: S3Bucket,
     object_lock_enabled: str | None,
     default_lock_mode: str | None,
     default_retention_days: int | None,

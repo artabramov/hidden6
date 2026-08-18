@@ -9,7 +9,7 @@ from app.hooks import Events, HookManager
 from app.repositories.orm import ORMRepository
 from app.models.user import User
 from app.models.user_key import UserKey
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 from app.models.object import S3Object
 
 
@@ -43,27 +43,27 @@ async def user_initialized(user: User) -> None:
     ...
 
 
-async def bucket_created(bucket: Bucket) -> None:
+async def bucket_created(bucket: S3Bucket) -> None:
     ...
 
 
-async def bucket_listed(buckets: List[Bucket]) -> None:
+async def bucket_listed(buckets: List[S3Bucket]) -> None:
     ...
 
 
-async def bucket_versioning_retrieved(bucket: Bucket) -> None:
+async def bucket_versioning_retrieved(bucket: S3Bucket) -> None:
     ...
 
 
-async def bucket_versioning_updated(bucket: Bucket) -> None:
+async def bucket_versioning_updated(bucket: S3Bucket) -> None:
     ...
 
 
-async def bucket_object_lock_retrieved(bucket: Bucket) -> None:
+async def bucket_object_lock_retrieved(bucket: S3Bucket) -> None:
     ...
 
 
-async def bucket_object_lock_updated(bucket: Bucket) -> None:
+async def bucket_object_lock_updated(bucket: S3Bucket) -> None:
     ...
 
 

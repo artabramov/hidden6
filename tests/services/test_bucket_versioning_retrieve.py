@@ -16,7 +16,7 @@ from app.constants import (  # noqa: E402
 )
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import S3AccessDeniedError, S3BucketNotFoundError  # noqa: E402
-from app.models.bucket import Bucket  # noqa: E402
+from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve  # noqa: E402
 
@@ -28,8 +28,8 @@ class TestBucketVersioningRetrieve(unittest.IsolatedAsyncioTestCase):
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
 
-    def _bucket(self, versioning_status: str) -> Bucket:
-        return Bucket(
+    def _bucket(self, versioning_status: str) -> S3Bucket:
+        return S3Bucket(
             id=7,
             user_id=1,
             bucket_name="photos",

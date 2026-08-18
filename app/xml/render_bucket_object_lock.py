@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 from app.constants import S3_XMLNS
-from app.models.bucket import Bucket
+from app.models.bucket import S3Bucket
 
 
-def render_bucket_object_lock(bucket: Bucket) -> str:
+def render_bucket_object_lock(bucket: S3Bucket) -> str:
     """
     Render an S3-compatible ObjectLockConfiguration XML response.
     """
