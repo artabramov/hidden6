@@ -32,7 +32,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
         session = MagicMock()
 
         with patch(
-            "app.routers.object_upload.objekt_upload",
+            "app.routers.object_upload.object_upload",
             new_callable=AsyncMock,
             return_value=objekt,
         ) as mock_service:

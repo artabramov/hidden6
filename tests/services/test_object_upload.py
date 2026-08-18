@@ -21,7 +21,7 @@ from app.locks import LockType  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.object import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.object_upload import objekt_upload  # noqa: E402
+from app.services.object_upload import object_upload  # noqa: E402
 
 load_all_models()
 
@@ -129,7 +129,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.emit = self._patch("hooks.emit", new_callable=AsyncMock)
 
     async def _upload(self, key="2024/cat.png"):
-        return await objekt_upload(
+        return await object_upload(
             session=self.session,
             current_user=self.user,
             bucket_name="photos",

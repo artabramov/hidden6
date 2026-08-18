@@ -126,7 +126,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.assertFalse(version.legal_hold)
         self.assertIsInstance(version.created_at, int)
 
-    def test_same_objekt_may_have_many_versions(self):
+    def test_same_object_may_have_many_versions(self):
         self.session.add(self._version(version_id="a" * 32, etag="a" * 32))
         self.session.add(
             self._version(

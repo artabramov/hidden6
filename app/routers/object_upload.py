@@ -14,7 +14,7 @@ from app.errors import S3ObjectPartNumberInvalidError
 from app.models.user import User
 from app.s3.headers import etag_headers
 from app.services.multipart_upload import multipart_upload
-from app.services.object_upload import objekt_upload
+from app.services.object_upload import object_upload
 from app.streams import build_body_reader
 
 router = APIRouter(include_in_schema=False)
@@ -113,7 +113,7 @@ async def object_upload_router(
             headers=etag_headers(etag),
         )
 
-    objekt = await objekt_upload(
+    objekt = await object_upload(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,

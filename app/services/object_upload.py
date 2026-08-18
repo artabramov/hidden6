@@ -102,7 +102,7 @@ log = logging.getLogger(__name__)
 # x-amz-version-id when versioning is Enabled or Suspended. Disabled
 # buckets expose the null version without a version header.
 
-async def objekt_upload(
+async def object_upload(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
