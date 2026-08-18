@@ -15,8 +15,8 @@ from app.errors import (
     S3ObjectUploadNotFoundError,
 )
 from app.models.bucket import Bucket
-from app.models.objekt_multipart import ObjektMultipart
-from app.models.objekt_multipart_part import ObjektMultipartPart
+from app.models.object_multipart import ObjektMultipart
+from app.models.object_multipart_part import ObjektMultipartPart
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.paths import resolve_multipart_part_path

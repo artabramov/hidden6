@@ -72,12 +72,12 @@ def load_all_models() -> None:
     import app.models.bucket  # noqa: F401, PLC0415
     import app.models.bucket_tag  # noqa: F401, PLC0415
     import app.models.objekt  # noqa: F401, PLC0415
-    import app.models.objekt_metadata  # noqa: F401, PLC0415
-    import app.models.objekt_multipart  # noqa: F401, PLC0415
-    import app.models.objekt_multipart_metadata  # noqa: F401, PLC0415
-    import app.models.objekt_multipart_part  # noqa: F401, PLC0415
-    import app.models.objekt_multipart_tag  # noqa: F401, PLC0415
-    import app.models.objekt_tag  # noqa: F401, PLC0415
-    import app.models.objekt_version  # noqa: F401, PLC0415
-    import app.models.objekt_version_metadata  # noqa: F401, PLC0415
-    import app.models.objekt_version_tag  # noqa: F401, PLC0415
+    import app.models.object_metadata  # noqa: F401, PLC0415
+    import app.models.object_multipart  # noqa: F401, PLC0415
+    import app.models.object_multipart_metadata  # noqa: F401, PLC0415
+    import app.models.object_multipart_part  # noqa: F401, PLC0415
+    import app.models.object_multipart_tag  # noqa: F401, PLC0415
+    import app.models.object_tag  # noqa: F401, PLC0415
+    import app.models.object_version  # noqa: F401, PLC0415
+    import app.models.object_version_metadata  # noqa: F401, PLC0415
+    import app.models.object_version_tag  # noqa: F401, PLC0415

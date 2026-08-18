@@ -19,11 +19,11 @@ from app.errors import (  # noqa: E402
     S3IllegalVersioningConfigurationError,
 )
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
-from app.models.objekt_version_metadata import (  # noqa: E402, F401
+from app.models.object_version import ObjektVersion  # noqa: E402, F401
+from app.models.object_version_metadata import (  # noqa: E402, F401
     ObjektVersionMetadata,
 )
-from app.models.objekt_version_tag import ObjektVersionTag  # noqa: E402, F401
+from app.models.object_version_tag import ObjektVersionTag  # noqa: E402, F401
 from app.s3.versioning import (  # noqa: E402
     get_bucket_versioning_status,
     set_bucket_versioning_status,

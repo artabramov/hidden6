@@ -11,11 +11,11 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_get import bucket_get
-from app.services.bucket_objekt_lock_retrieve import bucket_objekt_lock_retrieve  # noqa: E501
+from app.services.bucket_object_lock_retrieve import bucket_objekt_lock_retrieve  # noqa: E501
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
-from app.xml.render_objekt_list import render_objekt_list
+from app.xml.render_object_list import render_objekt_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
-from app.xml.render_bucket_objekt_lock import render_bucket_objekt_lock
+from app.xml.render_bucket_object_lock import render_bucket_objekt_lock
 
 router = APIRouter(include_in_schema=False)
 

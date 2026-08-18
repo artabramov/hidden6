@@ -1,4 +1,4 @@
-# tests/models/test_bucket_tag.py
+# tests/models/test_object_tag.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -14,14 +14,14 @@ set_minimal_app_config_env()
 
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.bucket_tag import BucketTag  # noqa: E402
-from app.models.objekt import Objekt  # noqa: E402, F401
+from app.models.bucket_tag import BucketTag  # noqa: E402, F401
+from app.models.objekt import Objekt  # noqa: E402
 from app.models.object_metadata import ObjektMetadata  # noqa: E402, F401
 from app.models.object_multipart import ObjektMultipart  # noqa: E402, F401
 from app.models.object_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
 from app.models.object_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
 from app.models.object_multipart_part import ObjektMultipartPart  # noqa: E402, F401
-from app.models.object_tag import ObjektTag  # noqa: E402, F401
+from app.models.object_tag import ObjektTag  # noqa: E402
 from app.models.object_version import ObjektVersion  # noqa: E402, F401
 from app.models.object_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
 from app.models.object_version_tag import ObjektVersionTag  # noqa: E402, F401
@@ -29,7 +29,7 @@ from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestBucketTagModel(unittest.TestCase):
+class TestObjektTagModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -53,21 +53,33 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
+        self.objekt = Objekt(
+            bucket_id=self.bucket.id,
+            user_id=self.user.id,
+            object_key="a.txt",
+            size_bytes=10,
+            etag="c" * 32,
+            content_type="text/plain",
+        )
+        self.session.add(self.objekt)
+        self.session.commit()
+        self.session.refresh(self.objekt)
+
     def tearDown(self):
         self.session.close()
         self.engine.dispose()
 
-    def _tag(self, **kwargs) -> BucketTag:
+    def _tag(self, **kwargs) -> ObjektTag:
         defaults = {
-            "bucket_id": self.bucket.id,
+            "objekt_id": self.objekt.id,
             "tag_key": "color",
             "tag_value": "red",
         }
         defaults.update(kwargs)
-        return BucketTag(**defaults)
+        return ObjektTag(**defaults)
 
     def test_tablename(self):
-        self.assertEqual(BucketTag.__tablename__, "buckets_tags")
+        self.assertEqual(ObjektTag.__tablename__, "objekts_tags")
 
     def test_persists_required_fields(self):
         row = self._tag(tag_key="owner", tag_value="alice")
@@ -76,7 +88,7 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.refresh(row)
 
         self.assertIsNotNone(row.id)
-        self.assertEqual(row.bucket_id, self.bucket.id)
+        self.assertEqual(row.objekt_id, self.objekt.id)
         self.assertEqual(row.tag_key, "owner")
         self.assertEqual(row.tag_value, "alice")
 
@@ -88,7 +100,7 @@ class TestBucketTagModel(unittest.TestCase):
 
         self.assertEqual(row.tag_value, "")
 
-    def test_tag_key_unique_per_bucket(self):
+    def test_tag_key_unique_per_objekt(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.commit()
 
@@ -96,10 +108,14 @@ class TestBucketTagModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_tag_key_allowed_on_different_buckets(self):
-        other = Bucket(
+    def test_same_tag_key_allowed_on_different_objekts(self):
+        other = Objekt(
+            bucket_id=self.bucket.id,
             user_id=self.user.id,
-            bucket_name="docs",
+            object_key="b.txt",
+            size_bytes=2,
+            etag="d" * 32,
+            content_type="text/plain",
         )
         self.session.add(other)
         self.session.commit()
@@ -108,42 +124,42 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(
             self._tag(
-                bucket_id=other.id,
+                objekt_id=other.id,
                 tag_key="color",
                 tag_value="blue",
             ),
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(BucketTag)).all()
+        rows = self.session.scalars(select(ObjektTag)).all()
         self.assertEqual(len(rows), 2)
 
-    def test_relationship_back_to_bucket(self):
+    def test_relationship_back_to_objekt(self):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(BucketTag)
-            .where(BucketTag.id == row.id)
-            .options(selectinload(BucketTag.bucket_tag_bucket)),
+            select(ObjektTag)
+            .where(ObjektTag.id == row.id)
+            .options(selectinload(ObjektTag.objekt_tag_objekt)),
         )
 
-        self.assertEqual(loaded.bucket_tag_bucket.id, self.bucket.id)
-        self.assertEqual(loaded.bucket_tag_bucket.bucket_name, "photos")
+        self.assertEqual(loaded.objekt_tag_objekt.id, self.objekt.id)
+        self.assertEqual(loaded.objekt_tag_objekt.object_key, "a.txt")
 
-    def test_bucket_relationship_to_tags(self):
+    def test_objekt_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(self._tag(tag_key="owner", tag_value="alice"))
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket)
-            .where(Bucket.id == self.bucket.id)
-            .options(selectinload(Bucket.bucket_tags)),
+            select(Objekt)
+            .where(Objekt.id == self.objekt.id)
+            .options(selectinload(Objekt.objekt_tags)),
         )
 
-        keys = sorted(item.tag_key for item in loaded.bucket_tags)
+        keys = sorted(item.tag_key for item in loaded.objekt_tags)
         self.assertEqual(keys, ["color", "owner"])
 
     def test_relationship_access_without_eager_load_raises(self):
@@ -151,18 +167,18 @@ class TestBucketTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Bucket).where(Bucket.id == self.bucket.id),
+            select(Objekt).where(Objekt.id == self.objekt.id),
         )
 
         with self.assertRaises(InvalidRequestError):
-            _ = loaded.bucket_tags
+            _ = loaded.objekt_tags
 
-    def test_cascade_delete_with_bucket(self):
+    def test_cascade_delete_with_objekt(self):
         self.session.add(self._tag())
         self.session.commit()
 
-        self.session.delete(self.bucket)
+        self.session.delete(self.objekt)
         self.session.commit()
 
-        remaining = self.session.scalars(select(BucketTag)).all()
+        remaining = self.session.scalars(select(ObjektTag)).all()
         self.assertEqual(remaining, [])

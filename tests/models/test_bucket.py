@@ -21,15 +21,15 @@ from app.constants import (  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.objekt import Objekt  # noqa: E402, F401
-from app.models.objekt_metadata import ObjektMetadata  # noqa: E402, F401
-from app.models.objekt_multipart import ObjektMultipart  # noqa: E402, F401
-from app.models.objekt_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
-from app.models.objekt_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
-from app.models.objekt_multipart_part import ObjektMultipartPart  # noqa: E402, F401
-from app.models.objekt_tag import ObjektTag  # noqa: E402, F401
-from app.models.objekt_version import ObjektVersion  # noqa: E402, F401
-from app.models.objekt_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
-from app.models.objekt_version_tag import ObjektVersionTag  # noqa: E402, F401
+from app.models.object_metadata import ObjektMetadata  # noqa: E402, F401
+from app.models.object_multipart import ObjektMultipart  # noqa: E402, F401
+from app.models.object_multipart_metadata import ObjektMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
+from app.models.object_multipart_part import ObjektMultipartPart  # noqa: E402, F401
+from app.models.object_tag import ObjektTag  # noqa: E402, F401
+from app.models.object_version import ObjektVersion  # noqa: E402, F401
+from app.models.object_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import ObjektVersionTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 

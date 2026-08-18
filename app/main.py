@@ -42,10 +42,10 @@ from app.routers.user_init import router as user_init_router
 from app.routers.bucket_put import router as bucket_put_router
 from app.routers.bucket_get import router as bucket_get_router
 from app.routers.bucket_list import router as bucket_list_router
-from app.routers.objekt_upload import router as objekt_upload_router
+from app.routers.object_upload import router as objekt_upload_router
 from app.routers.multipart_create import router as multipart_create_router
 from app.routers.multipart_abort import router as multipart_abort_router
-from app.routers.objekt_download import router as objekt_download_router
+from app.routers.object_download import router as objekt_download_router
 
 config = get_config()
 

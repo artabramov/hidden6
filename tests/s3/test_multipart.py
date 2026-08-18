@@ -18,8 +18,8 @@ from app.errors import (  # noqa: E402
     S3ObjectUploadNotFoundError,
 )
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
-from app.models.objekt_multipart_part import ObjektMultipartPart  # noqa: E402
+from app.models.object_multipart import ObjektMultipart  # noqa: E402
+from app.models.object_multipart_part import ObjektMultipartPart  # noqa: E402
 from app.s3.multipart import (  # noqa: E402
     load_multipart,
     upsert_multipart_part,

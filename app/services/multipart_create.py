@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
-from app.models.objekt_multipart import ObjektMultipart
+from app.models.object_multipart import ObjektMultipart
 from app.models.user import User
 from app.repositories.io import mktree, rmtree
 from app.repositories.orm import ORMRepository

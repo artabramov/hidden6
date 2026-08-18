@@ -17,7 +17,7 @@ from app.errors import (  # noqa: E402
 )
 from app.locks import LockType  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.objekt_multipart import ObjektMultipart  # noqa: E402
+from app.models.object_multipart import ObjektMultipart  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.multipart_abort import multipart_abort  # noqa: E402
 
