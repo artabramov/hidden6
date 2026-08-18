@@ -4,7 +4,7 @@
 from xml.sax.saxutils import escape
 
 from app.constants import S3_XMLNS
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.s3.datetime import format_datetime
 
 

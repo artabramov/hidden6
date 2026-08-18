@@ -71,7 +71,7 @@ def load_all_models() -> None:
     import app.models.user_key  # noqa: F401, PLC0415
     import app.models.bucket  # noqa: F401, PLC0415
     import app.models.bucket_tag  # noqa: F401, PLC0415
-    import app.models.objekt  # noqa: F401, PLC0415
+    import app.models.object  # noqa: F401, PLC0415
     import app.models.object_metadata  # noqa: F401, PLC0415
     import app.models.object_multipart  # noqa: F401, PLC0415
     import app.models.object_multipart_metadata  # noqa: F401, PLC0415

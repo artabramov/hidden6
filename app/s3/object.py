@@ -9,7 +9,7 @@ from app.errors import (
     S3ObjectNotFoundError,
 )
 from app.models.bucket import Bucket
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository

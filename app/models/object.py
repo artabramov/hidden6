@@ -1,4 +1,4 @@
-# app/models/objekt.py
+# app/models/object.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import time

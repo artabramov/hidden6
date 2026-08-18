@@ -11,7 +11,7 @@ from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
 from app.errors import S3BucketNotFoundError, S3ObjectKeyConflictError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.models.user import User
 from app.repositories.io import (
     AsyncReadable,

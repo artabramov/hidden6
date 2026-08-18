@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_config
 from app.errors import S3ObjectNotFoundError
 from app.hooks import Events, hooks
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.models.user import User
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository

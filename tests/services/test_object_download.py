@@ -17,7 +17,7 @@ from app.errors import (  # noqa: E402
 )
 from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.objekt import Objekt  # noqa: E402
+from app.models.object import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.object_download import objekt_download  # noqa: E402
 

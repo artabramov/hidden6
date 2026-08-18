@@ -10,7 +10,7 @@ from app.repositories.orm import ORMRepository
 from app.models.user import User
 from app.models.user_key import UserKey
 from app.models.bucket import Bucket
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 
 
 async def gocryptfs_initialized(_: None) -> None:

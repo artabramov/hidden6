@@ -8,7 +8,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.models.objekt import Objekt  # noqa: E402
+from app.models.object import Objekt  # noqa: E402
 from app.xml.render_object_list import render_object_list  # noqa: E402
 
 

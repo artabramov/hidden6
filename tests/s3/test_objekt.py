@@ -18,7 +18,7 @@ from app.errors import (  # noqa: E402
     S3ObjectNotFoundError,
 )
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.objekt import Objekt  # noqa: E402
+from app.models.object import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.s3.object import load_object, object_mkdir, upsert_object  # noqa: E402
 

@@ -9,7 +9,7 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
-from app.models.objekt import Objekt  # noqa: E402
+from app.models.object import Objekt  # noqa: E402
 from app.s3.datetime import http_datetime  # noqa: E402
 from app.s3.headers import etag_headers, objekt_headers  # noqa: E402
 

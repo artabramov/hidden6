@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.hooks import Events, hooks
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket

@@ -14,7 +14,7 @@ from app.errors import (
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.models.user import User
 from app.repositories.io import (
     concat,

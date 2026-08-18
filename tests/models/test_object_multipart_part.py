@@ -16,7 +16,7 @@ from app.constants import OBJECT_PART_NUMBER_MAX  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
-from app.models.objekt import Objekt  # noqa: E402, F401
+from app.models.object import Objekt  # noqa: E402, F401
 from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import ObjectMultipart  # noqa: E402
 from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401

@@ -1,7 +1,7 @@
 # app/s3/headers.py
 # SPDX-License-Identifier: GPL-3.0-only
 
-from app.models.objekt import Objekt
+from app.models.object import Objekt
 from app.s3.datetime import http_datetime
 
 
