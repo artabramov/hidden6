@@ -248,7 +248,7 @@ class TestObjectVersionModel(unittest.TestCase):
             "a.txt",
         )
 
-    def test_objekt_relationship_to_versions(self):
+    def test_object_relationship_to_versions(self):
         self.session.add(self._version(version_id="a" * 32))
         self.session.add(
             self._version(version_id="b" * 32, size_bytes=2, etag="b" * 32),
@@ -288,7 +288,7 @@ class TestObjectVersionModel(unittest.TestCase):
         with self.assertRaises(InvalidRequestError):
             _ = loaded.object_versions
 
-    def test_objekt_delete_is_restricted(self):
+    def test_object_delete_is_restricted(self):
         self.session.add(self._version(version_id="a" * 32))
         self.session.commit()
 

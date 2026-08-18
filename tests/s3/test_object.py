@@ -1,4 +1,4 @@
-# tests/s3/test_objekt.py
+# tests/s3/test_object.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import os

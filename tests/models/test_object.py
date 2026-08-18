@@ -1,4 +1,4 @@
-# tests/models/test_objekt.py
+# tests/models/test_object.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest

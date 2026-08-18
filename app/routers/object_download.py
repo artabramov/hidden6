@@ -10,7 +10,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.repositories.io import iter_read
-from app.s3.headers import objekt_headers
+from app.s3.headers import object_headers
 from app.services.object_download import objekt_download
 
 router = APIRouter(include_in_schema=False)
@@ -78,7 +78,7 @@ async def object_download_router(
         bucket_name=bucket_name,
         object_key=object_key,
     )
-    headers = objekt_headers(objekt)
+    headers = object_headers(objekt)
 
     if request.method == "HEAD":
         return Response(

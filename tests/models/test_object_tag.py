@@ -148,7 +148,7 @@ class TestObjectTagModel(unittest.TestCase):
         self.assertEqual(loaded.object_tag_object.id, self.objekt.id)
         self.assertEqual(loaded.object_tag_object.object_key, "a.txt")
 
-    def test_objekt_relationship_to_tags(self):
+    def test_object_relationship_to_tags(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.add(self._tag(tag_key="owner", tag_value="alice"))
         self.session.commit()
