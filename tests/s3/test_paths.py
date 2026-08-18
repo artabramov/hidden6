@@ -13,7 +13,7 @@ from app.s3.paths import (
     resolve_multipart_part_path,
     resolve_multipart_path,
     resolve_multipart_staged_part_path,
-    resolve_objekt_path,
+    resolve_object_path,
     resolve_staged_path,
     resolve_version_path,
 )
@@ -29,7 +29,7 @@ class TestBucketPath(unittest.TestCase):
 
 class TestObjektPath(unittest.TestCase):
     def test_resolves_nested_key(self):
-        resolved_bucket, resolved_objekt = resolve_objekt_path(
+        resolved_bucket, resolved_objekt = resolve_object_path(
             "/mnt/buckets",
             "photos",
             "2024/summer/cat.png",
@@ -47,7 +47,7 @@ class TestObjektPath(unittest.TestCase):
 
     def test_rejects_absolute_key_with_value_error(self):
         with self.assertRaises(ValueError) as ctx:
-            resolve_objekt_path("/mnt/buckets", "photos", "/etc/passwd")
+            resolve_object_path("/mnt/buckets", "photos", "/etc/passwd")
 
         self.assertIn("escapes bucket directory", str(ctx.exception))
 

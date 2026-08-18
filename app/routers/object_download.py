@@ -55,7 +55,7 @@ _RESPONSES = {
     dependencies=[Depends(require_gocryptfs())],
     summary="Download an S3 object or fetch its metadata.",
 )
-async def objekt_download_router(
+async def object_download_router(
     bucket_name: str,
     object_key: str,
     request: Request,

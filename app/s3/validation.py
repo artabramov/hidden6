@@ -72,7 +72,7 @@ def validate_bucket_name(
         raise S3InvalidBucketNameError(resource)
 
 
-def validate_objekt_key(object_key: str, resource: str) -> None:
+def validate_object_key(object_key: str, resource: str) -> None:
     """
     Validate an S3 object key for the filesystem-backed namespace.
 

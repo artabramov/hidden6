@@ -33,7 +33,7 @@ from app.s3.paths import (
     resolve_multipart_path,
     resolve_multipart_staged_part_path,
 )
-from app.s3.validation import validate_objekt_key
+from app.s3.validation import validate_object_key
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ async def multipart_upload(
     config = get_config()
     resource = f"/{bucket_name}/{objekt_key}"
 
-    validate_objekt_key(objekt_key, resource)
+    validate_object_key(objekt_key, resource)
 
     if part_number < 1 or part_number > OBJECT_PART_NUMBER_MAX:
         raise S3ObjectPartNumberInvalidError(resource)

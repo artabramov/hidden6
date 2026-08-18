@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.constants import OBJECT_KEY_MAX_BYTES
-from app.s3.paths import resolve_objekt_path
+from app.s3.paths import resolve_object_path
 from tests.helpers import set_minimal_app_config_env
 
 
@@ -27,7 +27,7 @@ load_all_models()
 
 class TestObjektPath(unittest.TestCase):
     def test_resolves_flat_key(self):
-        bucket_path, object_path = resolve_objekt_path(
+        bucket_path, object_path = resolve_object_path(
             "/mnt/buckets",
             "photos",
             "cat.png",
@@ -37,7 +37,7 @@ class TestObjektPath(unittest.TestCase):
         self.assertEqual(object_path, "/mnt/buckets/photos/cat.png")
 
     def test_resolves_nested_key(self):
-        bucket_path, object_path = resolve_objekt_path(
+        bucket_path, object_path = resolve_object_path(
             "/mnt/buckets",
             "photos",
             "2024/summer/cat.png",
@@ -51,7 +51,7 @@ class TestObjektPath(unittest.TestCase):
 
     def test_resolves_key_at_max_length(self):
         key = "a" * OBJECT_KEY_MAX_BYTES
-        _, object_path = resolve_objekt_path(
+        _, object_path = resolve_object_path(
             "/mnt/buckets",
             "photos",
             key,
@@ -60,7 +60,7 @@ class TestObjektPath(unittest.TestCase):
         self.assertEqual(object_path, f"/mnt/buckets/photos/{key}")
 
     def test_joins_key_without_normalization(self):
-        bucket_path, object_path = resolve_objekt_path(
+        bucket_path, object_path = resolve_object_path(
             "/mnt/buckets",
             "photos",
             "2024/summer/cat.png",
@@ -76,7 +76,7 @@ class TestObjektPath(unittest.TestCase):
         )
 
     def test_does_not_collapse_parent_segments(self):
-        _bucket_path, object_path = resolve_objekt_path(
+        _bucket_path, object_path = resolve_object_path(
             "/mnt/buckets",
             "photos",
             "foo/../bar",
@@ -89,7 +89,7 @@ class TestObjektPath(unittest.TestCase):
 
     def test_rejects_key_escaping_the_bucket(self):
         with self.assertRaises(ValueError) as ctx:
-            resolve_objekt_path(
+            resolve_object_path(
                 "/mnt/buckets",
                 "photos",
                 "/etc/passwd",

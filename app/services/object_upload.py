@@ -28,8 +28,8 @@ from app.repositories.io import (
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
 from app.s3.object import object_mkdir, upsert_object
-from app.s3.paths import resolve_objekt_path, resolve_staged_path
-from app.s3.validation import validate_bucket_name, validate_objekt_key
+from app.s3.paths import resolve_object_path, resolve_staged_path
+from app.s3.validation import validate_bucket_name, validate_object_key
 
 log = logging.getLogger(__name__)
 
@@ -139,9 +139,9 @@ async def objekt_upload(
     resource = f"/{bucket_name}/{objekt_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_objekt_key(objekt_key, resource)
+    validate_object_key(objekt_key, resource)
 
-    bucket_path, objekt_path = resolve_objekt_path(
+    bucket_path, objekt_path = resolve_object_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         objekt_key,
@@ -165,7 +165,7 @@ async def objekt_upload(
     )
 
     backup_created = False
-    objekt_written = False
+    object_written = False
 
     # The whole bucket subtree is locked for the upload transaction
     # because a conflicting key can sit at any prefix level.
@@ -206,7 +206,7 @@ async def objekt_upload(
             except (IsADirectoryError, NotADirectoryError) as exc:
                 raise S3ObjectKeyConflictError(resource) from exc
 
-            objekt_written = True
+            object_written = True
             await repo.commit()
 
         # Reconcile DB and filesystem state before releasing the bucket
@@ -225,7 +225,7 @@ async def objekt_upload(
 
             # A new object was published before the transaction failed.
             # Remove it because there is no previous payload to restore.
-            if objekt_written and not backup_created:
+            if object_written and not backup_created:
                 try:
                     await delete(objekt_path)
                 except Exception:
@@ -238,7 +238,7 @@ async def objekt_upload(
             # An existing object was overwritten before the transaction
             # failed. Restore its previous payload from the temporary
             # backup.
-            if objekt_written and backup_created:
+            if object_written and backup_created:
                 try:
                     await copy(backup_path, objekt_path)
                 except Exception:
@@ -264,7 +264,7 @@ async def objekt_upload(
             # A backup was created, but the new payload was never
             # published. The original object is still intact, so
             # discard the backup.
-            if backup_created and not objekt_written:
+            if backup_created and not object_written:
                 try:
                     await delete(backup_path)
                 except Exception:

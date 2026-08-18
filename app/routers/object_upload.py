@@ -60,7 +60,7 @@ router = APIRouter(include_in_schema=False)
     dependencies=[Depends(require_gocryptfs())],
     summary="Upload an S3 object or one of its parts.",
 )
-async def objekt_upload_router(
+async def object_upload_router(
     bucket_name: str,
     object_key: str,
     request: Request,

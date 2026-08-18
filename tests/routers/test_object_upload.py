@@ -15,7 +15,7 @@ from app.errors import (  # noqa: E402
     S3ObjectPartNumberInvalidError,
     S3ObjectTooLargeError,
 )
-from app.routers.object_upload import objekt_upload_router  # noqa: E402
+from app.routers.object_upload import object_upload_router  # noqa: E402
 from app.streams import RequestBodyReader  # noqa: E402
 
 
@@ -36,7 +36,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=objekt,
         ) as mock_service:
-            response = await objekt_upload_router(
+            response = await object_upload_router(
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(),
@@ -65,7 +65,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value="9b2cf5",
         ) as mock_service:
-            response = await objekt_upload_router(
+            response = await object_upload_router(
                 bucket_name="photos",
                 object_key="2024/cat.png",
                 request=self._build_request(),
@@ -87,7 +87,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
 
     async def test_part_without_number_raises_s3_error(self):
         with self.assertRaises(S3ObjectPartNumberInvalidError) as cm:
-            await objekt_upload_router(
+            await object_upload_router(
                 bucket_name="photos",
                 object_key="cat.png",
                 request=self._build_request(),
@@ -102,7 +102,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
         request = self._build_request({"content-length": "99999999999999"})
 
         with self.assertRaises(S3ObjectTooLargeError) as cm:
-            await objekt_upload_router(
+            await object_upload_router(
                 bucket_name="photos",
                 object_key="cat.png",
                 request=request,

@@ -39,10 +39,10 @@ from app.s3.paths import (
     resolve_multipart_completed_path,
     resolve_multipart_object_backup_path,
     resolve_multipart_path,
-    resolve_objekt_path,
+    resolve_object_path,
     resolve_staged_path,
 )
-from app.s3.validation import validate_bucket_name, validate_objekt_key
+from app.s3.validation import validate_bucket_name, validate_object_key
 from app.schemas.multipart_complete import MultipartPart
 
 log = logging.getLogger(__name__)
@@ -94,9 +94,9 @@ async def multipart_complete(
     resource = f"/{bucket_name}/{objekt_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_objekt_key(objekt_key, resource)
+    validate_object_key(objekt_key, resource)
 
-    bucket_path, object_path = resolve_objekt_path(
+    bucket_path, object_path = resolve_object_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
         objekt_key,
@@ -135,7 +135,7 @@ async def multipart_complete(
     )
 
     backup_created = False
-    objekt_written = False
+    object_written = False
     upload_moved = False
 
     # Hold the multipart lock through validation, assembly, publication,
@@ -231,7 +231,7 @@ async def multipart_complete(
                     await rename(staged_path, object_path)
                 except (IsADirectoryError, NotADirectoryError) as exc:
                     raise S3ObjectKeyConflictError(resource) from exc
-                objekt_written = True
+                object_written = True
 
                 await rename(upload_path, cleanup_path)
                 upload_moved = True
@@ -259,7 +259,7 @@ async def multipart_complete(
                 # A new object was published before the transaction
                 # failed. Remove it because there is no previous
                 # payload to restore.
-                if objekt_written and not backup_created:
+                if object_written and not backup_created:
                     try:
                         await delete(object_path)
                     except Exception:
@@ -272,7 +272,7 @@ async def multipart_complete(
                 # An existing object was overwritten before the
                 # transaction failed. Restore its previous payload
                 # from the temporary backup.
-                if objekt_written and backup_created:
+                if object_written and backup_created:
                     try:
                         await copy(backup_path, object_path)
                     except Exception:
@@ -296,7 +296,7 @@ async def multipart_complete(
                 # A backup was created, but the assembled object was
                 # never published. The original object is still intact,
                 # so discard the backup.
-                if backup_created and not objekt_written:
+                if backup_created and not object_written:
                     try:
                         await delete(backup_path)
                     except Exception:
