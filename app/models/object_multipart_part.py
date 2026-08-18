@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class S3S3ObjectMultipartPart(Base):
+class S3ObjectMultipartPart(Base):
     """
     Uploaded part of an in-progress S3 multipart upload.
 

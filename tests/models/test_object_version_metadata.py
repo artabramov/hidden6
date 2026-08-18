@@ -18,18 +18,18 @@ from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
-from app.models.object_multipart_metadata import S3S3ObjectMultipartMetadata  # noqa: E402, F401
-from app.models.object_multipart_tag import S3S3ObjectMultipartTag  # noqa: E402, F401
-from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402, F401
+from app.models.object_multipart_metadata import S3ObjectMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_tag import S3ObjectMultipartTag  # noqa: E402, F401
+from app.models.object_multipart_part import S3ObjectMultipartPart  # noqa: E402, F401
 from app.models.object_tag import S3ObjectTag  # noqa: E402, F401
 from app.models.object_version import S3ObjectVersion  # noqa: E402
-from app.models.object_version_metadata import S3S3ObjectVersionMetadata  # noqa: E402
-from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
+from app.models.object_version_metadata import S3ObjectVersionMetadata  # noqa: E402
+from app.models.object_version_tag import S3ObjectVersionTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestS3S3ObjectVersionMetadataModel(unittest.TestCase):
+class TestS3ObjectVersionMetadataModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -82,18 +82,18 @@ class TestS3S3ObjectVersionMetadataModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _metadata(self, **kwargs) -> S3S3ObjectVersionMetadata:
+    def _metadata(self, **kwargs) -> S3ObjectVersionMetadata:
         defaults = {
             "object_version_id": self.version.id,
             "meta_key": "x-amz-meta-color",
             "meta_value": "red",
         }
         defaults.update(kwargs)
-        return S3S3ObjectVersionMetadata(**defaults)
+        return S3ObjectVersionMetadata(**defaults)
 
     def test_tablename(self):
         self.assertEqual(
-            S3S3ObjectVersionMetadata.__tablename__,
+            S3ObjectVersionMetadata.__tablename__,
             "objects_versions_metadata",
         )
 
@@ -149,7 +149,7 @@ class TestS3S3ObjectVersionMetadataModel(unittest.TestCase):
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(S3S3ObjectVersionMetadata)).all()
+        rows = self.session.scalars(select(S3ObjectVersionMetadata)).all()
         self.assertEqual(len(rows), 2)
 
     def test_relationship_back_to_version(self):
@@ -158,11 +158,11 @@ class TestS3S3ObjectVersionMetadataModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(S3S3ObjectVersionMetadata)
-            .where(S3S3ObjectVersionMetadata.id == row.id)
+            select(S3ObjectVersionMetadata)
+            .where(S3ObjectVersionMetadata.id == row.id)
             .options(
                 selectinload(
-                    S3S3ObjectVersionMetadata.object_version_metadata_object_version,
+                    S3ObjectVersionMetadata.object_version_metadata_object_version,
                 ),
             ),
         )
@@ -212,5 +212,5 @@ class TestS3S3ObjectVersionMetadataModel(unittest.TestCase):
         self.session.delete(self.version)
         self.session.commit()
 
-        remaining = self.session.scalars(select(S3S3ObjectVersionMetadata)).all()
+        remaining = self.session.scalars(select(S3ObjectVersionMetadata)).all()
         self.assertEqual(remaining, [])

@@ -21,9 +21,9 @@ from app.errors import (  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import (  # noqa: E402, F401
-    S3S3ObjectVersionMetadata,
+    S3ObjectVersionMetadata,
 )
-from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
+from app.models.object_version_tag import S3ObjectVersionTag  # noqa: E402, F401
 from app.s3.versioning import (  # noqa: E402
     get_bucket_versioning_status,
     set_bucket_versioning_status,

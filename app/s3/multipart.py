@@ -16,7 +16,7 @@ from app.errors import (
 )
 from app.models.bucket import Bucket
 from app.models.object_multipart import S3ObjectMultipart
-from app.models.object_multipart_part import S3S3ObjectMultipartPart
+from app.models.object_multipart_part import S3ObjectMultipartPart
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.paths import resolve_multipart_part_path
@@ -54,20 +54,20 @@ async def upsert_multipart_part(
     part_number: int,
     size_bytes: int,
     etag: str,
-) -> S3S3ObjectMultipartPart:
+) -> S3ObjectMultipartPart:
     """
     Insert or update the multipart part for the specified part number.
     The staged part file must already exist when this is called.
     """
     existing = await repo.select(
-        S3S3ObjectMultipartPart,
+        S3ObjectMultipartPart,
         object_multipart_id=multipart.id,
         part_number=part_number,
     )
 
     if existing is None:
         return await repo.insert(
-            S3S3ObjectMultipartPart(
+            S3ObjectMultipartPart(
                 object_multipart_id=multipart.id,
                 part_number=part_number,
                 size_bytes=size_bytes,
@@ -88,7 +88,7 @@ async def list_multipart_parts(
     *,
     part_number_marker: int | None = None,
     max_parts: int | None = None,
-) -> list[S3S3ObjectMultipartPart]:
+) -> list[S3ObjectMultipartPart]:
     """
     Return uploaded parts for a multipart upload ordered by part
     number. Optional marker and limit support a future ListParts API.
@@ -103,7 +103,7 @@ async def list_multipart_parts(
     if max_parts is not None:
         filters["limit"] = max_parts
 
-    return await repo.select_all(S3S3ObjectMultipartPart, **filters)
+    return await repo.select_all(S3ObjectMultipartPart, **filters)
 
 
 async def delete_multipart_parts(
@@ -111,7 +111,7 @@ async def delete_multipart_parts(
     multipart: S3ObjectMultipart,
 ) -> None:
     """
-    Delete every S3S3ObjectMultipartPart row for an upload. The parts FK
+    Delete every S3ObjectMultipartPart row for an upload. The parts FK
     has no ON DELETE CASCADE, so callers must clear parts before the
     parent S3ObjectMultipart row.
     """
@@ -132,7 +132,7 @@ async def load_multipart_parts(
     Load and validate the multipart parts listed by the client.
 
     Parts must be listed in ascending order, every listed part must
-    have a matching S3S3ObjectMultipartPart row and staged file, and every
+    have a matching S3ObjectMultipartPart row and staged file, and every
     part except the last must meet the minimum part size. Returns the
     staged paths and stored ETags in client order.
     """
@@ -150,7 +150,7 @@ async def load_multipart_parts(
         previous = part.part_number
 
         row = await repo.select(
-            S3S3ObjectMultipartPart,
+            S3ObjectMultipartPart,
             object_multipart_id=multipart.id,
             part_number=part.part_number,
         )

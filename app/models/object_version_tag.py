@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class S3S3ObjectVersionTag(Base):
+class S3ObjectVersionTag(Base):
     """
     S3 tag associated with a non-current object version.
 

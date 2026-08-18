@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class S3S3ObjectMultipartMetadata(Base):
+class S3ObjectMultipartMetadata(Base):
     """
     Additional metadata associated with an in-progress multipart upload.
 

@@ -19,7 +19,7 @@ from app.errors import (  # noqa: E402
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
-from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402
+from app.models.object_multipart_part import S3ObjectMultipartPart  # noqa: E402
 from app.s3.multipart import (  # noqa: E402
     load_multipart,
     upsert_multipart_part,
@@ -112,7 +112,7 @@ class TestUpsertMultipartPart(unittest.IsolatedAsyncioTestCase):
         self.repo.update.assert_not_awaited()
 
     async def test_updates_existing_part_row(self):
-        existing = S3S3ObjectMultipartPart(
+        existing = S3ObjectMultipartPart(
             id=9,
             object_multipart_id=5,
             part_number=1,
@@ -154,7 +154,7 @@ class TestListMultipartParts(unittest.IsolatedAsyncioTestCase):
         )
 
         repo.select_all.assert_awaited_once_with(
-            S3S3ObjectMultipartPart,
+            S3ObjectMultipartPart,
             object_multipart_id=5,
             order_by="part_number",
             order="asc",
@@ -167,8 +167,8 @@ class TestDeleteMultipartParts(unittest.IsolatedAsyncioTestCase):
     async def test_deletes_every_part_row(self):
         multipart = S3ObjectMultipart(id=5, upload_id="beef", object_key="a")
         rows = [
-            S3S3ObjectMultipartPart(id=1, part_number=1),
-            S3S3ObjectMultipartPart(id=2, part_number=3),
+            S3ObjectMultipartPart(id=1, part_number=1),
+            S3ObjectMultipartPart(id=2, part_number=3),
         ]
         repo = MagicMock()
         repo.select_all = AsyncMock(return_value=rows)
@@ -207,7 +207,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
 
         async def _select(_cls, **filters):
             number = filters["part_number"]
-            return S3S3ObjectMultipartPart(
+            return S3ObjectMultipartPart(
                 id=number,
                 object_multipart_id=5,
                 part_number=number,
@@ -293,7 +293,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_small_non_final_part(self):
         async def _select(_cls, **filters):
             number = filters["part_number"]
-            return S3S3ObjectMultipartPart(
+            return S3ObjectMultipartPart(
                 id=number,
                 object_multipart_id=5,
                 part_number=number,
@@ -311,7 +311,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
 
     async def test_last_part_may_be_small(self):
         async def _select(_cls, **filters):
-            return S3S3ObjectMultipartPart(
+            return S3ObjectMultipartPart(
                 id=1,
                 object_multipart_id=5,
                 part_number=1,
@@ -330,7 +330,7 @@ class TestLoadMultipartParts(unittest.IsolatedAsyncioTestCase):
         async def _select(_cls, **filters):
             number = filters["part_number"]
             size = 1024 if number == 1 else 1024 * 1024 * 6
-            return S3S3ObjectMultipartPart(
+            return S3ObjectMultipartPart(
                 id=number,
                 object_multipart_id=5,
                 part_number=number,

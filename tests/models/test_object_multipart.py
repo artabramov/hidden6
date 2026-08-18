@@ -16,12 +16,12 @@ from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
-from app.models.object_multipart_metadata import S3S3ObjectMultipartMetadata  # noqa: E402, F401
-from app.models.object_multipart_tag import S3S3ObjectMultipartTag  # noqa: E402, F401
-from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402, F401
+from app.models.object_multipart_metadata import S3ObjectMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_tag import S3ObjectMultipartTag  # noqa: E402, F401
+from app.models.object_multipart_part import S3ObjectMultipartPart  # noqa: E402, F401
 from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
-from app.models.object_version_metadata import S3S3ObjectVersionMetadata  # noqa: E402, F401
-from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
+from app.models.object_version_metadata import S3ObjectVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import S3ObjectVersionTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402, F401
 from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
 from app.models.object_tag import S3ObjectTag  # noqa: E402, F401

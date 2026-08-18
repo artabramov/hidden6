@@ -18,9 +18,9 @@ from app.errors import S3BucketStateInvalidError  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import (  # noqa: E402, F401
-    S3S3ObjectVersionMetadata,
+    S3ObjectVersionMetadata,
 )
-from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
+from app.models.object_version_tag import S3ObjectVersionTag  # noqa: E402, F401
 from app.s3.object_lock import set_bucket_object_lock_configuration  # noqa: E402
 
 load_all_models()

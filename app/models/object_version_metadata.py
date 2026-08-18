@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class S3S3ObjectVersionMetadata(Base):
+class S3ObjectVersionMetadata(Base):
     """
     Additional metadata associated with a non-current S3 object version.
 
