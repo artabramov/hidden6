@@ -12,7 +12,7 @@ from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_create import bucket_create
 from app.services.bucket_versioning_update import bucket_versioning_update
-from app.services.bucket_object_lock_update import bucket_objekt_lock_update
+from app.services.bucket_object_lock_update import bucket_object_lock_update
 
 router = APIRouter(include_in_schema=False)
 
@@ -73,7 +73,7 @@ async def bucket_put_router(
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
     if objekt_lock is not None:
-        await bucket_objekt_lock_update(
+        await bucket_object_lock_update(
             session=session,
             current_user=current_user,
             bucket_name=bucket_name,

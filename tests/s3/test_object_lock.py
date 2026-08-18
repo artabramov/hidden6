@@ -42,7 +42,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
 
     def _set(self, bucket, **kwargs) -> None:
         defaults = {
-            "objekt_lock_enabled": None,
+            "object_lock_enabled": None,
             "default_lock_mode": None,
             "default_retention_days": None,
             "default_retention_years": None,
@@ -54,7 +54,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
     def test_enables_object_lock(self):
         bucket = self._bucket()
 
-        self._set(bucket, objekt_lock_enabled="Enabled")
+        self._set(bucket, object_lock_enabled="Enabled")
 
         self.assertTrue(bucket.object_lock_enabled)
         self.assertIsNone(bucket.default_lock_mode)
@@ -66,7 +66,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
 
         self._set(
             bucket,
-            objekt_lock_enabled="Enabled",
+            object_lock_enabled="Enabled",
             default_lock_mode="GOVERNANCE",
             default_retention_days=10,
         )
@@ -81,7 +81,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
 
         self._set(
             bucket,
-            objekt_lock_enabled="Enabled",
+            object_lock_enabled="Enabled",
             default_lock_mode="COMPLIANCE",
             default_retention_years=2,
         )
@@ -139,7 +139,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
     def test_non_enabled_flag_does_not_enable_lock(self):
         bucket = self._bucket()
 
-        self._set(bucket, objekt_lock_enabled="Disabled")
+        self._set(bucket, object_lock_enabled="Disabled")
 
         self.assertFalse(bucket.object_lock_enabled)
 
@@ -147,7 +147,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
         bucket = self._bucket(versioning_status=BUCKET_VERSIONING_DISABLED)
 
         with self.assertRaises(S3BucketStateInvalidError) as cm:
-            self._set(bucket, objekt_lock_enabled="Enabled")
+            self._set(bucket, object_lock_enabled="Enabled")
 
         self.assertEqual(cm.exception.resource, RESOURCE)
         self.assertFalse(bucket.object_lock_enabled)
@@ -156,7 +156,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
         bucket = self._bucket(versioning_status=BUCKET_VERSIONING_SUSPENDED)
 
         with self.assertRaises(S3BucketStateInvalidError) as cm:
-            self._set(bucket, objekt_lock_enabled="Enabled")
+            self._set(bucket, object_lock_enabled="Enabled")
 
         self.assertEqual(cm.exception.resource, RESOURCE)
         self.assertFalse(bucket.object_lock_enabled)

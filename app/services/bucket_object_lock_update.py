@@ -16,7 +16,7 @@ from app.xml.parse_bucket_object_lock import parse_bucket_object_lock
 log = logging.getLogger(__name__)
 
 
-async def bucket_objekt_lock_update(
+async def bucket_object_lock_update(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
@@ -33,7 +33,7 @@ async def bucket_objekt_lock_update(
 
     try:
         (
-            objekt_lock_enabled,
+            object_lock_enabled,
             default_lock_mode,
             default_retention_days,
             default_retention_years,
@@ -51,7 +51,7 @@ async def bucket_objekt_lock_update(
 
     set_bucket_object_lock_configuration(
         bucket=bucket,
-        objekt_lock_enabled=objekt_lock_enabled,
+        object_lock_enabled=object_lock_enabled,
         default_lock_mode=default_lock_mode,
         default_retention_days=default_retention_days,
         default_retention_years=default_retention_years,

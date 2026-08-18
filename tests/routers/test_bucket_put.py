@@ -48,7 +48,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_versioning,
             patch(
-                "app.routers.bucket_put.bucket_objekt_lock_update",
+                "app.routers.bucket_put.bucket_object_lock_update",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -83,7 +83,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_create,
             patch(
-                "app.routers.bucket_put.bucket_objekt_lock_update",
+                "app.routers.bucket_put.bucket_object_lock_update",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -112,7 +112,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_put.bucket_objekt_lock_update",
+                "app.routers.bucket_put.bucket_object_lock_update",
                 new_callable=AsyncMock,
             ) as mock_lock,
             patch(
@@ -149,7 +149,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_put.bucket_objekt_lock_update",
+                "app.routers.bucket_put.bucket_object_lock_update",
                 new_callable=AsyncMock,
             ) as mock_lock,
             patch(

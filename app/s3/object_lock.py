@@ -8,7 +8,7 @@ from app.models.bucket import Bucket
 
 def set_bucket_object_lock_configuration(
     bucket: Bucket,
-    objekt_lock_enabled: str | None,
+    object_lock_enabled: str | None,
     default_lock_mode: str | None,
     default_retention_days: int | None,
     default_retention_years: int | None,
@@ -24,7 +24,7 @@ def set_bucket_object_lock_configuration(
     if bucket.versioning_status != BUCKET_VERSIONING_ENABLED:
         raise S3BucketStateInvalidError(resource)
 
-    if objekt_lock_enabled == "Enabled":
+    if object_lock_enabled == "Enabled":
         bucket.object_lock_enabled = True
 
     bucket.default_lock_mode = default_lock_mode

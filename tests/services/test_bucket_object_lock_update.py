@@ -25,7 +25,7 @@ from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_object_lock_update import (  # noqa: E402
-    bucket_objekt_lock_update,
+    bucket_object_lock_update,
 )
 
 load_all_models()
@@ -107,7 +107,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
                 new=emit,
             ),
         ):
-            await bucket_objekt_lock_update(
+            await bucket_object_lock_update(
                 session=self.session,
                 current_user=user or self.user,
                 bucket_name="photos",
@@ -192,7 +192,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ) as emit,
         ):
             with self.assertRaises(S3XmlMalformedError) as cm:
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -224,7 +224,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ) as emit,
         ):
             with self.assertRaises(S3BucketStateInvalidError) as cm:
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -252,7 +252,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(S3BucketStateInvalidError):
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -276,7 +276,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(S3BucketNotFoundError):
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -301,7 +301,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(S3AccessDeniedError):
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=other_user,
                     bucket_name="photos",
@@ -331,7 +331,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ) as emit,
         ):
             with self.assertRaises(RuntimeError):
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -363,7 +363,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ) as emit,
         ):
             with self.assertRaises(RuntimeError):
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -392,7 +392,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(RuntimeError) as cm:
-                await bucket_objekt_lock_update(
+                await bucket_object_lock_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
