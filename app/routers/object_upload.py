@@ -103,7 +103,7 @@ async def object_upload_router(
             session=session,
             current_user=current_user,
             bucket_name=bucket_name,
-            objekt_key=object_key,
+            object_key=object_key,
             upload_id=upload_id,
             part_number=part_number,
             body=body,
@@ -117,7 +117,7 @@ async def object_upload_router(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
-        objekt_key=object_key,
+        object_key=object_key,
         body=body,
     )
     return Response(

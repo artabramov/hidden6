@@ -48,7 +48,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
         self.assertIs(kwargs["session"], session)
         self.assertIs(kwargs["current_user"], user)
         self.assertEqual(kwargs["bucket_name"], "photos")
-        self.assertEqual(kwargs["objekt_key"], "2024/cat.png")
+        self.assertEqual(kwargs["object_key"], "2024/cat.png")
         self.assertIsInstance(kwargs["body"], RequestBodyReader)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -79,7 +79,7 @@ class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
         self.assertIs(kwargs["session"], session)
         self.assertIs(kwargs["current_user"], user)
         self.assertEqual(kwargs["bucket_name"], "photos")
-        self.assertEqual(kwargs["objekt_key"], "2024/cat.png")
+        self.assertEqual(kwargs["object_key"], "2024/cat.png")
         self.assertEqual(kwargs["upload_id"], "beef")
         self.assertEqual(kwargs["part_number"], 2)
         self.assertIsInstance(kwargs["body"], RequestBodyReader)

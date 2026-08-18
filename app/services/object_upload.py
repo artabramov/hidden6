@@ -106,7 +106,7 @@ async def objekt_upload(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
     body: AsyncReadable,
 ) -> Objekt:
     """
@@ -136,15 +136,15 @@ async def objekt_upload(
     best-effort cleanup step.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{objekt_key}"
+    resource = f"/{bucket_name}/{object_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_object_key(objekt_key, resource)
+    validate_object_key(object_key, resource)
 
-    bucket_path, objekt_path = resolve_object_path(
+    bucket_path, object_path = resolve_object_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
-        objekt_key,
+        object_key,
     )
 
     repo = ORMRepository(session)
@@ -182,27 +182,27 @@ async def objekt_upload(
             etag = await get_file_hash(staged_path)
             content_type = await get_mimetype(staged_path)
 
-            await object_mkdir(objekt_path, resource)
+            await object_mkdir(object_path, resource)
 
             # Preserve the current payload in tmp before overwriting it.
             # A copy keeps the canonical object path intact until the
             # new payload is ready to replace it.
-            if await isfile(objekt_path):
-                await copy(objekt_path, backup_path)
+            if await isfile(object_path):
+                await copy(object_path, backup_path)
                 backup_created = True
 
             objekt = await upsert_object(
                 repo=repo,
                 bucket=bucket,
                 user=current_user,
-                object_key=objekt_key,
+                object_key=object_key,
                 size_bytes=size_bytes,
                 etag=etag,
                 content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
             )
 
             try:
-                await rename(staged_path, objekt_path)
+                await rename(staged_path, object_path)
             except (IsADirectoryError, NotADirectoryError) as exc:
                 raise S3ObjectKeyConflictError(resource) from exc
 
@@ -220,19 +220,19 @@ async def objekt_upload(
                     "bucket_name=%s "
                     "object_key=%s",
                     bucket_name,
-                    objekt_key,
+                    object_key,
                 )
 
             # A new object was published before the transaction failed.
             # Remove it because there is no previous payload to restore.
             if object_written and not backup_created:
                 try:
-                    await delete(objekt_path)
+                    await delete(object_path)
                 except Exception:
                     log.exception(
                         "msg=cleanup_failed "
-                        "objekt_path=%s",
-                        objekt_path,
+                        "object_path=%s",
+                        object_path,
                     )
 
             # An existing object was overwritten before the transaction
@@ -240,14 +240,14 @@ async def objekt_upload(
             # backup.
             if object_written and backup_created:
                 try:
-                    await copy(backup_path, objekt_path)
+                    await copy(backup_path, object_path)
                 except Exception:
                     log.exception(
                         "msg=restore_failed "
                         "bucket_name=%s "
                         "object_key=%s",
                         bucket_name,
-                        objekt_key,
+                        object_key,
                     )
                 else:
                     # The previous payload is back in place,

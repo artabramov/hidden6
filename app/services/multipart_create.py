@@ -23,7 +23,7 @@ async def multipart_create(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
     content_type: str | None = None,
 ) -> ObjectMultipart:
     """
@@ -41,9 +41,9 @@ async def multipart_create(
     temporary upload directory is removed as a best-effort cleanup step.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{objekt_key}"
+    resource = f"/{bucket_name}/{object_key}"
 
-    validate_object_key(objekt_key, resource)
+    validate_object_key(object_key, resource)
 
     repo = ORMRepository(session)
     bucket = await load_bucket(repo, bucket_name, current_user, resource)
@@ -61,7 +61,7 @@ async def multipart_create(
         bucket_id=bucket.id,
         user_id=current_user.id,
         upload_id=upload_id,
-        object_key=objekt_key,
+        object_key=object_key,
         content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
     )
 
@@ -80,7 +80,7 @@ async def multipart_create(
                 "object_key=%s "
                 "upload_id=%s",
                 bucket_name,
-                objekt_key,
+                object_key,
                 upload_id,
             )
 

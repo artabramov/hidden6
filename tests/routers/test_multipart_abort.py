@@ -38,7 +38,7 @@ class TestMultipartAbortRouter(unittest.IsolatedAsyncioTestCase):
             session=session,
             current_user=user,
             bucket_name="photos",
-            objekt_key="2024/cat.png",
+            object_key="2024/cat.png",
             upload_id="beef",
         )
         self.assertEqual(

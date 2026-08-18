@@ -52,7 +52,7 @@ async def multipart_complete(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
     upload_id: str,
     parts: list[MultipartPart],
 ) -> Objekt:
@@ -91,15 +91,15 @@ async def multipart_complete(
     multipart upload directory are removed as best-effort cleanup steps.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{objekt_key}"
+    resource = f"/{bucket_name}/{object_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_object_key(objekt_key, resource)
+    validate_object_key(object_key, resource)
 
     bucket_path, object_path = resolve_object_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
-        objekt_key,
+        object_key,
     )
 
     repo = ORMRepository(session)
@@ -145,7 +145,7 @@ async def multipart_complete(
             multipart = await load_multipart(
                 repo=repo,
                 bucket=bucket,
-                object_key=objekt_key,
+                object_key=object_key,
                 upload_id=upload_id,
                 resource=resource,
             )
@@ -183,7 +183,7 @@ async def multipart_complete(
                     "object_key=%s "
                     "upload_id=%s",
                     bucket_name,
-                    objekt_key,
+                    object_key,
                     upload_id,
                 )
 
@@ -213,7 +213,7 @@ async def multipart_complete(
                     repo=repo,
                     bucket=bucket,
                     user=current_user,
-                    object_key=objekt_key,
+                    object_key=object_key,
                     size_bytes=size_bytes,
                     etag=construct_etag(stored_etags),
                     content_type=multipart.content_type,
@@ -252,7 +252,7 @@ async def multipart_complete(
                         "object_key=%s "
                         "upload_id=%s",
                         bucket_name,
-                        objekt_key,
+                        object_key,
                         upload_id,
                     )
 

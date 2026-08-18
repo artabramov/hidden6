@@ -17,7 +17,7 @@ def resolve_bucket_path(
 def resolve_object_path(
     buckets_dir: str,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
 ) -> tuple[str, str]:
     """
     Filesystem paths of a bucket directory and an object stored under
@@ -27,7 +27,7 @@ def resolve_object_path(
         ValueError: Resolved object path is outside its bucket directory.
     """
     resolved_bucket = resolve_bucket_path(buckets_dir, bucket_name)
-    resolved_objekt = os.path.join(resolved_bucket, objekt_key)
+    resolved_objekt = os.path.join(resolved_bucket, object_key)
 
     if resolved_objekt == resolved_bucket:
         raise ValueError("Object path resolves to bucket directory")

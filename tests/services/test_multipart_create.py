@@ -64,7 +64,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
             session=self.session,
             current_user=self.user,
             bucket_name="photos",
-            objekt_key="2024/cat.png",
+            object_key="2024/cat.png",
             content_type=content_type,
         )
 
@@ -105,7 +105,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
-                objekt_key="../etc/passwd",
+                object_key="../etc/passwd",
             )
 
         self.assertEqual(cm.exception.resource, "/photos/../etc/passwd")

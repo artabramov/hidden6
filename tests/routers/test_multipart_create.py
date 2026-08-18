@@ -57,7 +57,7 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
             session=session,
             current_user=user,
             bucket_name="photos",
-            objekt_key="2024/cat.png",
+            object_key="2024/cat.png",
             content_type=None,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -113,7 +113,7 @@ class TestMultipartCreateRouter(unittest.IsolatedAsyncioTestCase):
         self.assertIs(kwargs["session"], session)
         self.assertIs(kwargs["current_user"], user)
         self.assertEqual(kwargs["bucket_name"], "photos")
-        self.assertEqual(kwargs["objekt_key"], "2024/cat.png")
+        self.assertEqual(kwargs["object_key"], "2024/cat.png")
         self.assertEqual(kwargs["upload_id"], "beef")
         self.assertEqual(kwargs["parts"][0].part_number, 1)
         self.assertEqual(kwargs["parts"][0].etag, "aaa")

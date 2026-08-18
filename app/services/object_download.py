@@ -20,7 +20,7 @@ async def objekt_download(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
 ) -> tuple[Objekt, str]:
     """
     Resolve an S3 object for download.
@@ -31,20 +31,20 @@ async def objekt_download(
     router streams to the client.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{objekt_key}"
+    resource = f"/{bucket_name}/{object_key}"
 
     validate_bucket_name(bucket_name, resource)
-    validate_object_key(objekt_key, resource)
+    validate_object_key(object_key, resource)
 
     _bucket_path, object_path = resolve_object_path(
         config.MOUNTPOINT_BUCKETS_DIR,
         bucket_name,
-        objekt_key,
+        object_key,
     )
 
     repo = ORMRepository(session)
     bucket = await load_bucket(repo, bucket_name, current_user, resource)
-    objekt = await load_object(repo, bucket, objekt_key, resource)
+    objekt = await load_object(repo, bucket, object_key, resource)
 
     if not await isfile(object_path):
         raise S3ObjectNotFoundError(resource)

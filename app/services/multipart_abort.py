@@ -26,7 +26,7 @@ async def multipart_abort(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
     upload_id: str,
 ) -> None:
     """
@@ -49,9 +49,9 @@ async def multipart_abort(
     stored part data are removed as a best-effort cleanup step.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{objekt_key}"
+    resource = f"/{bucket_name}/{object_key}"
 
-    validate_object_key(objekt_key, resource)
+    validate_object_key(object_key, resource)
 
     repo = ORMRepository(session)
     bucket = await load_bucket(repo, bucket_name, current_user, resource)
@@ -78,7 +78,7 @@ async def multipart_abort(
             multipart = await load_multipart(
                 repo=repo,
                 bucket=bucket,
-                object_key=objekt_key,
+                object_key=object_key,
                 upload_id=upload_id,
                 resource=resource,
             )
@@ -107,7 +107,7 @@ async def multipart_abort(
                     "object_key=%s "
                     "upload_id=%s",
                     bucket_name,
-                    objekt_key,
+                    object_key,
                     upload_id,
                 )
 

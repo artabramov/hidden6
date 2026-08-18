@@ -76,7 +76,7 @@ async def object_download_router(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
-        objekt_key=object_key,
+        object_key=object_key,
     )
     headers = objekt_headers(objekt)
 

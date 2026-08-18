@@ -104,7 +104,7 @@ async def multipart_create_router(
             session=session,
             current_user=current_user,
             bucket_name=bucket_name,
-            objekt_key=object_key,
+            object_key=object_key,
             content_type=request.headers.get("content-type"),
         )
         return _xml_response(
@@ -127,7 +127,7 @@ async def multipart_create_router(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,
-        objekt_key=object_key,
+        object_key=object_key,
         upload_id=upload_id,
         parts=parts,
     )

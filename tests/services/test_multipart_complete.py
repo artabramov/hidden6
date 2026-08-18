@@ -179,7 +179,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             session=self.session,
             current_user=self.user,
             bucket_name="photos",
-            objekt_key="2024/cat.png",
+            object_key="2024/cat.png",
             upload_id="beef",
             parts=parts or self._build_parts(),
         )
@@ -390,7 +390,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
-                objekt_key="../etc/passwd",
+                object_key="../etc/passwd",
                 upload_id="beef",
                 parts=self._build_parts(),
             )

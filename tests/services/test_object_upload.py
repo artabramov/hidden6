@@ -133,7 +133,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             session=self.session,
             current_user=self.user,
             bucket_name="photos",
-            objekt_key=key,
+            object_key=key,
             body=self.body,
         )
 
@@ -378,7 +378,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             c.args[0] for c in self.log.exception.call_args_list
         ]
         self.assertTrue(
-            any("objekt_path=%s" in message for message in messages),
+            any("object_path=%s" in message for message in messages),
         )
 
     async def test_logs_when_restore_fails(self):

@@ -82,7 +82,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
             session=self.session,
             current_user=self.user,
             bucket_name="photos",
-            objekt_key="2024/cat.png",
+            object_key="2024/cat.png",
         )
 
         self.assertIs(objekt, self.objekt)
@@ -103,7 +103,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
-                objekt_key="../escape",
+                object_key="../escape",
             )
 
         self.load_bucket.assert_not_awaited()
@@ -118,7 +118,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
-                objekt_key="2024/cat.png",
+                object_key="2024/cat.png",
             )
 
         self.load_object.assert_not_awaited()
@@ -134,7 +134,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
-                objekt_key="2024/cat.png",
+                object_key="2024/cat.png",
             )
 
         self.isfile.assert_not_awaited()
@@ -148,7 +148,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
-                objekt_key="2024/cat.png",
+                object_key="2024/cat.png",
             )
 
         self.emit.assert_not_awaited()

@@ -42,7 +42,7 @@ async def multipart_upload(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
-    objekt_key: str,
+    object_key: str,
     upload_id: str,
     part_number: int,
     body: AsyncReadable,
@@ -73,9 +73,9 @@ async def multipart_upload(
     is removed as a best-effort cleanup step.
     """
     config = get_config()
-    resource = f"/{bucket_name}/{objekt_key}"
+    resource = f"/{bucket_name}/{object_key}"
 
-    validate_object_key(objekt_key, resource)
+    validate_object_key(object_key, resource)
 
     if part_number < 1 or part_number > OBJECT_PART_NUMBER_MAX:
         raise S3ObjectPartNumberInvalidError(resource)
@@ -116,7 +116,7 @@ async def multipart_upload(
             multipart = await load_multipart(
                 repo=repo,
                 bucket=bucket,
-                object_key=objekt_key,
+                object_key=object_key,
                 upload_id=upload_id,
                 resource=resource,
             )
@@ -156,7 +156,7 @@ async def multipart_upload(
                     "object_key=%s "
                     "part_number=%s",
                     bucket_name,
-                    objekt_key,
+                    object_key,
                     part_number,
                 )
 
