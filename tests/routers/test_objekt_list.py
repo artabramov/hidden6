@@ -49,7 +49,7 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
                 return_value=objekts,
             ) as mock_list,
             patch(
-                "app.routers.objekt_list.bucket_versioning_get",
+                "app.routers.objekt_list.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
             ) as mock_versioning,
         ):
@@ -91,7 +91,7 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
                 return_value=[],
             ) as mock_list,
             patch(
-                "app.routers.objekt_list.bucket_versioning_get",
+                "app.routers.objekt_list.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
             ) as mock_versioning,
         ):
@@ -119,7 +119,7 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.bucket_versioning_get",
+                "app.routers.objekt_list.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
                 return_value=BUCKET_VERSIONING_ENABLED,
             ) as mock_versioning,
@@ -158,7 +158,7 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.bucket_versioning_get",
+                "app.routers.objekt_list.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
                 return_value=BUCKET_VERSIONING_SUSPENDED,
             ),
@@ -187,7 +187,7 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.bucket_versioning_get",
+                "app.routers.objekt_list.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
                 return_value=None,
             ),

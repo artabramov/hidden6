@@ -1,4 +1,4 @@
-# tests/services/test_bucket_versioning_get.py
+# tests/services/test_bucket_versioning_retrieve.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -18,12 +18,12 @@ from app.db.engine import load_all_models  # noqa: E402
 from app.errors import S3AccessDeniedError, S3BucketNotFoundError  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.bucket_versioning_get import bucket_versioning_get  # noqa: E402
+from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve  # noqa: E402
 
 load_all_models()
 
 
-class TestBucketVersioningGet(unittest.IsolatedAsyncioTestCase):
+class TestBucketVersioningRetrieve(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
@@ -42,16 +42,16 @@ class TestBucketVersioningGet(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_get.ORMRepository",
+                "app.services.bucket_versioning_retrieve.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_get.load_bucket",
+                "app.services.bucket_versioning_retrieve.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ) as load_bucket_mock,
         ):
-            result = await bucket_versioning_get(
+            result = await bucket_versioning_retrieve(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -71,16 +71,16 @@ class TestBucketVersioningGet(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_get.ORMRepository",
+                "app.services.bucket_versioning_retrieve.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_get.load_bucket",
+                "app.services.bucket_versioning_retrieve.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
-            result = await bucket_versioning_get(
+            result = await bucket_versioning_retrieve(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -94,16 +94,16 @@ class TestBucketVersioningGet(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_get.ORMRepository",
+                "app.services.bucket_versioning_retrieve.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_get.load_bucket",
+                "app.services.bucket_versioning_retrieve.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
-            result = await bucket_versioning_get(
+            result = await bucket_versioning_retrieve(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -116,17 +116,17 @@ class TestBucketVersioningGet(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_get.ORMRepository",
+                "app.services.bucket_versioning_retrieve.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_get.load_bucket",
+                "app.services.bucket_versioning_retrieve.load_bucket",
                 new_callable=AsyncMock,
                 side_effect=S3BucketNotFoundError("/photos"),
             ),
         ):
             with self.assertRaises(S3BucketNotFoundError):
-                await bucket_versioning_get(
+                await bucket_versioning_retrieve(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -138,17 +138,17 @@ class TestBucketVersioningGet(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_get.ORMRepository",
+                "app.services.bucket_versioning_retrieve.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_get.load_bucket",
+                "app.services.bucket_versioning_retrieve.load_bucket",
                 new_callable=AsyncMock,
                 side_effect=S3AccessDeniedError("/photos"),
             ),
         ):
             with self.assertRaises(S3AccessDeniedError):
-                await bucket_versioning_get(
+                await bucket_versioning_retrieve(
                     session=self.session,
                     current_user=other_user,
                     bucket_name="photos",

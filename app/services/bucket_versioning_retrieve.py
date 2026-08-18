@@ -1,4 +1,4 @@
-# app/services/bucket_versioning_get.py
+# app/services/bucket_versioning_retrieve.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,7 @@ from app.s3.bucket import load_bucket
 from app.s3.versioning import get_bucket_versioning_status
 
 
-async def bucket_versioning_get(
+async def bucket_versioning_retrieve(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,

@@ -11,7 +11,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.objekt_list import objekt_list
-from app.services.bucket_versioning_get import bucket_versioning_get
+from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
 from app.xml.render_objekt_list import render_objekt_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
 
@@ -73,7 +73,7 @@ async def objekt_list_router(
     `OBJEKT_LISTED` — hook executed after the object list is retrieved.
     """
     if versioning is not None:
-        versioning_status = await bucket_versioning_get(
+        versioning_status = await bucket_versioning_retrieve(
             session=session,
             current_user=current_user,
             bucket_name=bucket_name,
