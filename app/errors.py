@@ -47,6 +47,7 @@ class S3ErrorCode:
     BUCKET_ALREADY_OWNED_BY_YOU = "BucketAlreadyOwnedByYou"
     BUCKET_NOT_FOUND = "NoSuchBucket"
     BUCKET_STATE_INVALID = "InvalidBucketState"
+    ILLEGAL_VERSIONING_CONFIGURATION = "IllegalVersioningConfigurationException"  # noqa: E501
 
     OBJEKT_NOT_FOUND = "NoSuchKey"
     OBJEKT_KEY_INVALID = "InvalidArgument"
@@ -58,7 +59,6 @@ class S3ErrorCode:
     OBJEKT_PART_INVALID = "InvalidPart"
     OBJEKT_PART_ORDER_INVALID = "InvalidPartOrder"
     OBJEKT_PART_TOO_SMALL = "EntityTooSmall"
-    ILLEGAL_VERSIONING_CONFIGURATION = "IllegalVersioningConfigurationException"  # noqa: E501
 
 
 class S3Error(Exception):
@@ -201,6 +201,21 @@ class S3BucketStateInvalidError(S3Error):
                 "bucket."
             ),
             status_code=status.HTTP_409_CONFLICT,
+            resource=resource,
+        )
+
+
+class S3IllegalVersioningConfigurationError(S3Error):
+    """Raised when the bucket versioning configuration is invalid (400)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.ILLEGAL_VERSIONING_CONFIGURATION,
+            message=(
+                "The versioning configuration specified in the request "
+                "is not valid."
+            ),
+            status_code=status.HTTP_400_BAD_REQUEST,
             resource=resource,
         )
 
@@ -375,20 +390,5 @@ class S3NotImplementedError(S3Error):
                 "this server."
             ),
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            resource=resource,
-        )
-
-
-class S3IllegalVersioningConfigurationError(S3Error):
-    """Raised when the bucket versioning configuration is invalid (400)."""
-
-    def __init__(self, resource: str | None = None) -> None:
-        super().__init__(
-            code=S3ErrorCode.ILLEGAL_VERSIONING_CONFIGURATION,
-            message=(
-                "The versioning configuration specified in the request "
-                "is not valid."
-            ),
-            status_code=status.HTTP_400_BAD_REQUEST,
             resource=resource,
         )
