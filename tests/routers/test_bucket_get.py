@@ -54,7 +54,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_versioning,
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -101,7 +101,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_versioning,
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -139,7 +139,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_list,
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -183,7 +183,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_list,
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -217,7 +217,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 new_callable=AsyncMock,
             ) as mock_list,
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
             ) as mock_lock,
         ):
@@ -247,7 +247,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ) as mock_lock,
@@ -298,7 +298,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
@@ -332,7 +332,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                "app.routers.bucket_get.bucket_object_lock_retrieve",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ) as mock_lock,

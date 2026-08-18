@@ -11,7 +11,7 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
 
 
-async def bucket_objekt_lock_retrieve(
+async def bucket_object_lock_retrieve(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,

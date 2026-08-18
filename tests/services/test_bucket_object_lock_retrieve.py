@@ -19,7 +19,7 @@ from app.errors import (  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_object_lock_retrieve import (  # noqa: E402
-    bucket_objekt_lock_retrieve,
+    bucket_object_lock_retrieve,
 )
 
 load_all_models()
@@ -54,7 +54,7 @@ class TestBucketObjektLockRetrieve(unittest.IsolatedAsyncioTestCase):
                 return_value=bucket,
             ) as load_bucket_mock,
         ):
-            result = await bucket_objekt_lock_retrieve(
+            result = await bucket_object_lock_retrieve(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -86,7 +86,7 @@ class TestBucketObjektLockRetrieve(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(
                 S3ObjectLockConfigurationNotFoundError,
             ) as cm:
-                await bucket_objekt_lock_retrieve(
+                await bucket_object_lock_retrieve(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -109,7 +109,7 @@ class TestBucketObjektLockRetrieve(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(S3BucketNotFoundError):
-                await bucket_objekt_lock_retrieve(
+                await bucket_object_lock_retrieve(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -131,7 +131,7 @@ class TestBucketObjektLockRetrieve(unittest.IsolatedAsyncioTestCase):
             ),
         ):
             with self.assertRaises(S3AccessDeniedError):
-                await bucket_objekt_lock_retrieve(
+                await bucket_object_lock_retrieve(
                     session=self.session,
                     current_user=other_user,
                     bucket_name="photos",
