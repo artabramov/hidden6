@@ -3,7 +3,7 @@
 
 import unittest
 
-from app.constants import OBJEKT_KEY_MAX_BYTES
+from app.constants import OBJECT_KEY_MAX_BYTES
 from app.errors import S3InvalidBucketNameError, S3ObjectKeyInvalidError
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
@@ -124,12 +124,12 @@ class TestValidateObjektKey(unittest.TestCase):
         self._assert_accepts("foo\\bar")
 
     def test_accepts_key_at_max_utf8_bytes(self):
-        key = "a" * OBJEKT_KEY_MAX_BYTES
+        key = "a" * OBJECT_KEY_MAX_BYTES
         self._assert_accepts(key)
 
     def test_accepts_multibyte_key_at_max_utf8_bytes(self):
-        key = "я" * (OBJEKT_KEY_MAX_BYTES // 2)
-        self.assertEqual(len(key.encode("utf-8")), OBJEKT_KEY_MAX_BYTES)
+        key = "я" * (OBJECT_KEY_MAX_BYTES // 2)
+        self.assertEqual(len(key.encode("utf-8")), OBJECT_KEY_MAX_BYTES)
         self._assert_accepts(key)
 
     def test_rejects_empty_key(self):
@@ -142,15 +142,15 @@ class TestValidateObjektKey(unittest.TestCase):
         self._assert_rejects("..")
 
     def test_rejects_key_longer_than_max_bytes(self):
-        self._assert_rejects("a" * (OBJEKT_KEY_MAX_BYTES + 1))
+        self._assert_rejects("a" * (OBJECT_KEY_MAX_BYTES + 1))
 
     def test_rejects_multibyte_key_longer_than_max_bytes(self):
-        self._assert_rejects("я" * OBJEKT_KEY_MAX_BYTES)
+        self._assert_rejects("я" * OBJECT_KEY_MAX_BYTES)
 
     def test_rejects_multibyte_key_one_byte_over_limit(self):
-        key = ("я" * (OBJEKT_KEY_MAX_BYTES // 2)) + "a"
-        self.assertEqual(len(key.encode("utf-8")), OBJEKT_KEY_MAX_BYTES + 1)
-        self.assertLess(len(key), OBJEKT_KEY_MAX_BYTES)
+        key = ("я" * (OBJECT_KEY_MAX_BYTES // 2)) + "a"
+        self.assertEqual(len(key.encode("utf-8")), OBJECT_KEY_MAX_BYTES + 1)
+        self.assertLess(len(key), OBJECT_KEY_MAX_BYTES)
         self._assert_rejects(key)
 
     def test_rejects_null_byte(self):

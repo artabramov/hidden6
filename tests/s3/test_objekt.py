@@ -5,7 +5,7 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.constants import OBJEKT_KEY_MAX_BYTES
+from app.constants import OBJECT_KEY_MAX_BYTES
 from app.s3.paths import resolve_objekt_path
 from tests.helpers import set_minimal_app_config_env
 
@@ -50,7 +50,7 @@ class TestObjektPath(unittest.TestCase):
         )
 
     def test_resolves_key_at_max_length(self):
-        key = "a" * OBJEKT_KEY_MAX_BYTES
+        key = "a" * OBJECT_KEY_MAX_BYTES
         _, object_path = resolve_objekt_path(
             "/mnt/buckets",
             "photos",

@@ -12,7 +12,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.constants import OBJEKT_PART_NUMBER_MAX  # noqa: E402
+from app.constants import OBJECT_PART_NUMBER_MAX  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
@@ -150,15 +150,15 @@ class TestObjektMultipartPartModel(unittest.TestCase):
         self._assert_rejects(self._part(part_number=0))
 
     def test_part_number_max_is_allowed(self):
-        row = self._part(part_number=OBJEKT_PART_NUMBER_MAX)
+        row = self._part(part_number=OBJECT_PART_NUMBER_MAX)
         self.session.add(row)
         self.session.commit()
         self.session.refresh(row)
 
-        self.assertEqual(row.part_number, OBJEKT_PART_NUMBER_MAX)
+        self.assertEqual(row.part_number, OBJECT_PART_NUMBER_MAX)
 
     def test_part_number_above_max_is_rejected(self):
-        self._assert_rejects(self._part(part_number=OBJEKT_PART_NUMBER_MAX + 1))
+        self._assert_rejects(self._part(part_number=OBJECT_PART_NUMBER_MAX + 1))
 
     def test_size_bytes_must_be_nonnegative(self):
         self._assert_rejects(self._part(size_bytes=-1))

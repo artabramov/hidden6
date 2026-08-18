@@ -9,7 +9,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT  # noqa: E402
+from app.constants import OBJECT_CONTENT_TYPE_DEFAULT  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
@@ -82,7 +82,7 @@ class TestMultipartCreate(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(multipart.bucket_id, 7)
         self.assertEqual(multipart.user_id, 1)
         self.assertEqual(multipart.object_key, "2024/cat.png")
-        self.assertEqual(multipart.content_type, OBJEKT_CONTENT_TYPE_DEFAULT)
+        self.assertEqual(multipart.content_type, OBJECT_CONTENT_TYPE_DEFAULT)
 
     async def test_stores_supplied_content_type(self):
         multipart = await self._create(content_type="image/png")

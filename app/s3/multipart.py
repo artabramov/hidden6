@@ -4,8 +4,8 @@
 import time
 
 from app.constants import (
-    OBJEKT_PART_NUMBER_MAX,
-    OBJEKT_PART_SIZE_MIN_BYTES,
+    OBJECT_PART_NUMBER_MAX,
+    OBJECT_PART_SIZE_MIN_BYTES,
 )
 from app.errors import (
     S3ObjectPartInvalidError,
@@ -144,7 +144,7 @@ async def load_multipart_parts(
         if part.part_number <= previous:
             raise S3ObjectPartOrderInvalidError(resource)
 
-        if part.part_number > OBJEKT_PART_NUMBER_MAX:
+        if part.part_number > OBJECT_PART_NUMBER_MAX:
             raise S3ObjectPartNumberInvalidError(resource)
 
         previous = part.part_number
@@ -166,7 +166,7 @@ async def load_multipart_parts(
 
         if (
             index < len(parts) - 1
-            and row.size_bytes < OBJEKT_PART_SIZE_MIN_BYTES
+            and row.size_bytes < OBJECT_PART_SIZE_MIN_BYTES
         ):
             raise S3ObjectPartTooSmallError(resource)
 

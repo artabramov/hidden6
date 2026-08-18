@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
+from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
 from app.models.objekt_multipart import ObjektMultipart
 from app.models.user import User
 from app.repositories.io import mktree, rmtree
@@ -62,7 +62,7 @@ async def multipart_create(
         user_id=current_user.id,
         upload_id=upload_id,
         object_key=objekt_key,
-        content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
+        content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
     )
 
     try:

@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT
+from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
 from app.errors import S3BucketNotFoundError, S3ObjectKeyConflictError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -198,7 +198,7 @@ async def objekt_upload(
                 object_key=objekt_key,
                 size_bytes=size_bytes,
                 etag=etag,
-                content_type=content_type or OBJEKT_CONTENT_TYPE_DEFAULT,
+                content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
             )
 
             try:

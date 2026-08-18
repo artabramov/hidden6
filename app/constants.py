@@ -22,13 +22,13 @@ BUCKET_VERSIONING_DISABLED = "Disabled"
 BUCKET_VERSIONING_ENABLED = "Enabled"
 BUCKET_VERSIONING_SUSPENDED = "Suspended"
 
-OBJEKT_KEY_MAX_BYTES = 1024
-OBJEKT_CONTENT_TYPE_DEFAULT = "application/octet-stream"
+OBJECT_KEY_MAX_BYTES = 1024
+OBJECT_CONTENT_TYPE_DEFAULT = "application/octet-stream"
 
 # S3 allows 10000 parts per multipart upload, and every part except
 # the last one must be at least 5 MiB.
-OBJEKT_PART_NUMBER_MAX = 10000
-OBJEKT_PART_SIZE_MIN_BYTES = 1024 * 1024 * 5
+OBJECT_PART_NUMBER_MAX = 10000
+OBJECT_PART_SIZE_MIN_BYTES = 1024 * 1024 * 5
 
 S3_XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 

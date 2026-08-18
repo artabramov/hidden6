@@ -9,7 +9,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.constants import OBJEKT_CONTENT_TYPE_DEFAULT  # noqa: E402
+from app.constants import OBJECT_CONTENT_TYPE_DEFAULT  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
@@ -187,7 +187,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             self.upsert_objekt.await_args.kwargs["content_type"],
-            OBJEKT_CONTENT_TYPE_DEFAULT,
+            OBJECT_CONTENT_TYPE_DEFAULT,
         )
 
     async def test_rejects_key_escaping_the_bucket(self):

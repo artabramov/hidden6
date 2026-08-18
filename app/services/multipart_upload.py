@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.constants import OBJEKT_PART_NUMBER_MAX
+from app.constants import OBJECT_PART_NUMBER_MAX
 from app.errors import (
     S3ObjectPartNumberInvalidError,
     S3ObjectUploadNotFoundError,
@@ -77,7 +77,7 @@ async def multipart_upload(
 
     validate_objekt_key(objekt_key, resource)
 
-    if part_number < 1 or part_number > OBJEKT_PART_NUMBER_MAX:
+    if part_number < 1 or part_number > OBJECT_PART_NUMBER_MAX:
         raise S3ObjectPartNumberInvalidError(resource)
 
     repo = ORMRepository(session)
