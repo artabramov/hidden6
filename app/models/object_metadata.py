@@ -17,7 +17,7 @@ class ObjectMetadata(Base):
     Additional metadata associated with the current S3 object state.
 
     Stores extensible HTTP and S3 object metadata that does not belong
-    in the fixed Objekt schema, including user-defined x-amz-meta-*
+    in the fixed S3Object schema, including user-defined x-amz-meta-*
     values.
     """
 
@@ -45,7 +45,7 @@ class ObjectMetadata(Base):
         nullable=False,
     )
 
-    object_metadata_object: Mapped["Objekt"] = relationship(  # noqa: F821
+    object_metadata_object: Mapped["S3Object"] = relationship(  # noqa: F821
         back_populates="object_metadata",
         foreign_keys=[object_id],
         lazy="raise",

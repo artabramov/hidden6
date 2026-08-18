@@ -18,7 +18,7 @@ from app.constants import (  # noqa: E402
 )
 from app.db.engine import load_all_models  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.routers.bucket_get import bucket_get_router  # noqa: E402
 
@@ -30,7 +30,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
         user = User(id=1, username="alice", is_root=False)
         session = MagicMock()
         objekts = [
-            Objekt(
+            S3Object(
                 id=3,
                 bucket_id=7,
                 user_id=1,

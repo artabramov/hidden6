@@ -4,7 +4,7 @@
 from xml.sax.saxutils import escape
 
 from app.constants import S3_XMLNS
-from app.models.object import Objekt
+from app.models.object import S3Object
 from app.s3.datetime import format_datetime
 
 
@@ -12,7 +12,7 @@ def render_object_list(
     bucket_name: str,
     prefix: str,
     max_keys: int,
-    objekts: list[Objekt],
+    objekts: list[S3Object],
 ) -> str:
     """
     Render an S3-compatible ListBucketResult XML body.

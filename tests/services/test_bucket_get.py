@@ -13,7 +13,7 @@ from app.db.engine import load_all_models  # noqa: E402
 from app.errors import S3BucketNotFoundError, S3AccessDeniedError  # noqa: E402
 from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.bucket_get import bucket_get  # noqa: E402
 
@@ -33,7 +33,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
         return repo
 
     async def test_lists_all_objects_without_prefix(self):
-        objekt = Objekt(
+        objekt = S3Object(
             id=1, bucket_id=7, user_id=1,
             object_key="photo.jpg", size_bytes=100,
             etag="abc", content_type="image/jpeg",
@@ -58,7 +58,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
             )
 
         repo.select_all.assert_awaited_once_with(
-            Objekt,
+            S3Object,
             bucket_id=7,
             delete_marker=False,
             order_by="object_key",
@@ -69,7 +69,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
         emit_mock.assert_awaited_once_with(Events.OBJECT_LISTED, [objekt])
 
     async def test_lists_objects_with_prefix(self):
-        objekt = Objekt(
+        objekt = S3Object(
             id=2, bucket_id=7, user_id=1,
             object_key="2024/cat.png", size_bytes=50,
             etag="def", content_type="image/png",
@@ -95,7 +95,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
             )
 
         repo.select_all.assert_awaited_once_with(
-            Objekt,
+            S3Object,
             bucket_id=7,
             delete_marker=False,
             order_by="object_key",

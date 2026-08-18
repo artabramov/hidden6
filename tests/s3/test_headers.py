@@ -9,7 +9,7 @@ from tests.helpers import set_minimal_app_config_env
 set_minimal_app_config_env()
 
 from app.db.engine import load_all_models  # noqa: E402
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.s3.datetime import http_datetime  # noqa: E402
 from app.s3.headers import etag_headers, object_headers  # noqa: E402
 
@@ -26,7 +26,7 @@ class TestEtagHeaders(unittest.TestCase):
 
 class TestObjektHeaders(unittest.TestCase):
     def test_builds_get_and_head_headers(self):
-        objekt = Objekt(
+        objekt = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,

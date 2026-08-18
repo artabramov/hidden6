@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_config
 from app.errors import S3ObjectNotFoundError
 from app.hooks import Events, hooks
-from app.models.object import Objekt
+from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
@@ -21,7 +21,7 @@ async def object_download(
     current_user: User,
     bucket_name: str,
     object_key: str,
-) -> tuple[Objekt, str]:
+) -> tuple[S3Object, str]:
     """
     Resolve an S3 object for download.
 

@@ -129,7 +129,7 @@ class ObjectVersion(Base):
         server_default=text("0"),
     )
 
-    object_version_object: Mapped["Objekt"] = relationship(  # noqa: F821
+    object_version_object: Mapped["S3Object"] = relationship(  # noqa: F821
         back_populates="object_versions",
         foreign_keys=[object_id],
         lazy="raise",

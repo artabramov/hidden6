@@ -4,7 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.hooks import Events, hooks
-from app.models.object import Objekt
+from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
@@ -16,7 +16,7 @@ async def bucket_get(
     bucket_name: str,
     prefix: str = "",
     max_keys: int = 1000,
-) -> list[Objekt]:
+) -> list[S3Object]:
     """
     List S3 objects in a bucket visible to the authenticated user.
 
@@ -42,7 +42,7 @@ async def bucket_get(
         escaped = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")  # noqa: E501
         filters["object_key__like"] = f"{escaped}%"
 
-    objekts = await repo.select_all(Objekt, **filters)
+    objekts = await repo.select_all(S3Object, **filters)
 
     await hooks.emit(Events.OBJECT_LISTED, objekts)
     return objekts

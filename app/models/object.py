@@ -17,7 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class Objekt(Base):
+class S3Object(Base):
     """
     Current S3 state for an object key inside a bucket.
 

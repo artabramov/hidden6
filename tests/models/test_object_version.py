@@ -15,7 +15,7 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import ObjectMultipart  # noqa: E402, F401
 from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
@@ -53,7 +53,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.objekt = Objekt(
+        self.objekt = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             object_key="a.txt",
@@ -148,7 +148,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.add(self._version(version_id="a" * 32))
         self.session.commit()
 
-        other = Objekt(
+        other = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             object_key="other.txt",
@@ -256,9 +256,9 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt)
-            .where(Objekt.id == self.objekt.id)
-            .options(selectinload(Objekt.object_versions)),
+            select(S3Object)
+            .where(S3Object.id == self.objekt.id)
+            .options(selectinload(S3Object.object_versions)),
         )
 
         ids = sorted(v.version_id for v in loaded.object_versions)
@@ -282,7 +282,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt).where(Objekt.id == self.objekt.id),
+            select(S3Object).where(S3Object.id == self.objekt.id),
         )
 
         with self.assertRaises(InvalidRequestError):

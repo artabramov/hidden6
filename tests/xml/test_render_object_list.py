@@ -8,12 +8,12 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.xml.render_object_list import render_object_list  # noqa: E402
 
 
-def _objekt(key: str, size: int = 10, etag: str = "abc", modified_at: int = 1_704_067_200) -> Objekt:
-    return Objekt(
+def _objekt(key: str, size: int = 10, etag: str = "abc", modified_at: int = 1_704_067_200) -> S3Object:
+    return S3Object(
         id=1,
         bucket_id=1,
         user_id=1,

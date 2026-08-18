@@ -144,7 +144,7 @@ class Bucket(Base):
         lazy="raise",
     )
 
-    bucket_objects: Mapped[list["Objekt"]] = relationship(  # noqa: F821
+    bucket_objects: Mapped[list["S3Object"]] = relationship(  # noqa: F821
         back_populates="object_bucket",
         lazy="raise",
     )

@@ -15,7 +15,7 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import ObjectMultipart  # noqa: E402, F401
 from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
@@ -57,7 +57,7 @@ class TestObjektModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _objekt(self, **kwargs) -> Objekt:
+    def _objekt(self, **kwargs) -> S3Object:
         defaults = {
             "bucket_id": self.bucket.id,
             "user_id": self.user.id,
@@ -67,9 +67,9 @@ class TestObjektModel(unittest.TestCase):
             "content_type": "text/plain",
         }
         defaults.update(kwargs)
-        return Objekt(**defaults)
+        return S3Object(**defaults)
 
-    def _delete_marker(self, **kwargs) -> Objekt:
+    def _delete_marker(self, **kwargs) -> S3Object:
         defaults = {
             "delete_marker": True,
             "size_bytes": None,
@@ -85,7 +85,7 @@ class TestObjektModel(unittest.TestCase):
             self.session.commit()
 
     def test_tablename(self):
-        self.assertEqual(Objekt.__tablename__, "objects")
+        self.assertEqual(S3Object.__tablename__, "objects")
 
     def test_persists_required_fields_and_defaults(self):
         objekt = self._objekt(
@@ -144,7 +144,7 @@ class TestObjektModel(unittest.TestCase):
         )
         self.session.commit()
 
-        keys = self.session.scalars(select(Objekt.object_key)).all()
+        keys = self.session.scalars(select(S3Object.object_key)).all()
         self.assertEqual(keys.count("readme.txt"), 2)
 
     def test_version_id_must_be_unique(self):
@@ -242,9 +242,9 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt)
-            .where(Objekt.id == objekt.id)
-            .options(selectinload(Objekt.object_bucket)),
+            select(S3Object)
+            .where(S3Object.id == objekt.id)
+            .options(selectinload(S3Object.object_bucket)),
         )
 
         self.assertEqual(loaded.object_bucket.id, self.bucket.id)
@@ -256,9 +256,9 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt)
-            .where(Objekt.id == objekt.id)
-            .options(selectinload(Objekt.object_user)),
+            select(S3Object)
+            .where(S3Object.id == objekt.id)
+            .options(selectinload(S3Object.object_user)),
         )
 
         self.assertEqual(loaded.object_user.id, self.user.id)
@@ -297,7 +297,7 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt).where(Objekt.id == objekt.id),
+            select(S3Object).where(S3Object.id == objekt.id),
         )
 
         with self.assertRaises(InvalidRequestError):
@@ -309,7 +309,7 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(Objekt).where(Objekt.id == objekt.id),
+            select(S3Object).where(S3Object.id == objekt.id),
         )
 
         with self.assertRaises(InvalidRequestError):

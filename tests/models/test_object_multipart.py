@@ -22,7 +22,7 @@ from app.models.object_multipart_part import ObjectMultipartPart  # noqa: E402, 
 from app.models.object_version import ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import ObjectVersionMetadata  # noqa: E402, F401
 from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
-from app.models.object import Objekt  # noqa: E402, F401
+from app.models.object import S3Object  # noqa: E402, F401
 from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
 from app.models.object_tag import ObjectTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402

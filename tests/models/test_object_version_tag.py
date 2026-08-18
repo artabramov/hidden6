@@ -15,7 +15,7 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
 from app.models.object_multipart import ObjectMultipart  # noqa: E402, F401
 from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
@@ -53,7 +53,7 @@ class TestObjectVersionTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.objekt = Objekt(
+        self.objekt = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             object_key="a.txt",

@@ -10,7 +10,7 @@ from app.repositories.orm import ORMRepository
 from app.models.user import User
 from app.models.user_key import UserKey
 from app.models.bucket import Bucket
-from app.models.object import Objekt
+from app.models.object import S3Object
 
 
 async def gocryptfs_initialized(_: None) -> None:
@@ -67,15 +67,15 @@ async def bucket_object_lock_updated(bucket: Bucket) -> None:
     ...
 
 
-async def object_uploaded(objekt: Objekt) -> None:
+async def object_uploaded(objekt: S3Object) -> None:
     ...
 
 
-async def object_listed(objekts: List[Objekt]) -> None:
+async def object_listed(objekts: List[S3Object]) -> None:
     ...
 
 
-async def object_downloaded(objekt: Objekt) -> None:
+async def object_downloaded(objekt: S3Object) -> None:
     ...
 
 

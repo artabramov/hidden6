@@ -17,7 +17,7 @@ from app.errors import (  # noqa: E402
 )
 from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.object_download import object_download  # noqa: E402
 
@@ -29,7 +29,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        self.objekt = Objekt(
+        self.objekt = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,

@@ -9,7 +9,7 @@ from app.errors import (
     S3ObjectNotFoundError,
 )
 from app.models.bucket import Bucket
-from app.models.object import Objekt
+from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository
@@ -21,15 +21,15 @@ async def load_object(
     bucket: Bucket,
     object_key: str,
     resource: str,
-) -> Objekt:
+) -> S3Object:
     """
-    Load the Objekt row for a key inside a bucket. A missing row or a
+    Load the S3Object row for a key inside a bucket. A missing row or a
     current delete marker is reported as NoSuchKey — the same code S3
     uses when GetObject / HeadObject address a key with no current
     object bytes.
     """
     objekt = await repo.select(
-        Objekt,
+        S3Object,
         bucket_id=bucket.id,
         object_key=object_key,
     )
@@ -63,9 +63,9 @@ async def upsert_object(
     size_bytes: int,
     etag: str,
     content_type: str,
-) -> Objekt:
+) -> S3Object:
     """
-    Insert the Objekt row for a new key or update the existing row when
+    Insert the S3Object row for a new key or update the existing row when
     the key is overwritten. The current state becomes an object with a
     payload (not a delete marker). Bucket default Object Lock retention
     is applied to the new current state.
@@ -73,13 +73,13 @@ async def upsert_object(
     lock_mode, retain_until = bucket_default_object_lock(bucket)
 
     objekt = await repo.select(
-        Objekt,
+        S3Object,
         bucket_id=bucket.id,
         object_key=object_key,
     )
 
     if objekt is None:
-        objekt = Objekt(
+        objekt = S3Object(
             bucket_id=bucket.id,
             user_id=user.id,
             object_key=object_key,

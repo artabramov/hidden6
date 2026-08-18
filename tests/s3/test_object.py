@@ -18,7 +18,7 @@ from app.errors import (  # noqa: E402
     S3ObjectNotFoundError,
 )
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.s3.object import load_object, object_mkdir, upsert_object  # noqa: E402
 
@@ -101,7 +101,7 @@ class TestObjektPath(unittest.TestCase):
 class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
     async def test_returns_objekt(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        objekt = Objekt(
+        objekt = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -117,14 +117,14 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
 
         self.assertIs(result, objekt)
         repo.select.assert_awaited_once_with(
-            Objekt,
+            S3Object,
             bucket_id=7,
             object_key="cat.png",
         )
 
     async def test_delete_marker_raises(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        objekt = Objekt(
+        objekt = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -214,7 +214,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         objekt = await self._upsert(repo)
 
         repo.insert.assert_awaited_once_with(objekt)
-        self.assertIsInstance(objekt, Objekt)
+        self.assertIsInstance(objekt, S3Object)
         self.assertEqual(objekt.bucket_id, 7)
         self.assertEqual(objekt.user_id, 1)
         self.assertEqual(objekt.object_key, "2024/cat.png")
@@ -226,7 +226,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(objekt.retain_until)
 
     async def test_updates_existing_objekt(self):
-        existing = Objekt(
+        existing = S3Object(
             id=3,
             bucket_id=7,
             user_id=99,
@@ -250,7 +250,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(existing.modified_at, int)
 
     async def test_overwrite_clears_delete_marker(self):
-        existing = Objekt(
+        existing = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -295,7 +295,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.bucket.object_lock_enabled = True
         self.bucket.default_lock_mode = "GOVERNANCE"
         self.bucket.default_retention_days = 1
-        existing = Objekt(
+        existing = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,
@@ -315,7 +315,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(existing.legal_hold)
 
     async def test_overwrite_clears_lock_without_bucket_default(self):
-        existing = Objekt(
+        existing = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,

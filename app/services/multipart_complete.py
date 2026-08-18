@@ -14,7 +14,7 @@ from app.errors import (
 )
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.models.object import Objekt
+from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.io import (
     concat,
@@ -55,7 +55,7 @@ async def multipart_complete(
     object_key: str,
     upload_id: str,
     parts: list[MultipartPart],
-) -> Objekt:
+) -> S3Object:
     """
     Complete an S3 multipart upload. The uploaded parts are validated
     and assembled into a staged object while the multipart upload is

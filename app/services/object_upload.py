@@ -11,7 +11,7 @@ from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
 from app.errors import S3BucketNotFoundError, S3ObjectKeyConflictError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
-from app.models.object import Objekt
+from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.io import (
     AsyncReadable,
@@ -108,7 +108,7 @@ async def object_upload(
     bucket_name: str,
     object_key: str,
     body: AsyncReadable,
-) -> Objekt:
+) -> S3Object:
     """
     Upload an S3 object to the specified bucket. The operation is
     transactional at the DB level and reconciles filesystem state

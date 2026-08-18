@@ -69,7 +69,7 @@ class User(Base):
         lazy="raise",
     )
 
-    user_objects: Mapped[list["Objekt"]] = relationship(  # noqa: F821
+    user_objects: Mapped[list["S3Object"]] = relationship(  # noqa: F821
         back_populates="object_user",
         lazy="raise",
     )

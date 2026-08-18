@@ -22,7 +22,7 @@ from app.errors import (  # noqa: E402
 from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.object import Objekt  # noqa: E402
+from app.models.object import S3Object  # noqa: E402
 from app.models.object_multipart import ObjectMultipart  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.schemas.multipart_complete import MultipartPart  # noqa: E402
@@ -68,7 +68,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             object_key="2024/cat.png",
             content_type="image/png",
         )
-        self.objekt = Objekt(
+        self.objekt = S3Object(
             id=3,
             bucket_id=7,
             user_id=1,

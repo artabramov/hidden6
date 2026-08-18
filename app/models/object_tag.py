@@ -45,7 +45,7 @@ class ObjectTag(Base):
         nullable=False,
     )
 
-    object_tag_object: Mapped["Objekt"] = relationship(  # noqa: F821
+    object_tag_object: Mapped["S3Object"] = relationship(  # noqa: F821
         back_populates="object_tags",
         foreign_keys=[object_id],
         lazy="raise",
