@@ -1,4 +1,4 @@
-# tests/services/test_objekt_list.py
+# tests/services/test_bucket_get.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -15,12 +15,12 @@ from app.hooks import Events  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.objekt_list import objekt_list  # noqa: E402
+from app.services.bucket_get import bucket_get  # noqa: E402
 
 load_all_models()
 
 
-class TestObjektList(unittest.IsolatedAsyncioTestCase):
+class TestBucketGet(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
@@ -41,17 +41,17 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(objekts=[objekt])
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch(
-                "app.services.objekt_list.hooks.emit",
+                "app.services.bucket_get.hooks.emit",
                 new_callable=AsyncMock,
             ) as emit_mock,
         ):
-            result = await objekt_list(
+            result = await bucket_get(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -77,17 +77,17 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(objekts=[objekt])
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch(
-                "app.services.objekt_list.hooks.emit",
+                "app.services.bucket_get.hooks.emit",
                 new_callable=AsyncMock,
             ),
         ):
-            result = await objekt_list(
+            result = await bucket_get(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -109,14 +109,14 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(objekts=[])
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
-            patch("app.services.objekt_list.hooks.emit", new_callable=AsyncMock),
+            patch("app.services.bucket_get.hooks.emit", new_callable=AsyncMock),
         ):
-            await objekt_list(
+            await bucket_get(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -130,14 +130,14 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(objekts=[])
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
-            patch("app.services.objekt_list.hooks.emit", new_callable=AsyncMock),
+            patch("app.services.bucket_get.hooks.emit", new_callable=AsyncMock),
         ):
-            await objekt_list(
+            await bucket_get(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -151,17 +151,17 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo(objekts=[])
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(return_value=self.bucket),
             ),
             patch(
-                "app.services.objekt_list.hooks.emit",
+                "app.services.bucket_get.hooks.emit",
                 new_callable=AsyncMock,
             ) as emit_mock,
         ):
-            result = await objekt_list(
+            result = await bucket_get(
                 session=self.session,
                 current_user=self.user,
                 bucket_name="photos",
@@ -174,14 +174,14 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo()
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(side_effect=S3BucketNotFoundError("/photos")),
             ),
         ):
             with self.assertRaises(S3BucketNotFoundError):
-                await objekt_list(
+                await bucket_get(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -192,14 +192,14 @@ class TestObjektList(unittest.IsolatedAsyncioTestCase):
         repo = self._build_repo()
 
         with (
-            patch("app.services.objekt_list.ORMRepository", return_value=repo),
+            patch("app.services.bucket_get.ORMRepository", return_value=repo),
             patch(
-                "app.services.objekt_list.load_bucket",
+                "app.services.bucket_get.load_bucket",
                 new=AsyncMock(side_effect=S3AccessDeniedError("/photos")),
             ),
         ):
             with self.assertRaises(S3AccessDeniedError):
-                await objekt_list(
+                await bucket_get(
                     session=self.session,
                     current_user=other_user,
                     bucket_name="photos",

@@ -1,4 +1,4 @@
-# tests/routers/test_objekt_list.py
+# tests/routers/test_bucket_get.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -19,12 +19,12 @@ from app.constants import (  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.routers.objekt_list import objekt_list_router  # noqa: E402
+from app.routers.bucket_get import bucket_get_router  # noqa: E402
 
 load_all_models()
 
 
-class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
+class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
     async def test_returns_200_with_list_bucket_xml(self):
         user = User(id=1, username="alice", is_root=False)
         session = MagicMock()
@@ -44,16 +44,16 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.objekt_list",
+                "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
                 return_value=objekts,
             ) as mock_list,
             patch(
-                "app.routers.objekt_list.bucket_versioning_retrieve",
+                "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
             ) as mock_versioning,
         ):
-            response = await objekt_list_router(
+            response = await bucket_get_router(
                 bucket_name="photos",
                 session=session,
                 current_user=user,
@@ -86,16 +86,16 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.objekt_list",
+                "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
                 return_value=[],
             ) as mock_list,
             patch(
-                "app.routers.objekt_list.bucket_versioning_retrieve",
+                "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
             ) as mock_versioning,
         ):
-            response = await objekt_list_router(
+            response = await bucket_get_router(
                 bucket_name="photos",
                 session=session,
                 current_user=user,
@@ -119,16 +119,16 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.bucket_versioning_retrieve",
+                "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
                 return_value=BUCKET_VERSIONING_ENABLED,
             ) as mock_versioning,
             patch(
-                "app.routers.objekt_list.objekt_list",
+                "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
             ) as mock_list,
         ):
-            response = await objekt_list_router(
+            response = await bucket_get_router(
                 bucket_name="photos",
                 session=session,
                 current_user=user,
@@ -158,16 +158,16 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.bucket_versioning_retrieve",
+                "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
                 return_value=BUCKET_VERSIONING_SUSPENDED,
             ),
             patch(
-                "app.routers.objekt_list.objekt_list",
+                "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
             ) as mock_list,
         ):
-            response = await objekt_list_router(
+            response = await bucket_get_router(
                 bucket_name="photos",
                 session=session,
                 current_user=user,
@@ -187,16 +187,16 @@ class TestObjektListRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.objekt_list.bucket_versioning_retrieve",
+                "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
                 return_value=None,
             ),
             patch(
-                "app.routers.objekt_list.objekt_list",
+                "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
             ) as mock_list,
         ):
-            response = await objekt_list_router(
+            response = await bucket_get_router(
                 bucket_name="photos",
                 session=session,
                 current_user=user,

@@ -1,4 +1,4 @@
-# app/routers/objekt_list.py
+# app/routers/bucket_get.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from typing import Annotated
@@ -10,7 +10,7 @@ from app.dependencies.require_auth import require_auth
 from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
-from app.services.objekt_list import objekt_list
+from app.services.bucket_get import bucket_get
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
 from app.xml.render_objekt_list import render_objekt_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
@@ -53,7 +53,7 @@ _MAX_KEYS_DEFAULT = 1000
     dependencies=[Depends(require_gocryptfs())],
     summary="List objects or get bucket versioning.",
 )
-async def objekt_list_router(
+async def bucket_get_router(
     bucket_name: str,
     session: AsyncSession = Depends(require_session),
     current_user: User = Depends(require_auth),
@@ -85,7 +85,7 @@ async def objekt_list_router(
             media_type="application/xml",
         )
 
-    objekts = await objekt_list(
+    objekts = await bucket_get(
         session=session,
         current_user=current_user,
         bucket_name=bucket_name,

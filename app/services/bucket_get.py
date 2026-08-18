@@ -1,4 +1,4 @@
-# app/services/objekt_list.py
+# app/services/bucket_get.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,7 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
 
 
-async def objekt_list(
+async def bucket_get(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,
