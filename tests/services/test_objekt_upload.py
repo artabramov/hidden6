@@ -26,7 +26,7 @@ from app.services.objekt_upload import objekt_upload  # noqa: E402
 load_all_models()
 
 BUCKET_PATH = "/mnt/buckets/photos"
-OBJEKT_PATH = "/mnt/buckets/photos/2024/cat.png"
+OBJECT_PATH = "/mnt/buckets/photos/2024/cat.png"
 STAGED_PATH = "/mnt/tmp/staged"
 BACKUP_PATH = "/mnt/tmp/backup"
 RESOURCE = "/photos/2024/cat.png"
@@ -148,10 +148,10 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.lock.assert_called_once_with(BUCKET_PATH, LockType.WRITE)
         self.isdir.assert_awaited_once_with(BUCKET_PATH)
         self.upload.assert_awaited_once_with(self.body, STAGED_PATH)
-        self.objekt_mkdir.assert_awaited_once_with(OBJEKT_PATH, RESOURCE)
-        self.isfile.assert_awaited_once_with(OBJEKT_PATH)
+        self.objekt_mkdir.assert_awaited_once_with(OBJECT_PATH, RESOURCE)
+        self.isfile.assert_awaited_once_with(OBJECT_PATH)
         self.copy.assert_not_awaited()
-        self.rename.assert_awaited_once_with(STAGED_PATH, OBJEKT_PATH)
+        self.rename.assert_awaited_once_with(STAGED_PATH, OBJECT_PATH)
         self.repo.commit.assert_awaited_once()
         self.delete.assert_not_awaited()
         self.assertIs(objekt, self.objekt)
@@ -162,8 +162,8 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         await self._upload()
 
-        self.copy.assert_awaited_once_with(OBJEKT_PATH, BACKUP_PATH)
-        self.rename.assert_awaited_once_with(STAGED_PATH, OBJEKT_PATH)
+        self.copy.assert_awaited_once_with(OBJECT_PATH, BACKUP_PATH)
+        self.rename.assert_awaited_once_with(STAGED_PATH, OBJECT_PATH)
         self.repo.commit.assert_awaited_once()
         self.delete.assert_awaited_once_with(BACKUP_PATH)
 
@@ -278,7 +278,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
 
-        self.copy.assert_awaited_once_with(OBJEKT_PATH, BACKUP_PATH)
+        self.copy.assert_awaited_once_with(OBJECT_PATH, BACKUP_PATH)
         self.assertEqual(
             self._delete_paths(),
             [BACKUP_PATH, STAGED_PATH],
@@ -307,7 +307,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.repo.rollback.assert_awaited_once()
         self.assertEqual(
             self._delete_paths(),
-            [OBJEKT_PATH, STAGED_PATH],
+            [OBJECT_PATH, STAGED_PATH],
         )
         self.copy.assert_not_awaited()
         self.emit.assert_not_awaited()
@@ -322,8 +322,8 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             self.copy.await_args_list,
             [
-                call(OBJEKT_PATH, BACKUP_PATH),
-                call(BACKUP_PATH, OBJEKT_PATH),
+                call(OBJECT_PATH, BACKUP_PATH),
+                call(BACKUP_PATH, OBJECT_PATH),
             ],
         )
         self.assertEqual(
