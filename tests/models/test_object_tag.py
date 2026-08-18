@@ -100,7 +100,7 @@ class TestObjectTagModel(unittest.TestCase):
 
         self.assertEqual(row.tag_value, "")
 
-    def test_tag_key_unique_per_objekt(self):
+    def test_tag_key_unique_per_object(self):
         self.session.add(self._tag(tag_key="color", tag_value="red"))
         self.session.commit()
 
@@ -108,7 +108,7 @@ class TestObjectTagModel(unittest.TestCase):
         with self.assertRaises(IntegrityError):
             self.session.commit()
 
-    def test_same_tag_key_allowed_on_different_objekts(self):
+    def test_same_tag_key_allowed_on_different_objects(self):
         other = S3Object(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
@@ -134,7 +134,7 @@ class TestObjectTagModel(unittest.TestCase):
         rows = self.session.scalars(select(ObjectTag)).all()
         self.assertEqual(len(rows), 2)
 
-    def test_relationship_back_to_objekt(self):
+    def test_relationship_back_to_object(self):
         row = self._tag()
         self.session.add(row)
         self.session.commit()
@@ -173,7 +173,7 @@ class TestObjectTagModel(unittest.TestCase):
         with self.assertRaises(InvalidRequestError):
             _ = loaded.object_tags
 
-    def test_cascade_delete_with_objekt(self):
+    def test_cascade_delete_with_object(self):
         self.session.add(self._tag())
         self.session.commit()
 

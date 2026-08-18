@@ -27,9 +27,9 @@ class TestBucketPath(unittest.TestCase):
         )
 
 
-class TestObjektPath(unittest.TestCase):
+class TestObjectPath(unittest.TestCase):
     def test_resolves_nested_key(self):
-        resolved_bucket, resolved_objekt = resolve_object_path(
+        resolved_bucket, resolved_object = resolve_object_path(
             "/mnt/buckets",
             "photos",
             "2024/summer/cat.png",
@@ -37,11 +37,11 @@ class TestObjektPath(unittest.TestCase):
 
         self.assertEqual(resolved_bucket, "/mnt/buckets/photos")
         self.assertEqual(
-            resolved_objekt,
+            resolved_object,
             "/mnt/buckets/photos/2024/summer/cat.png",
         )
         self.assertEqual(
-            resolved_objekt,
+            resolved_object,
             os.path.join(resolved_bucket, "2024/summer/cat.png"),
         )
 

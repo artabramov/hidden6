@@ -24,7 +24,7 @@ from app.services.object_download import object_download  # noqa: E402
 load_all_models()
 
 
-class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
+class TestObjectDownload(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()

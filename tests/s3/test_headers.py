@@ -24,7 +24,7 @@ class TestEtagHeaders(unittest.TestCase):
         )
 
 
-class TestObjektHeaders(unittest.TestCase):
+class TestObjectHeaders(unittest.TestCase):
     def test_builds_get_and_head_headers(self):
         s3_object = S3Object(
             id=3,

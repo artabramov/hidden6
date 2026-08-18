@@ -21,7 +21,7 @@ from app.s3.datetime import http_datetime  # noqa: E402
 load_all_models()
 
 
-class TestObjektDownloadRouter(unittest.IsolatedAsyncioTestCase):
+class TestObjectDownloadRouter(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()

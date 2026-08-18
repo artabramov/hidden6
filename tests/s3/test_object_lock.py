@@ -28,7 +28,7 @@ load_all_models()
 RESOURCE = "/photos"
 
 
-class TestSetBucketObjektLockConfiguration(unittest.TestCase):
+class TestSetBucketObjectLockConfiguration(unittest.TestCase):
     def _bucket(self, **kwargs) -> Bucket:
         values = {
             "id": 1,

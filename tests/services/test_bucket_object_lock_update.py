@@ -60,7 +60,7 @@ COMPLIANCE_YEARS_BODY = (
 EMPTY_BODY = b"<ObjectLockConfiguration></ObjectLockConfiguration>"
 
 
-class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
+class TestBucketObjectLockUpdate(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.log_patcher = patch("app.services.bucket_object_lock_update.log")
         self.log = self.log_patcher.start()

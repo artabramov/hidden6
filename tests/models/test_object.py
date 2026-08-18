@@ -29,7 +29,7 @@ from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjektModel(unittest.TestCase):
+class TestObjectModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -57,7 +57,7 @@ class TestObjektModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _objekt(self, **kwargs) -> S3Object:
+    def _object(self, **kwargs) -> S3Object:
         defaults = {
             "bucket_id": self.bucket.id,
             "user_id": self.user.id,
@@ -77,7 +77,7 @@ class TestObjektModel(unittest.TestCase):
             "content_type": None,
         }
         defaults.update(kwargs)
-        return self._objekt(**defaults)
+        return self._object(**defaults)
 
     def _assert_rejects(self, s3_object):
         self.session.add(s3_object)
@@ -88,7 +88,7 @@ class TestObjektModel(unittest.TestCase):
         self.assertEqual(S3Object.__tablename__, "objects")
 
     def test_persists_required_fields_and_defaults(self):
-        s3_object = self._objekt(
+        s3_object = self._object(
             object_key="album/a.jpg",
             size_bytes=1024,
             etag="d41d8cd98f00b204e9800998ecf8427e",
@@ -114,11 +114,11 @@ class TestObjektModel(unittest.TestCase):
         self.assertIsInstance(s3_object.modified_at, int)
 
     def test_object_key_unique_per_bucket(self):
-        self.session.add(self._objekt(object_key="same.txt", etag="a" * 32))
+        self.session.add(self._object(object_key="same.txt", etag="a" * 32))
         self.session.commit()
 
         self.session.add(
-            self._objekt(
+            self._object(
                 object_key="same.txt",
                 size_bytes=2,
                 etag="b" * 32,
@@ -133,9 +133,9 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(other)
 
-        self.session.add(self._objekt(object_key="readme.txt", etag="a" * 32))
+        self.session.add(self._object(object_key="readme.txt", etag="a" * 32))
         self.session.add(
-            self._objekt(
+            self._object(
                 bucket_id=other.id,
                 object_key="readme.txt",
                 size_bytes=2,
@@ -148,11 +148,11 @@ class TestObjektModel(unittest.TestCase):
         self.assertEqual(keys.count("readme.txt"), 2)
 
     def test_version_id_must_be_unique(self):
-        self.session.add(self._objekt(object_key="a.txt", version_id="a" * 32))
+        self.session.add(self._object(object_key="a.txt", version_id="a" * 32))
         self.session.commit()
 
         self.session.add(
-            self._objekt(object_key="b.txt", version_id="a" * 32),
+            self._object(object_key="b.txt", version_id="a" * 32),
         )
         with self.assertRaises(IntegrityError):
             self.session.commit()
@@ -163,7 +163,7 @@ class TestObjektModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(root)
 
-        s3_object = self._objekt(
+        s3_object = self._object(
             user_id=root.id,
             object_key="from-root.txt",
             etag="c" * 32,
@@ -191,7 +191,7 @@ class TestObjektModel(unittest.TestCase):
         self.assertFalse(s3_object.legal_hold)
 
     def test_object_lock_fields(self):
-        s3_object = self._objekt(
+        s3_object = self._object(
             lock_mode="COMPLIANCE",
             retain_until=1_704_067_200,
             legal_hold=True,
@@ -206,7 +206,7 @@ class TestObjektModel(unittest.TestCase):
         self.assertTrue(s3_object.legal_hold)
 
     def test_payload_required_when_not_delete_marker(self):
-        self._assert_rejects(self._objekt(etag=None))
+        self._assert_rejects(self._object(etag=None))
 
     def test_payload_forbidden_on_delete_marker(self):
         self._assert_rejects(self._delete_marker(etag="a" * 32))
@@ -223,21 +223,21 @@ class TestObjektModel(unittest.TestCase):
         self._assert_rejects(self._delete_marker(legal_hold=True))
 
     def test_lock_mode_requires_retain_until(self):
-        self._assert_rejects(self._objekt(lock_mode="GOVERNANCE"))
+        self._assert_rejects(self._object(lock_mode="GOVERNANCE"))
 
     def test_lock_mode_must_be_governance_or_compliance(self):
         self._assert_rejects(
-            self._objekt(
+            self._object(
                 lock_mode="INVALID",
                 retain_until=1_704_067_200,
             ),
         )
 
     def test_size_bytes_must_be_nonnegative(self):
-        self._assert_rejects(self._objekt(size_bytes=-1))
+        self._assert_rejects(self._object(size_bytes=-1))
 
     def test_relationship_back_to_bucket(self):
-        s3_object = self._objekt(object_key="x.bin", size_bytes=0, etag="c" * 32)
+        s3_object = self._object(object_key="x.bin", size_bytes=0, etag="c" * 32)
         self.session.add(s3_object)
         self.session.commit()
 
@@ -251,7 +251,7 @@ class TestObjektModel(unittest.TestCase):
         self.assertEqual(loaded.object_bucket.bucket_name, "photos")
 
     def test_relationship_back_to_user(self):
-        s3_object = self._objekt(object_key="x.bin", size_bytes=0, etag="c" * 32)
+        s3_object = self._object(object_key="x.bin", size_bytes=0, etag="c" * 32)
         self.session.add(s3_object)
         self.session.commit()
 
@@ -264,10 +264,10 @@ class TestObjektModel(unittest.TestCase):
         self.assertEqual(loaded.object_user.id, self.user.id)
         self.assertEqual(loaded.object_user.username, "alice")
 
-    def test_bucket_relationship_to_objekts(self):
-        self.session.add(self._objekt(object_key="a.txt", etag="a" * 32))
+    def test_bucket_relationship_to_objects(self):
+        self.session.add(self._object(object_key="a.txt", etag="a" * 32))
         self.session.add(
-            self._objekt(object_key="b.txt", size_bytes=2, etag="b" * 32),
+            self._object(object_key="b.txt", size_bytes=2, etag="b" * 32),
         )
         self.session.commit()
 
@@ -281,7 +281,7 @@ class TestObjektModel(unittest.TestCase):
         self.assertEqual(keys, ["a.txt", "b.txt"])
 
     def test_relationship_access_without_eager_load_raises(self):
-        self.session.add(self._objekt())
+        self.session.add(self._object())
         self.session.commit()
 
         loaded = self.session.scalar(
@@ -292,7 +292,7 @@ class TestObjektModel(unittest.TestCase):
             _ = loaded.bucket_objects
 
     def test_object_bucket_access_without_eager_load_raises(self):
-        s3_object = self._objekt()
+        s3_object = self._object()
         self.session.add(s3_object)
         self.session.commit()
 
@@ -304,7 +304,7 @@ class TestObjektModel(unittest.TestCase):
             _ = loaded.object_bucket
 
     def test_object_user_access_without_eager_load_raises(self):
-        s3_object = self._objekt()
+        s3_object = self._object()
         self.session.add(s3_object)
         self.session.commit()
 
@@ -316,7 +316,7 @@ class TestObjektModel(unittest.TestCase):
             _ = loaded.object_user
 
     def test_bucket_delete_is_restricted(self):
-        self.session.add(self._objekt())
+        self.session.add(self._object())
         self.session.commit()
 
         self.session.delete(self.bucket)
@@ -330,7 +330,7 @@ class TestObjektModel(unittest.TestCase):
         self.session.refresh(root)
 
         self.session.add(
-            self._objekt(user_id=root.id, object_key="root.txt"),
+            self._object(user_id=root.id, object_key="root.txt"),
         )
         self.session.commit()
 
@@ -339,7 +339,7 @@ class TestObjektModel(unittest.TestCase):
             self.session.commit()
 
     def test_user_delete_is_restricted(self):
-        self.session.add(self._objekt())
+        self.session.add(self._object())
         self.session.commit()
 
         self.session.delete(self.user)

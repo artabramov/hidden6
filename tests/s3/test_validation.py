@@ -93,7 +93,7 @@ class TestValidateBucketName(unittest.TestCase):
         self._assert_rejects("example--table-s3")
 
 
-class TestValidateObjektKey(unittest.TestCase):
+class TestValidateObjectKey(unittest.TestCase):
     def _assert_rejects(self, object_key):
         resource = f"/photos/{object_key}"
 

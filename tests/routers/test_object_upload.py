@@ -19,7 +19,7 @@ from app.routers.object_upload import object_upload_router  # noqa: E402
 from app.streams import RequestBodyReader  # noqa: E402
 
 
-class TestObjektUploadRouter(unittest.IsolatedAsyncioTestCase):
+class TestObjectUploadRouter(unittest.IsolatedAsyncioTestCase):
     def _build_request(self, headers=None):
         request = MagicMock()
         request.headers = headers or {}

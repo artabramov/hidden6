@@ -18,7 +18,7 @@ from app.xml.render_bucket_object_lock import (  # noqa: E402
 load_all_models()
 
 
-class TestRenderBucketObjektLock(unittest.TestCase):
+class TestRenderBucketObjectLock(unittest.TestCase):
     def _bucket(self, **kwargs) -> Bucket:
         values = {
             "id": 1,

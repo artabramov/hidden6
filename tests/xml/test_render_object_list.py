@@ -12,7 +12,7 @@ from app.models.object import S3Object  # noqa: E402
 from app.xml.render_object_list import render_object_list  # noqa: E402
 
 
-def _objekt(key: str, size: int = 10, etag: str = "abc", modified_at: int = 1_704_067_200) -> S3Object:
+def _object(key: str, size: int = 10, etag: str = "abc", modified_at: int = 1_704_067_200) -> S3Object:
     return S3Object(
         id=1,
         bucket_id=1,
@@ -26,7 +26,7 @@ def _objekt(key: str, size: int = 10, etag: str = "abc", modified_at: int = 1_70
     )
 
 
-class TestRenderObjektList(unittest.TestCase):
+class TestRenderObjectList(unittest.TestCase):
     def test_render_empty_list(self):
         xml = render_object_list(
             bucket_name="photos",
@@ -44,7 +44,7 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertNotIn("<Contents>", xml)
 
     def test_render_single_object(self):
-        obj = _objekt("photo.jpg", size=1234, etag="deadbeef", modified_at=1_704_067_200)
+        obj = _object("photo.jpg", size=1234, etag="deadbeef", modified_at=1_704_067_200)
         xml = render_object_list(
             bucket_name="photos",
             prefix="",
@@ -61,7 +61,7 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertIn("<IsTruncated>false</IsTruncated>", xml)
 
     def test_uses_modified_at_for_last_modified(self):
-        obj = _objekt("file.txt", modified_at=1_704_153_600)
+        obj = _object("file.txt", modified_at=1_704_153_600)
         xml = render_object_list(
             bucket_name="my-bucket",
             prefix="",
@@ -73,7 +73,7 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertNotIn("2024-01-01", xml)
 
     def test_is_truncated_when_result_equals_max_keys(self):
-        s3_objects = [_objekt(f"file{i}.txt") for i in range(5)]
+        s3_objects = [_object(f"file{i}.txt") for i in range(5)]
         xml = render_object_list(
             bucket_name="my-bucket",
             prefix="",
@@ -84,7 +84,7 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertIn("<IsTruncated>true</IsTruncated>", xml)
 
     def test_is_not_truncated_when_result_below_max_keys(self):
-        s3_objects = [_objekt(f"file{i}.txt") for i in range(3)]
+        s3_objects = [_object(f"file{i}.txt") for i in range(3)]
         xml = render_object_list(
             bucket_name="my-bucket",
             prefix="",
@@ -105,7 +105,7 @@ class TestRenderObjektList(unittest.TestCase):
         self.assertIn("<Prefix>2024/</Prefix>", xml)
 
     def test_escapes_xml_special_characters(self):
-        obj = _objekt("a&b/<c>.txt")
+        obj = _object("a&b/<c>.txt")
         xml = render_object_list(
             bucket_name="my&bucket",
             prefix="",
@@ -118,9 +118,9 @@ class TestRenderObjektList(unittest.TestCase):
 
     def test_multiple_objects_all_rendered(self):
         s3_objects = [
-            _objekt("a.txt", size=1),
-            _objekt("b.txt", size=2),
-            _objekt("c.txt", size=3),
+            _object("a.txt", size=1),
+            _object("b.txt", size=2),
+            _object("c.txt", size=3),
         ]
         xml = render_object_list(
             bucket_name="my-bucket",

@@ -231,7 +231,7 @@ class TestObjectVersionModel(unittest.TestCase):
     def test_size_bytes_must_be_nonnegative(self):
         self._assert_rejects(self._version(size_bytes=-1))
 
-    def test_relationship_back_to_objekt(self):
+    def test_relationship_back_to_object(self):
         version = self._version(version_id="e" * 32)
         self.session.add(version)
         self.session.commit()

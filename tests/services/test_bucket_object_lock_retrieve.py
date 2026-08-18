@@ -25,7 +25,7 @@ from app.services.bucket_object_lock_retrieve import (  # noqa: E402
 load_all_models()
 
 
-class TestBucketObjektLockRetrieve(unittest.IsolatedAsyncioTestCase):
+class TestBucketObjectLockRetrieve(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)

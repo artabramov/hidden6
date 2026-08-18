@@ -32,7 +32,7 @@ BACKUP_PATH = "/mnt/tmp/backup"
 RESOURCE = "/photos/2024/cat.png"
 
 
-class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
+class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)

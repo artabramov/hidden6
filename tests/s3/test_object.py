@@ -25,7 +25,7 @@ from app.s3.object import load_object, object_mkdir, upsert_object  # noqa: E402
 load_all_models()
 
 
-class TestObjektPath(unittest.TestCase):
+class TestObjectPath(unittest.TestCase):
     def test_resolves_flat_key(self):
         bucket_path, object_path = resolve_object_path(
             "/mnt/buckets",
@@ -98,8 +98,8 @@ class TestObjektPath(unittest.TestCase):
         self.assertIn("escapes bucket directory", str(ctx.exception))
 
 
-class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
-    async def test_returns_objekt(self):
+class TestObjectLoad(unittest.IsolatedAsyncioTestCase):
+    async def test_returns_object(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
         s3_object = S3Object(
             id=3,
@@ -146,7 +146,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
             await load_object(repo, bucket, "missing.png", "/photos/missing.png")
 
 
-class TestObjektMkdir(unittest.IsolatedAsyncioTestCase):
+class TestObjectMkdir(unittest.IsolatedAsyncioTestCase):
     async def _run(self, isdir_value, mkdir_error=None):
         with (
             patch(
@@ -185,7 +185,7 @@ class TestObjektMkdir(unittest.IsolatedAsyncioTestCase):
             )
 
 
-class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
+class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.user = User(id=1, username="alice", is_root=False)
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
@@ -208,7 +208,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
             content_type="image/png",
         )
 
-    async def test_inserts_new_objekt(self):
+    async def test_inserts_new_object(self):
         repo = self._build_repo(None)
 
         s3_object = await self._upsert(repo)
@@ -225,7 +225,7 @@ class TestObjektUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(s3_object.lock_mode)
         self.assertIsNone(s3_object.retain_until)
 
-    async def test_updates_existing_objekt(self):
+    async def test_updates_existing_object(self):
         existing = S3Object(
             id=3,
             bucket_id=7,

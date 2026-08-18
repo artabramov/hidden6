@@ -7,7 +7,7 @@ from app.constants import S3_XMLNS
 from app.xml.parse_bucket_object_lock import parse_bucket_object_lock
 
 
-class TestParseBucketObjektLock(unittest.TestCase):
+class TestParseBucketObjectLock(unittest.TestCase):
     def test_parses_enabled_without_rule(self):
         body = (
             b"<ObjectLockConfiguration>"

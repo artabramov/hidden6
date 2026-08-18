@@ -27,17 +27,17 @@ def resolve_object_path(
         ValueError: Resolved object path is outside its bucket directory.
     """
     resolved_bucket = resolve_bucket_path(buckets_dir, bucket_name)
-    resolved_objekt = os.path.join(resolved_bucket, object_key)
+    resolved_object = os.path.join(resolved_bucket, object_key)
 
-    if resolved_objekt == resolved_bucket:
+    if resolved_object == resolved_bucket:
         raise ValueError("Object path resolves to bucket directory")
 
     if os.path.commonpath(
-        [resolved_bucket, resolved_objekt],
+        [resolved_bucket, resolved_object],
     ) != resolved_bucket:
         raise ValueError("Object path escapes bucket directory")
 
-    return resolved_bucket, resolved_objekt
+    return resolved_bucket, resolved_object
 
 
 def resolve_multipart_path(
