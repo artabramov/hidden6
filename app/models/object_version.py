@@ -23,7 +23,7 @@ from app.db.base import Base
 # while objects_versions stores its retained version history.
 
 
-class ObjectVersion(Base):
+class S3ObjectVersion(Base):
     """
     Non-current S3 object version or delete marker.
 
@@ -141,13 +141,13 @@ class ObjectVersion(Base):
         lazy="raise",
     )
 
-    object_version_metadata: Mapped[list["ObjectVersionMetadata"]] = relationship(  # noqa: E501, F821
+    object_version_metadata: Mapped[list["S3S3ObjectVersionMetadata"]] = relationship(  # noqa: E501, F821
         back_populates="object_version_metadata_object_version",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    object_version_tags: Mapped[list["ObjectVersionTag"]] = relationship(  # noqa: E501, F821
+    object_version_tags: Mapped[list["S3S3ObjectVersionTag"]] = relationship(  # noqa: E501, F821
         back_populates="object_version_tag_object_version",
         cascade="all, delete-orphan",
         lazy="raise",

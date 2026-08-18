@@ -74,12 +74,12 @@ class User(Base):
         lazy="raise",
     )
 
-    user_objects_multiparts: Mapped[list["ObjectMultipart"]] = relationship(  # noqa: E501, F821
+    user_objects_multiparts: Mapped[list["S3ObjectMultipart"]] = relationship(  # noqa: E501, F821
         back_populates="object_multipart_user",
         lazy="raise",
     )
 
-    user_objects_versions: Mapped[list["ObjectVersion"]] = relationship(  # noqa: E501, F821
+    user_objects_versions: Mapped[list["S3ObjectVersion"]] = relationship(  # noqa: E501, F821
         back_populates="object_version_user",
         lazy="raise",
     )

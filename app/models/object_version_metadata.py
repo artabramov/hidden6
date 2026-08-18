@@ -12,12 +12,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjectVersionMetadata(Base):
+class S3S3ObjectVersionMetadata(Base):
     """
     Additional metadata associated with a non-current S3 object version.
 
     Stores extensible HTTP and S3 object metadata that does not belong
-    in the fixed ObjectVersion schema, including user-defined x-amz-meta-*
+    in the fixed S3ObjectVersion schema, including user-defined x-amz-meta-*
     values.
     """
 
@@ -45,7 +45,7 @@ class ObjectVersionMetadata(Base):
         nullable=False,
     )
 
-    object_version_metadata_object_version: Mapped["ObjectVersion"] = relationship(  # noqa: E501, F821
+    object_version_metadata_object_version: Mapped["S3ObjectVersion"] = relationship(  # noqa: E501, F821
         back_populates="object_version_metadata",
         foreign_keys=[object_version_id],
         lazy="raise",

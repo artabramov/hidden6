@@ -16,20 +16,20 @@ from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402, F401
-from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
-from app.models.object_multipart import ObjectMultipart  # noqa: E402
-from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
-from app.models.object_multipart_tag import ObjectMultipartTag  # noqa: E402
-from app.models.object_multipart_part import ObjectMultipartPart  # noqa: E402, F401
-from app.models.object_tag import ObjectTag  # noqa: E402, F401
-from app.models.object_version import ObjectVersion  # noqa: E402, F401
-from app.models.object_version_metadata import ObjectVersionMetadata  # noqa: E402, F401
-from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
+from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
+from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
+from app.models.object_multipart_metadata import S3S3ObjectMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_tag import S3S3ObjectMultipartTag  # noqa: E402
+from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402, F401
+from app.models.object_tag import S3ObjectTag  # noqa: E402, F401
+from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
+from app.models.object_version_metadata import S3S3ObjectVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjectMultipartTagModel(unittest.TestCase):
+class TestS3S3ObjectMultipartTagModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -53,7 +53,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.multipart = ObjectMultipart(
+        self.multipart = S3ObjectMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             upload_id="a" * 32,
@@ -67,18 +67,18 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _tag(self, **kwargs) -> ObjectMultipartTag:
+    def _tag(self, **kwargs) -> S3S3ObjectMultipartTag:
         defaults = {
             "object_multipart_id": self.multipart.id,
             "tag_key": "color",
             "tag_value": "red",
         }
         defaults.update(kwargs)
-        return ObjectMultipartTag(**defaults)
+        return S3S3ObjectMultipartTag(**defaults)
 
     def test_tablename(self):
         self.assertEqual(
-            ObjectMultipartTag.__tablename__,
+            S3S3ObjectMultipartTag.__tablename__,
             "objects_multiparts_tags",
         )
 
@@ -110,7 +110,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
             self.session.commit()
 
     def test_same_tag_key_allowed_on_different_multiparts(self):
-        other = ObjectMultipart(
+        other = S3ObjectMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             upload_id="b" * 32,
@@ -130,7 +130,7 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(ObjectMultipartTag)).all()
+        rows = self.session.scalars(select(S3S3ObjectMultipartTag)).all()
         self.assertEqual(len(rows), 2)
 
     def test_relationship_back_to_multipart(self):
@@ -139,11 +139,11 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipartTag)
-            .where(ObjectMultipartTag.id == row.id)
+            select(S3S3ObjectMultipartTag)
+            .where(S3S3ObjectMultipartTag.id == row.id)
             .options(
                 selectinload(
-                    ObjectMultipartTag.object_multipart_tag_object_multipart,
+                    S3S3ObjectMultipartTag.object_multipart_tag_object_multipart,
                 ),
             ),
         )
@@ -163,9 +163,9 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart)
-            .where(ObjectMultipart.id == self.multipart.id)
-            .options(selectinload(ObjectMultipart.object_multipart_tags)),
+            select(S3ObjectMultipart)
+            .where(S3ObjectMultipart.id == self.multipart.id)
+            .options(selectinload(S3ObjectMultipart.object_multipart_tags)),
         )
 
         keys = sorted(item.tag_key for item in loaded.object_multipart_tags)
@@ -176,8 +176,8 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart).where(
-                ObjectMultipart.id == self.multipart.id,
+            select(S3ObjectMultipart).where(
+                S3ObjectMultipart.id == self.multipart.id,
             ),
         )
 
@@ -191,5 +191,5 @@ class TestObjectMultipartTagModel(unittest.TestCase):
         self.session.delete(self.multipart)
         self.session.commit()
 
-        remaining = self.session.scalars(select(ObjectMultipartTag)).all()
+        remaining = self.session.scalars(select(S3S3ObjectMultipartTag)).all()
         self.assertEqual(remaining, [])

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjectVersionTag(Base):
+class S3S3ObjectVersionTag(Base):
     """
     S3 tag associated with a non-current object version.
 
@@ -45,7 +45,7 @@ class ObjectVersionTag(Base):
         nullable=False,
     )
 
-    object_version_tag_object_version: Mapped["ObjectVersion"] = relationship(  # noqa: E501, F821
+    object_version_tag_object_version: Mapped["S3ObjectVersion"] = relationship(  # noqa: E501, F821
         back_populates="object_version_tags",
         foreign_keys=[object_version_id],
         lazy="raise",

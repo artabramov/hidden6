@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjectMultipartPart(Base):
+class S3S3ObjectMultipartPart(Base):
     """
     Uploaded part of an in-progress S3 multipart upload.
 
@@ -66,7 +66,7 @@ class ObjectMultipartPart(Base):
         nullable=False,
     )
 
-    object_multipart_part_object_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
+    object_multipart_part_object_multipart: Mapped["S3ObjectMultipart"] = relationship(  # noqa: E501, F821
         back_populates="object_multipart_parts",
         foreign_keys=[object_multipart_id],
         lazy="raise",

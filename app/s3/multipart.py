@@ -15,8 +15,8 @@ from app.errors import (
     S3ObjectUploadNotFoundError,
 )
 from app.models.bucket import Bucket
-from app.models.object_multipart import ObjectMultipart
-from app.models.object_multipart_part import ObjectMultipartPart
+from app.models.object_multipart import S3ObjectMultipart
+from app.models.object_multipart_part import S3S3ObjectMultipartPart
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.paths import resolve_multipart_part_path
@@ -29,14 +29,14 @@ async def load_multipart(
     object_key: str,
     upload_id: str,
     resource: str,
-) -> ObjectMultipart:
+) -> S3ObjectMultipart:
     """
     Load an in-progress upload and check that it belongs to the bucket
     and key being addressed. The caller has been authorized against the
     bucket, so its owner and root may upload parts into, finish, or
     abort any upload started in it.
     """
-    multipart = await repo.select(ObjectMultipart, upload_id=upload_id)
+    multipart = await repo.select(S3ObjectMultipart, upload_id=upload_id)
 
     if multipart is None:
         raise S3ObjectUploadNotFoundError(resource)
@@ -50,24 +50,24 @@ async def load_multipart(
 
 async def upsert_multipart_part(
     repo: ORMRepository,
-    multipart: ObjectMultipart,
+    multipart: S3ObjectMultipart,
     part_number: int,
     size_bytes: int,
     etag: str,
-) -> ObjectMultipartPart:
+) -> S3S3ObjectMultipartPart:
     """
     Insert or update the multipart part for the specified part number.
     The staged part file must already exist when this is called.
     """
     existing = await repo.select(
-        ObjectMultipartPart,
+        S3S3ObjectMultipartPart,
         object_multipart_id=multipart.id,
         part_number=part_number,
     )
 
     if existing is None:
         return await repo.insert(
-            ObjectMultipartPart(
+            S3S3ObjectMultipartPart(
                 object_multipart_id=multipart.id,
                 part_number=part_number,
                 size_bytes=size_bytes,
@@ -84,11 +84,11 @@ async def upsert_multipart_part(
 
 async def list_multipart_parts(
     repo: ORMRepository,
-    multipart: ObjectMultipart,
+    multipart: S3ObjectMultipart,
     *,
     part_number_marker: int | None = None,
     max_parts: int | None = None,
-) -> list[ObjectMultipartPart]:
+) -> list[S3S3ObjectMultipartPart]:
     """
     Return uploaded parts for a multipart upload ordered by part
     number. Optional marker and limit support a future ListParts API.
@@ -103,17 +103,17 @@ async def list_multipart_parts(
     if max_parts is not None:
         filters["limit"] = max_parts
 
-    return await repo.select_all(ObjectMultipartPart, **filters)
+    return await repo.select_all(S3S3ObjectMultipartPart, **filters)
 
 
 async def delete_multipart_parts(
     repo: ORMRepository,
-    multipart: ObjectMultipart,
+    multipart: S3ObjectMultipart,
 ) -> None:
     """
-    Delete every ObjectMultipartPart row for an upload. The parts FK
+    Delete every S3S3ObjectMultipartPart row for an upload. The parts FK
     has no ON DELETE CASCADE, so callers must clear parts before the
-    parent ObjectMultipart row.
+    parent S3ObjectMultipart row.
     """
     rows = await list_multipart_parts(repo, multipart)
     for row in rows:
@@ -123,7 +123,7 @@ async def delete_multipart_parts(
 
 async def load_multipart_parts(
     repo: ORMRepository,
-    multipart: ObjectMultipart,
+    multipart: S3ObjectMultipart,
     upload_path: str,
     parts: list[MultipartPart],
     resource: str,
@@ -132,7 +132,7 @@ async def load_multipart_parts(
     Load and validate the multipart parts listed by the client.
 
     Parts must be listed in ascending order, every listed part must
-    have a matching ObjectMultipartPart row and staged file, and every
+    have a matching S3S3ObjectMultipartPart row and staged file, and every
     part except the last must meet the minimum part size. Returns the
     staged paths and stored ETags in client order.
     """
@@ -150,7 +150,7 @@ async def load_multipart_parts(
         previous = part.part_number
 
         row = await repo.select(
-            ObjectMultipartPart,
+            S3S3ObjectMultipartPart,
             object_multipart_id=multipart.id,
             part_number=part.part_number,
         )

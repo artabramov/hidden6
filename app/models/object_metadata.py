@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjectMetadata(Base):
+class S3ObjectMetadata(Base):
     """
     Additional metadata associated with the current S3 object state.
 

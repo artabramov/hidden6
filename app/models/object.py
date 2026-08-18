@@ -29,7 +29,7 @@ class S3Object(Base):
 
     With versioning enabled, every new PUT creates a new version
     identifier. Before the current state is replaced, its metadata is
-    copied to ObjectVersion and its bytes are moved to version storage.
+    copied to S3ObjectVersion and its bytes are moved to version storage.
     The new state then becomes current.
 
     A normal DELETE in a versioning-enabled bucket does not remove
@@ -174,19 +174,19 @@ class S3Object(Base):
         lazy="raise",
     )
 
-    object_versions: Mapped[list["ObjectVersion"]] = relationship(  # noqa: E501, F821
+    object_versions: Mapped[list["S3ObjectVersion"]] = relationship(  # noqa: E501, F821
         back_populates="object_version_object",
-        foreign_keys="ObjectVersion.object_id",
+        foreign_keys="S3ObjectVersion.object_id",
         lazy="raise",
     )
 
-    object_metadata: Mapped[list["ObjectMetadata"]] = relationship(  # noqa: E501, F821
+    object_metadata: Mapped[list["S3ObjectMetadata"]] = relationship(  # noqa: E501, F821
         back_populates="object_metadata_object",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    object_tags: Mapped[list["ObjectTag"]] = relationship(  # noqa: F821
+    object_tags: Mapped[list["S3ObjectTag"]] = relationship(  # noqa: F821
         back_populates="object_tag_object",
         cascade="all, delete-orphan",
         lazy="raise",

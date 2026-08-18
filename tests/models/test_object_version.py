@@ -16,20 +16,20 @@ from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402
-from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
-from app.models.object_multipart import ObjectMultipart  # noqa: E402, F401
-from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
-from app.models.object_multipart_tag import ObjectMultipartTag  # noqa: E402, F401
-from app.models.object_multipart_part import ObjectMultipartPart  # noqa: E402, F401
-from app.models.object_tag import ObjectTag  # noqa: E402, F401
-from app.models.object_version import ObjectVersion  # noqa: E402
-from app.models.object_version_metadata import ObjectVersionMetadata  # noqa: E402, F401
-from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
+from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
+from app.models.object_multipart import S3ObjectMultipart  # noqa: E402, F401
+from app.models.object_multipart_metadata import S3S3ObjectMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_tag import S3S3ObjectMultipartTag  # noqa: E402, F401
+from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402, F401
+from app.models.object_tag import S3ObjectTag  # noqa: E402, F401
+from app.models.object_version import S3ObjectVersion  # noqa: E402
+from app.models.object_version_metadata import S3S3ObjectVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjectVersionModel(unittest.TestCase):
+class TestS3ObjectVersionModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -69,7 +69,7 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _version(self, **kwargs) -> ObjectVersion:
+    def _version(self, **kwargs) -> S3ObjectVersion:
         defaults = {
             "object_id": self.s3_object.id,
             "user_id": self.user.id,
@@ -80,9 +80,9 @@ class TestObjectVersionModel(unittest.TestCase):
             "content_type": "text/plain",
         }
         defaults.update(kwargs)
-        return ObjectVersion(**defaults)
+        return S3ObjectVersion(**defaults)
 
-    def _delete_marker(self, **kwargs) -> ObjectVersion:
+    def _delete_marker(self, **kwargs) -> S3ObjectVersion:
         defaults = {
             "delete_marker": True,
             "size_bytes": None,
@@ -98,7 +98,7 @@ class TestObjectVersionModel(unittest.TestCase):
             self.session.commit()
 
     def test_tablename(self):
-        self.assertEqual(ObjectVersion.__tablename__, "objects_versions")
+        self.assertEqual(S3ObjectVersion.__tablename__, "objects_versions")
 
     def test_persists_required_fields_and_defaults(self):
         version = self._version(
@@ -138,8 +138,8 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
 
         rows = self.session.scalars(
-            select(ObjectVersion).where(
-                ObjectVersion.object_id == self.s3_object.id,
+            select(S3ObjectVersion).where(
+                S3ObjectVersion.object_id == self.s3_object.id,
             ),
         ).all()
         self.assertEqual(len(rows), 2)
@@ -237,9 +237,9 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectVersion)
-            .where(ObjectVersion.id == version.id)
-            .options(selectinload(ObjectVersion.object_version_object)),
+            select(S3ObjectVersion)
+            .where(S3ObjectVersion.id == version.id)
+            .options(selectinload(S3ObjectVersion.object_version_object)),
         )
 
         self.assertEqual(loaded.object_version_object.id, self.s3_object.id)
@@ -270,9 +270,9 @@ class TestObjectVersionModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectVersion)
-            .where(ObjectVersion.id == version.id)
-            .options(selectinload(ObjectVersion.object_version_user)),
+            select(S3ObjectVersion)
+            .where(S3ObjectVersion.id == version.id)
+            .options(selectinload(S3ObjectVersion.object_version_user)),
         )
 
         self.assertEqual(loaded.object_version_user.id, self.user.id)

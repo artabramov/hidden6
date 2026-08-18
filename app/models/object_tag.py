@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjectTag(Base):
+class S3ObjectTag(Base):
     """
     S3 tag associated with the current state of an object key.
 

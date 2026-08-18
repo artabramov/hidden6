@@ -15,16 +15,16 @@ set_minimal_app_config_env()
 from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
-from app.models.object_multipart import ObjectMultipart  # noqa: E402
-from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
-from app.models.object_multipart_tag import ObjectMultipartTag  # noqa: E402, F401
-from app.models.object_multipart_part import ObjectMultipartPart  # noqa: E402, F401
-from app.models.object_version import ObjectVersion  # noqa: E402, F401
-from app.models.object_version_metadata import ObjectVersionMetadata  # noqa: E402, F401
-from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
+from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
+from app.models.object_multipart_metadata import S3S3ObjectMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_tag import S3S3ObjectMultipartTag  # noqa: E402, F401
+from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402, F401
+from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
+from app.models.object_version_metadata import S3S3ObjectVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402, F401
-from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
-from app.models.object_tag import ObjectTag  # noqa: E402, F401
+from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
+from app.models.object_tag import S3ObjectTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
@@ -57,7 +57,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _multipart(self, **kwargs) -> ObjectMultipart:
+    def _multipart(self, **kwargs) -> S3ObjectMultipart:
         defaults = {
             "bucket_id": self.bucket.id,
             "user_id": self.user.id,
@@ -65,11 +65,11 @@ class TestMultipartModel(unittest.TestCase):
             "object_key": "a.txt",
         }
         defaults.update(kwargs)
-        return ObjectMultipart(**defaults)
+        return S3ObjectMultipart(**defaults)
 
     def test_tablename(self):
         self.assertEqual(
-            ObjectMultipart.__tablename__,
+            S3ObjectMultipart.__tablename__,
             "objects_multiparts",
         )
 
@@ -100,7 +100,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.add(self._multipart(upload_id="b" * 32))
         self.session.commit()
 
-        keys = self.session.scalars(select(ObjectMultipart.object_key)).all()
+        keys = self.session.scalars(select(S3ObjectMultipart.object_key)).all()
         self.assertEqual(keys.count("a.txt"), 2)
 
     def test_root_may_upload_to_foreign_bucket(self):
@@ -123,9 +123,9 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart)
-            .where(ObjectMultipart.id == multipart.id)
-            .options(selectinload(ObjectMultipart.object_multipart_bucket)),
+            select(S3ObjectMultipart)
+            .where(S3ObjectMultipart.id == multipart.id)
+            .options(selectinload(S3ObjectMultipart.object_multipart_bucket)),
         )
 
         self.assertEqual(loaded.object_multipart_bucket.id, self.bucket.id)
@@ -136,9 +136,9 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart)
-            .where(ObjectMultipart.id == multipart.id)
-            .options(selectinload(ObjectMultipart.object_multipart_user)),
+            select(S3ObjectMultipart)
+            .where(S3ObjectMultipart.id == multipart.id)
+            .options(selectinload(S3ObjectMultipart.object_multipart_user)),
         )
 
         self.assertEqual(loaded.object_multipart_user.username, "alice")
@@ -176,7 +176,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart).where(ObjectMultipart.id == multipart.id),
+            select(S3ObjectMultipart).where(S3ObjectMultipart.id == multipart.id),
         )
 
         with self.assertRaises(InvalidRequestError):
@@ -188,7 +188,7 @@ class TestMultipartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart).where(ObjectMultipart.id == multipart.id),
+            select(S3ObjectMultipart).where(S3ObjectMultipart.id == multipart.id),
         )
 
         with self.assertRaises(InvalidRequestError):

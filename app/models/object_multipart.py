@@ -20,7 +20,7 @@ from app.db.base import Base
 # exist only until the upload is completed or aborted.
 
 
-class ObjectMultipart(Base):
+class S3ObjectMultipart(Base):
     """
     In-progress S3 multipart upload.
 
@@ -87,18 +87,18 @@ class ObjectMultipart(Base):
         lazy="raise",
     )
 
-    object_multipart_parts: Mapped[list["ObjectMultipartPart"]] = relationship(  # noqa: E501, F821
+    object_multipart_parts: Mapped[list["S3S3ObjectMultipartPart"]] = relationship(  # noqa: E501, F821
         back_populates="object_multipart_part_object_multipart",
         lazy="raise",
     )
 
-    object_multipart_metadata: Mapped[list["ObjectMultipartMetadata"]] = relationship(  # noqa: E501, F821
+    object_multipart_metadata: Mapped[list["S3S3ObjectMultipartMetadata"]] = relationship(  # noqa: E501, F821
         back_populates="object_multipart_metadata_object_multipart",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    object_multipart_tags: Mapped[list["ObjectMultipartTag"]] = relationship(  # noqa: E501, F821
+    object_multipart_tags: Mapped[list["S3S3ObjectMultipartTag"]] = relationship(  # noqa: E501, F821
         back_populates="object_multipart_tag_object_multipart",
         cascade="all, delete-orphan",
         lazy="raise",

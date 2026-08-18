@@ -17,7 +17,7 @@ from app.errors import (  # noqa: E402
     S3ObjectUploadNotFoundError,
 )
 from app.locks import LockType  # noqa: E402
-from app.models.object_multipart import ObjectMultipart  # noqa: E402
+from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.multipart_upload import multipart_upload  # noqa: E402
 
@@ -45,7 +45,7 @@ class TestMultipartUpload(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.body = MagicMock()
-        self.multipart = ObjectMultipart(
+        self.multipart = S3ObjectMultipart(
             id=5,
             bucket_id=7,
             user_id=1,

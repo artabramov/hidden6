@@ -17,20 +17,20 @@ from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.object import S3Object  # noqa: E402, F401
-from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
-from app.models.object_multipart import ObjectMultipart  # noqa: E402
-from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402, F401
-from app.models.object_multipart_part import ObjectMultipartPart  # noqa: E402
-from app.models.object_multipart_tag import ObjectMultipartTag  # noqa: E402, F401
-from app.models.object_tag import ObjectTag  # noqa: E402, F401
-from app.models.object_version import ObjectVersion  # noqa: E402, F401
-from app.models.object_version_metadata import ObjectVersionMetadata  # noqa: E402, F401
-from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
+from app.models.object_metadata import S3ObjectMetadata  # noqa: E402, F401
+from app.models.object_multipart import S3ObjectMultipart  # noqa: E402
+from app.models.object_multipart_metadata import S3S3ObjectMultipartMetadata  # noqa: E402, F401
+from app.models.object_multipart_part import S3S3ObjectMultipartPart  # noqa: E402
+from app.models.object_multipart_tag import S3S3ObjectMultipartTag  # noqa: E402, F401
+from app.models.object_tag import S3ObjectTag  # noqa: E402, F401
+from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
+from app.models.object_version_metadata import S3S3ObjectVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import S3S3ObjectVersionTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjectMultipartPartModel(unittest.TestCase):
+class TestS3S3ObjectMultipartPartModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -54,7 +54,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.multipart = ObjectMultipart(
+        self.multipart = S3ObjectMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             upload_id="a" * 32,
@@ -68,7 +68,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _part(self, **kwargs) -> ObjectMultipartPart:
+    def _part(self, **kwargs) -> S3S3ObjectMultipartPart:
         defaults = {
             "object_multipart_id": self.multipart.id,
             "part_number": 1,
@@ -76,7 +76,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
             "etag": "a" * 32,
         }
         defaults.update(kwargs)
-        return ObjectMultipartPart(**defaults)
+        return S3S3ObjectMultipartPart(**defaults)
 
     def _assert_rejects(self, part):
         self.session.add(part)
@@ -85,7 +85,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
 
     def test_tablename(self):
         self.assertEqual(
-            ObjectMultipartPart.__tablename__,
+            S3S3ObjectMultipartPart.__tablename__,
             "objects_multiparts_parts",
         )
 
@@ -123,7 +123,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
             self.session.commit()
 
     def test_same_part_number_allowed_on_different_multiparts(self):
-        other = ObjectMultipart(
+        other = S3ObjectMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             upload_id="b" * 32,
@@ -143,7 +143,7 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(ObjectMultipartPart)).all()
+        rows = self.session.scalars(select(S3S3ObjectMultipartPart)).all()
         self.assertEqual(len(rows), 2)
 
     def test_part_number_min_is_one(self):
@@ -177,11 +177,11 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipartPart)
-            .where(ObjectMultipartPart.id == row.id)
+            select(S3S3ObjectMultipartPart)
+            .where(S3S3ObjectMultipartPart.id == row.id)
             .options(
                 selectinload(
-                    ObjectMultipartPart.object_multipart_part_object_multipart,
+                    S3S3ObjectMultipartPart.object_multipart_part_object_multipart,
                 ),
             ),
         )
@@ -201,9 +201,9 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart)
-            .where(ObjectMultipart.id == self.multipart.id)
-            .options(selectinload(ObjectMultipart.object_multipart_parts)),
+            select(S3ObjectMultipart)
+            .where(S3ObjectMultipart.id == self.multipart.id)
+            .options(selectinload(S3ObjectMultipart.object_multipart_parts)),
         )
 
         numbers = sorted(item.part_number for item in loaded.object_multipart_parts)
@@ -214,8 +214,8 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjectMultipart).where(
-                ObjectMultipart.id == self.multipart.id,
+            select(S3ObjectMultipart).where(
+                S3ObjectMultipart.id == self.multipart.id,
             ),
         )
 
@@ -230,8 +230,8 @@ class TestObjectMultipartPartModel(unittest.TestCase):
         # database constraint (ORM cascade would still remove parts).
         with self.assertRaises(IntegrityError):
             self.session.execute(
-                delete(ObjectMultipart).where(
-                    ObjectMultipart.id == self.multipart.id,
+                delete(S3ObjectMultipart).where(
+                    S3ObjectMultipart.id == self.multipart.id,
                 ),
             )
             self.session.commit()
