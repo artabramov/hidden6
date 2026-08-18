@@ -1,4 +1,4 @@
-# tests/routers/test_bucket_create.py
+# tests/routers/test_bucket_put.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -11,7 +11,7 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.routers.bucket_create import bucket_create_router  # noqa: E402
+from app.routers.bucket_put import bucket_put_router  # noqa: E402
 
 VERSIONING_BODY = (
     b"<VersioningConfiguration>"
@@ -20,7 +20,7 @@ VERSIONING_BODY = (
 )
 
 
-class TestBucketCreateRouter(unittest.IsolatedAsyncioTestCase):
+class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
     def _build_request(self, body=b""):
         request = MagicMock()
         request.body = AsyncMock(return_value=body)
@@ -33,16 +33,16 @@ class TestBucketCreateRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_create.bucket_create",
+                "app.routers.bucket_put.bucket_create",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ) as mock_create,
             patch(
-                "app.routers.bucket_create.bucket_versioning_put",
+                "app.routers.bucket_put.bucket_versioning_put",
                 new_callable=AsyncMock,
             ) as mock_versioning,
         ):
-            response = await bucket_create_router(
+            response = await bucket_put_router(
                 bucket_name="photos",
                 request=self._build_request(),
                 session=session,
@@ -64,15 +64,15 @@ class TestBucketCreateRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_create.bucket_versioning_put",
+                "app.routers.bucket_put.bucket_versioning_put",
                 new_callable=AsyncMock,
             ) as mock_versioning,
             patch(
-                "app.routers.bucket_create.bucket_create",
+                "app.routers.bucket_put.bucket_create",
                 new_callable=AsyncMock,
             ) as mock_create,
         ):
-            response = await bucket_create_router(
+            response = await bucket_put_router(
                 bucket_name="photos",
                 request=self._build_request(VERSIONING_BODY),
                 session=session,

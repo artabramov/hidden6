@@ -1,4 +1,4 @@
-# app/routers/bucket_create.py
+# app/routers/bucket_put.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 from typing import Annotated
@@ -56,7 +56,7 @@ router = APIRouter(include_in_schema=False)
     dependencies=[Depends(require_gocryptfs())],
     summary="Create a bucket or configure bucket versioning.",
 )
-async def bucket_create_router(
+async def bucket_put_router(
     bucket_name: str,
     request: Request,
     session: AsyncSession = Depends(require_session),
