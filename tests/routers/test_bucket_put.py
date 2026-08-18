@@ -38,7 +38,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 return_value=bucket,
             ) as mock_create,
             patch(
-                "app.routers.bucket_put.bucket_versioning_put",
+                "app.routers.bucket_put.bucket_versioning_update",
                 new_callable=AsyncMock,
             ) as mock_versioning,
         ):
@@ -64,7 +64,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.routers.bucket_put.bucket_versioning_put",
+                "app.routers.bucket_put.bucket_versioning_update",
                 new_callable=AsyncMock,
             ) as mock_versioning,
             patch(

@@ -1,4 +1,4 @@
-# app/services/bucket_versioning_put.py
+# app/services/bucket_versioning_update.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import logging
@@ -15,7 +15,7 @@ from app.xml.parse_bucket_versioning import parse_bucket_versioning
 log = logging.getLogger(__name__)
 
 
-async def bucket_versioning_put(
+async def bucket_versioning_update(
     session: AsyncSession,
     current_user: User,
     bucket_name: str,

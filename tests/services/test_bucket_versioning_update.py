@@ -1,4 +1,4 @@
-# tests/services/test_bucket_versioning_put.py
+# tests/services/test_bucket_versioning_update.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -24,7 +24,7 @@ from app.errors import (  # noqa: E402
 )
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.bucket_versioning_put import bucket_versioning_put  # noqa: E402
+from app.services.bucket_versioning_update import bucket_versioning_update  # noqa: E402
 
 load_all_models()
 
@@ -37,9 +37,9 @@ def _versioning_body(status: str) -> bytes:
     )
 
 
-class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
+class TestBucketVersioningUpdate(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.log_patcher = patch("app.services.bucket_versioning_put.log")
+        self.log_patcher = patch("app.services.bucket_versioning_update.log")
         self.log = self.log_patcher.start()
         self.session = MagicMock()
         self.user = User(id=1, username="alice", is_root=False)
@@ -73,16 +73,16 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ) as load_bucket_mock,
         ):
-            await bucket_versioning_put(
+            await bucket_versioning_update(
                 session=self.session,
                 current_user=user or self.user,
                 bucket_name="photos",
@@ -151,16 +151,16 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
             ) as load_bucket_mock,
         ):
             with self.assertRaises(S3XmlMalformedError) as cm:
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -177,17 +177,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
             with self.assertRaises(S3IllegalVersioningConfigurationError) as cm:
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -205,17 +205,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
             with self.assertRaises(S3IllegalVersioningConfigurationError) as cm:
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -235,17 +235,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
             with self.assertRaises(S3BucketStateInvalidError) as cm:
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -261,17 +261,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 side_effect=S3BucketNotFoundError("/photos"),
             ),
         ):
             with self.assertRaises(S3BucketNotFoundError):
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -287,17 +287,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 side_effect=S3AccessDeniedError("/photos"),
             ),
         ):
             with self.assertRaises(S3AccessDeniedError):
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=other_user,
                     bucket_name="photos",
@@ -313,17 +313,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
             with self.assertRaises(RuntimeError):
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -340,17 +340,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
             with self.assertRaises(RuntimeError):
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",
@@ -368,17 +368,17 @@ class TestBucketVersioningPut(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "app.services.bucket_versioning_put.ORMRepository",
+                "app.services.bucket_versioning_update.ORMRepository",
                 return_value=repo,
             ),
             patch(
-                "app.services.bucket_versioning_put.load_bucket",
+                "app.services.bucket_versioning_update.load_bucket",
                 new_callable=AsyncMock,
                 return_value=bucket,
             ),
         ):
             with self.assertRaises(RuntimeError) as cm:
-                await bucket_versioning_put(
+                await bucket_versioning_update(
                     session=self.session,
                     current_user=self.user,
                     bucket_name="photos",

@@ -11,7 +11,7 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_create import bucket_create
-from app.services.bucket_versioning_put import bucket_versioning_put
+from app.services.bucket_versioning_update import bucket_versioning_update
 
 router = APIRouter(include_in_schema=False)
 
@@ -73,7 +73,7 @@ async def bucket_put_router(
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
     if versioning is not None:
-        await bucket_versioning_put(
+        await bucket_versioning_update(
             session=session,
             current_user=current_user,
             bucket_name=bucket_name,
