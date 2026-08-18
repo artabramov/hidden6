@@ -46,8 +46,7 @@ from app.db.base import Base
 #     null version for the same key instead of retaining it as history.
 #     DELETE Object without versionId removes the current null version,
 #     if any, and creates a null delete marker. DELETE Object with
-#     versionId permanently removes the specified version. Suspended
-#     cannot be entered while Object Lock is enabled.
+#     versionId permanently removes the specified version.
 
 
 class Bucket(Base):
