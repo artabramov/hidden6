@@ -16,11 +16,11 @@ from app.constants import (  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import S3BucketStateInvalidError  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.models.object_version import ObjektVersion  # noqa: E402, F401
+from app.models.object_version import ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import (  # noqa: E402, F401
-    ObjektVersionMetadata,
+    ObjectVersionMetadata,
 )
-from app.models.object_version_tag import ObjektVersionTag  # noqa: E402, F401
+from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
 from app.s3.object_lock import set_bucket_objekt_lock_configuration  # noqa: E402
 
 load_all_models()

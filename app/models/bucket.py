@@ -149,7 +149,7 @@ class Bucket(Base):
         lazy="raise",
     )
 
-    bucket_objekts_multiparts: Mapped[list["ObjektMultipart"]] = relationship(  # noqa: E501, F821
+    bucket_objekts_multiparts: Mapped[list["ObjectMultipart"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_bucket",
         lazy="raise",
     )

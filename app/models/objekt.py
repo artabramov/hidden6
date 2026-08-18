@@ -35,7 +35,7 @@ class Objekt(Base):
 
     With versioning enabled, every new PUT creates a new version
     identifier. Before the current state is replaced, its metadata is
-    copied to ObjektVersion and its bytes are moved to version storage.
+    copied to ObjectVersion and its bytes are moved to version storage.
     The new state then becomes current.
 
     A normal DELETE in a versioning-enabled bucket does not remove
@@ -180,19 +180,19 @@ class Objekt(Base):
         lazy="raise",
     )
 
-    objekt_versions: Mapped[list["ObjektVersion"]] = relationship(  # noqa: E501, F821
+    objekt_versions: Mapped[list["ObjectVersion"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_version_objekt",
-        foreign_keys="ObjektVersion.objekt_id",
+        foreign_keys="ObjectVersion.objekt_id",
         lazy="raise",
     )
 
-    objekt_metadata: Mapped[list["ObjektMetadata"]] = relationship(  # noqa: E501, F821
+    objekt_metadata: Mapped[list["ObjectMetadata"]] = relationship(  # noqa: E501, F821
         back_populates="objekt_metadata_objekt",
         cascade="all, delete-orphan",
         lazy="raise",
     )
 
-    objekt_tags: Mapped[list["ObjektTag"]] = relationship(  # noqa: F821
+    objekt_tags: Mapped[list["ObjectTag"]] = relationship(  # noqa: F821
         back_populates="objekt_tag_objekt",
         cascade="all, delete-orphan",
         lazy="raise",

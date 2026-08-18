@@ -16,20 +16,20 @@ from app.db.base import Base  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.bucket_tag import BucketTag  # noqa: E402, F401
 from app.models.objekt import Objekt  # noqa: E402, F401
-from app.models.object_metadata import ObjektMetadata  # noqa: E402, F401
-from app.models.object_multipart import ObjektMultipart  # noqa: E402
-from app.models.object_multipart_metadata import ObjektMultipartMetadata  # noqa: E402
-from app.models.object_multipart_tag import ObjektMultipartTag  # noqa: E402, F401
-from app.models.object_multipart_part import ObjektMultipartPart  # noqa: E402, F401
-from app.models.object_tag import ObjektTag  # noqa: E402, F401
-from app.models.object_version import ObjektVersion  # noqa: E402, F401
-from app.models.object_version_metadata import ObjektVersionMetadata  # noqa: E402, F401
-from app.models.object_version_tag import ObjektVersionTag  # noqa: E402, F401
+from app.models.object_metadata import ObjectMetadata  # noqa: E402, F401
+from app.models.object_multipart import ObjectMultipart  # noqa: E402
+from app.models.object_multipart_metadata import ObjectMultipartMetadata  # noqa: E402
+from app.models.object_multipart_tag import ObjectMultipartTag  # noqa: E402, F401
+from app.models.object_multipart_part import ObjectMultipartPart  # noqa: E402, F401
+from app.models.object_tag import ObjectTag  # noqa: E402, F401
+from app.models.object_version import ObjectVersion  # noqa: E402, F401
+from app.models.object_version_metadata import ObjectVersionMetadata  # noqa: E402, F401
+from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
 from app.models.user import User  # noqa: E402
 from app.models.user_key import UserKey  # noqa: E402, F401
 
 
-class TestObjektMultipartMetadataModel(unittest.TestCase):
+class TestObjectMultipartMetadataModel(unittest.TestCase):
 
     def setUp(self):
         self.engine = create_engine("sqlite:///:memory:")
@@ -53,7 +53,7 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(self.bucket)
 
-        self.multipart = ObjektMultipart(
+        self.multipart = ObjectMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             upload_id="a" * 32,
@@ -67,18 +67,18 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.close()
         self.engine.dispose()
 
-    def _metadata(self, **kwargs) -> ObjektMultipartMetadata:
+    def _metadata(self, **kwargs) -> ObjectMultipartMetadata:
         defaults = {
             "objekt_multipart_id": self.multipart.id,
             "meta_key": "x-amz-meta-color",
             "meta_value": "red",
         }
         defaults.update(kwargs)
-        return ObjektMultipartMetadata(**defaults)
+        return ObjectMultipartMetadata(**defaults)
 
     def test_tablename(self):
         self.assertEqual(
-            ObjektMultipartMetadata.__tablename__,
+            ObjectMultipartMetadata.__tablename__,
             "objekts_multiparts_metadata",
         )
 
@@ -112,7 +112,7 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
             self.session.commit()
 
     def test_same_meta_key_allowed_on_different_multiparts(self):
-        other = ObjektMultipart(
+        other = ObjectMultipart(
             bucket_id=self.bucket.id,
             user_id=self.user.id,
             upload_id="b" * 32,
@@ -134,7 +134,7 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         )
         self.session.commit()
 
-        rows = self.session.scalars(select(ObjektMultipartMetadata)).all()
+        rows = self.session.scalars(select(ObjectMultipartMetadata)).all()
         self.assertEqual(len(rows), 2)
 
     def test_relationship_back_to_multipart(self):
@@ -143,11 +143,11 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektMultipartMetadata)
-            .where(ObjektMultipartMetadata.id == row.id)
+            select(ObjectMultipartMetadata)
+            .where(ObjectMultipartMetadata.id == row.id)
             .options(
                 selectinload(
-                    ObjektMultipartMetadata.objekt_multipart_metadata_objekt_multipart,
+                    ObjectMultipartMetadata.objekt_multipart_metadata_objekt_multipart,
                 ),
             ),
         )
@@ -171,9 +171,9 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektMultipart)
-            .where(ObjektMultipart.id == self.multipart.id)
-            .options(selectinload(ObjektMultipart.objekt_multipart_metadata)),
+            select(ObjectMultipart)
+            .where(ObjectMultipart.id == self.multipart.id)
+            .options(selectinload(ObjectMultipart.objekt_multipart_metadata)),
         )
 
         keys = sorted(
@@ -186,8 +186,8 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.commit()
 
         loaded = self.session.scalar(
-            select(ObjektMultipart).where(
-                ObjektMultipart.id == self.multipart.id,
+            select(ObjectMultipart).where(
+                ObjectMultipart.id == self.multipart.id,
             ),
         )
 
@@ -201,5 +201,5 @@ class TestObjektMultipartMetadataModel(unittest.TestCase):
         self.session.delete(self.multipart)
         self.session.commit()
 
-        remaining = self.session.scalars(select(ObjektMultipartMetadata)).all()
+        remaining = self.session.scalars(select(ObjectMultipartMetadata)).all()
         self.assertEqual(remaining, [])

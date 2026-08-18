@@ -23,7 +23,7 @@ from app.hooks import Events  # noqa: E402
 from app.locks import LockType  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
-from app.models.object_multipart import ObjektMultipart  # noqa: E402
+from app.models.object_multipart import ObjectMultipart  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.schemas.multipart_complete import MultipartPart  # noqa: E402
 from app.services.multipart_complete import (  # noqa: E402
@@ -60,7 +60,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.bucket = Bucket(id=7, user_id=1, bucket_name="photos")
-        self.multipart = ObjektMultipart(
+        self.multipart = ObjectMultipart(
             id=5,
             bucket_id=7,
             user_id=1,

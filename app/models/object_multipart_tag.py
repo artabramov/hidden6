@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjektMultipartTag(Base):
+class ObjectMultipartTag(Base):
     """
     S3 tag associated with an in-progress multipart upload.
 
@@ -45,7 +45,7 @@ class ObjektMultipartTag(Base):
         nullable=False,
     )
 
-    objekt_multipart_tag_objekt_multipart: Mapped["ObjektMultipart"] = relationship(  # noqa: E501, F821
+    objekt_multipart_tag_objekt_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_tags",
         foreign_keys=[objekt_multipart_id],
         lazy="raise",

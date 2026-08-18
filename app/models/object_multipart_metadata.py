@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
-class ObjektMultipartMetadata(Base):
+class ObjectMultipartMetadata(Base):
     """
     Additional metadata associated with an in-progress multipart upload.
 
@@ -45,7 +45,7 @@ class ObjektMultipartMetadata(Base):
         nullable=False,
     )
 
-    objekt_multipart_metadata_objekt_multipart: Mapped["ObjektMultipart"] = relationship(  # noqa: E501, F821
+    objekt_multipart_metadata_objekt_multipart: Mapped["ObjectMultipart"] = relationship(  # noqa: E501, F821
         back_populates="objekt_multipart_metadata",
         foreign_keys=[objekt_multipart_id],
         lazy="raise",

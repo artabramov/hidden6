@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
 from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
-from app.models.object_multipart import ObjektMultipart
+from app.models.object_multipart import ObjectMultipart
 from app.models.user import User
 from app.repositories.io import mktree, rmtree
 from app.repositories.orm import ORMRepository
@@ -25,7 +25,7 @@ async def multipart_create(
     bucket_name: str,
     objekt_key: str,
     content_type: str | None = None,
-) -> ObjektMultipart:
+) -> ObjectMultipart:
     """
     Create an S3 multipart upload. The operation is transactional at
     the DB level and reconciles filesystem state on failure. A dedicated
@@ -57,7 +57,7 @@ async def multipart_create(
         upload_id,
     )
 
-    multipart = ObjektMultipart(
+    multipart = ObjectMultipart(
         bucket_id=bucket.id,
         user_id=current_user.id,
         upload_id=upload_id,
