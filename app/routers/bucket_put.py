@@ -12,6 +12,7 @@ from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_create import bucket_create
 from app.services.bucket_versioning_update import bucket_versioning_update
+from app.services.bucket_objekt_lock_update import bucket_objekt_lock_update
 
 router = APIRouter(include_in_schema=False)
 
@@ -21,10 +22,8 @@ router = APIRouter(include_in_schema=False)
     responses={
         400: {
             "description": (
-                "The bucket name in the path does not satisfy S3 "
-                "DNS naming rules: length, allowed characters, "
-                "label format, and restrictions on consecutive "
-                "dots or dashes."
+                "The bucket name or bucket configuration is invalid, "
+                "or the request XML is malformed."
             ),
         },
         403: {
@@ -39,7 +38,7 @@ router = APIRouter(include_in_schema=False)
         409: {
             "description": (
                 "The bucket name is unavailable, or the requested "
-                "versioning state is incompatible with the current "
+                "bucket configuration is incompatible with the current "
                 "bucket state."
             ),
         },
@@ -54,7 +53,7 @@ router = APIRouter(include_in_schema=False)
     status_code=status.HTTP_200_OK,
     response_class=Response,
     dependencies=[Depends(require_gocryptfs())],
-    summary="Create a bucket or configure bucket versioning.",
+    summary="Create a bucket or update bucket configuration.",
 )
 async def bucket_put_router(
     bucket_name: str,
@@ -62,16 +61,29 @@ async def bucket_put_router(
     session: AsyncSession = Depends(require_session),
     current_user: User = Depends(require_auth),
     versioning: Annotated[str | None, Query()] = None,
+    objekt_lock: Annotated[str | None, Query(alias="object-lock")] = None,
 ) -> Response:
     """
     Handle S3 PUT operations addressed to a bucket.
 
-    With `?versioning`, apply the versioning configuration from the
-    request body. Otherwise create the bucket for the authenticated
-    user.
+    With `?object-lock`, apply the Object Lock configuration from the
+    request body. With `?versioning`, apply the versioning configuration.
+    Otherwise create the bucket for the authenticated user.
 
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
+    if objekt_lock is not None:
+        await bucket_objekt_lock_update(
+            session=session,
+            current_user=current_user,
+            bucket_name=bucket_name,
+            body=await request.body(),
+        )
+
+        return Response(
+            status_code=status.HTTP_200_OK,
+        )
+
     if versioning is not None:
         await bucket_versioning_update(
             session=session,

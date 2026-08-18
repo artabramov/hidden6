@@ -19,6 +19,12 @@ VERSIONING_BODY = (
     b"</VersioningConfiguration>"
 )
 
+OBJECT_LOCK_BODY = (
+    b"<ObjectLockConfiguration>"
+    b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+    b"</ObjectLockConfiguration>"
+)
+
 
 class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
     def _build_request(self, body=b""):
@@ -41,6 +47,10 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_put.bucket_versioning_update",
                 new_callable=AsyncMock,
             ) as mock_versioning,
+            patch(
+                "app.routers.bucket_put.bucket_objekt_lock_update",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_put_router(
                 bucket_name="photos",
@@ -55,6 +65,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
             bucket_name="photos",
         )
         mock_versioning.assert_not_awaited()
+        mock_lock.assert_not_awaited()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.headers["Location"], "/photos")
 
@@ -71,6 +82,10 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_put.bucket_create",
                 new_callable=AsyncMock,
             ) as mock_create,
+            patch(
+                "app.routers.bucket_put.bucket_objekt_lock_update",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_put_router(
                 bucket_name="photos",
@@ -86,6 +101,77 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
             bucket_name="photos",
             body=VERSIONING_BODY,
         )
+        mock_create.assert_not_awaited()
+        mock_lock.assert_not_awaited()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("Location", response.headers)
+
+    async def test_applies_object_lock_configuration(self):
+        user = MagicMock()
+        session = MagicMock()
+
+        with (
+            patch(
+                "app.routers.bucket_put.bucket_objekt_lock_update",
+                new_callable=AsyncMock,
+            ) as mock_lock,
+            patch(
+                "app.routers.bucket_put.bucket_versioning_update",
+                new_callable=AsyncMock,
+            ) as mock_versioning,
+            patch(
+                "app.routers.bucket_put.bucket_create",
+                new_callable=AsyncMock,
+            ) as mock_create,
+        ):
+            response = await bucket_put_router(
+                bucket_name="photos",
+                request=self._build_request(OBJECT_LOCK_BODY),
+                session=session,
+                current_user=user,
+                objekt_lock="",
+            )
+
+        mock_lock.assert_awaited_once_with(
+            session=session,
+            current_user=user,
+            bucket_name="photos",
+            body=OBJECT_LOCK_BODY,
+        )
+        mock_versioning.assert_not_awaited()
+        mock_create.assert_not_awaited()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("Location", response.headers)
+
+    async def test_object_lock_query_takes_precedence_over_versioning(self):
+        user = MagicMock()
+        session = MagicMock()
+
+        with (
+            patch(
+                "app.routers.bucket_put.bucket_objekt_lock_update",
+                new_callable=AsyncMock,
+            ) as mock_lock,
+            patch(
+                "app.routers.bucket_put.bucket_versioning_update",
+                new_callable=AsyncMock,
+            ) as mock_versioning,
+            patch(
+                "app.routers.bucket_put.bucket_create",
+                new_callable=AsyncMock,
+            ) as mock_create,
+        ):
+            response = await bucket_put_router(
+                bucket_name="photos",
+                request=self._build_request(OBJECT_LOCK_BODY),
+                session=session,
+                current_user=user,
+                objekt_lock="",
+                versioning="",
+            )
+
+        mock_lock.assert_awaited_once()
+        mock_versioning.assert_not_awaited()
         mock_create.assert_not_awaited()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("Location", response.headers)
