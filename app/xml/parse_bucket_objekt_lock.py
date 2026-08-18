@@ -8,13 +8,14 @@ def parse_bucket_objekt_lock(
     body: bytes,
 ) -> tuple[str | None, str | None, int | None, int | None]:
     """
-    Parse a PutObjectLockConfiguration request body.
+    Parse and validate an S3 ObjectLockConfiguration request body.
 
     Returns ObjectLockEnabled, default retention mode, days, and years.
     Element namespaces are ignored.
 
     Raises:
-        ValueError: Body is not a well formed ObjectLockConfiguration.
+        ValueError: Body does not match the expected
+            ObjectLockConfiguration structure.
     """
     try:
         root = ElementTree.fromstring(body)
@@ -33,8 +34,13 @@ def parse_bucket_objekt_lock(
         name = _strip_element(element.tag)
 
         if name == "ObjectLockEnabled":
-            if element.text:
-                objekt_lock_enabled = element.text.strip()
+            if not element.text:
+                raise ValueError("Malformed ObjectLockConfiguration.")
+
+            objekt_lock_enabled = element.text.strip()
+
+            if objekt_lock_enabled != "Enabled":
+                raise ValueError("Malformed ObjectLockConfiguration.")
 
         elif name == "Rule":
             (
@@ -42,6 +48,9 @@ def parse_bucket_objekt_lock(
                 default_retention_days,
                 default_retention_years,
             ) = _parse_rule(element)
+
+        else:
+            raise ValueError("Malformed ObjectLockConfiguration.")
 
     return (
         objekt_lock_enabled,
@@ -53,38 +62,75 @@ def parse_bucket_objekt_lock(
 
 def _parse_rule(
     rule: ElementTree.Element,
-) -> tuple[str | None, int | None, int | None]:
-    """Parse the default retention rule."""
-    for element in rule:
-        if _strip_element(element.tag) == "DefaultRetention":
-            return _parse_default_retention(element)
+) -> tuple[str, int | None, int | None]:
+    """Parse and validate the default Object Lock retention rule."""
+    children = list(rule)
 
-    raise ValueError("Malformed ObjectLockConfiguration.")
+    if (
+        len(children) != 1
+        or _strip_element(children[0].tag) != "DefaultRetention"
+    ):
+        raise ValueError("Malformed ObjectLockConfiguration.")
+
+    return _parse_default_retention(children[0])
 
 
 def _parse_default_retention(
     retention: ElementTree.Element,
-) -> tuple[str | None, int | None, int | None]:
-    """Parse the default Object Lock retention configuration."""
+) -> tuple[str, int | None, int | None]:
+    """Parse and validate DefaultRetention."""
     mode = None
     days = None
     years = None
 
-    try:
-        for element in retention:
-            name = _strip_element(element.tag)
+    for element in retention:
+        name = _strip_element(element.tag)
 
-            if name == "Mode" and element.text:
-                mode = element.text.strip()
+        if name == "Mode":
+            if not element.text:
+                raise ValueError("Malformed ObjectLockConfiguration.")
 
-            elif name == "Days" and element.text:
+            mode = element.text.strip()
+
+            if mode not in ("GOVERNANCE", "COMPLIANCE"):
+                raise ValueError("Malformed ObjectLockConfiguration.")
+
+        elif name == "Days":
+            if not element.text:
+                raise ValueError("Malformed ObjectLockConfiguration.")
+
+            try:
                 days = int(element.text.strip())
+            except ValueError as exc:
+                raise ValueError(
+                    "Malformed ObjectLockConfiguration."
+                ) from exc
 
-            elif name == "Years" and element.text:
+        elif name == "Years":
+            if not element.text:
+                raise ValueError("Malformed ObjectLockConfiguration.")
+
+            try:
                 years = int(element.text.strip())
+            except ValueError as exc:
+                raise ValueError(
+                    "Malformed ObjectLockConfiguration."
+                ) from exc
 
-    except ValueError as exc:
-        raise ValueError("Malformed ObjectLockConfiguration.") from exc
+        else:
+            raise ValueError("Malformed ObjectLockConfiguration.")
+
+    if mode is None:
+        raise ValueError("Malformed ObjectLockConfiguration.")
+
+    if (days is None) == (years is None):
+        raise ValueError("Malformed ObjectLockConfiguration.")
+
+    if days is not None and days <= 0:
+        raise ValueError("Malformed ObjectLockConfiguration.")
+
+    if years is not None and years <= 0:
+        raise ValueError("Malformed ObjectLockConfiguration.")
 
     return mode, days, years
 

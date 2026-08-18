@@ -86,24 +86,6 @@ class TestParseBucketObjektLock(unittest.TestCase):
             ("Enabled", "GOVERNANCE", 7, None),
         )
 
-    def test_ignores_unknown_children(self):
-        body = (
-            b"<ObjectLockConfiguration>"
-            b"<Extra>nope</Extra>"
-            b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
-            b"<Rule><DefaultRetention>"
-            b"<Checksum>deadbeef</Checksum>"
-            b"<Mode>COMPLIANCE</Mode>"
-            b"<Years>1</Years>"
-            b"</DefaultRetention></Rule>"
-            b"</ObjectLockConfiguration>"
-        )
-
-        self.assertEqual(
-            parse_bucket_objekt_lock(body),
-            ("Enabled", "COMPLIANCE", None, 1),
-        )
-
     def test_empty_configuration_returns_nones(self):
         body = b"<ObjectLockConfiguration></ObjectLockConfiguration>"
 
@@ -111,6 +93,28 @@ class TestParseBucketObjektLock(unittest.TestCase):
             parse_bucket_objekt_lock(body),
             (None, None, None, None),
         )
+
+    def test_rejects_unknown_children(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<Extra>nope</Extra>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_unknown_retention_children(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Checksum>deadbeef</Checksum>"
+                b"<Mode>COMPLIANCE</Mode>"
+                b"<Years>1</Years>"
+                b"</DefaultRetention></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
 
     def test_rejects_malformed_xml(self):
         with self.assertRaises(ValueError) as cm:
@@ -127,12 +131,114 @@ class TestParseBucketObjektLock(unittest.TestCase):
                 b"<Nope><ObjectLockEnabled>Enabled</ObjectLockEnabled></Nope>",
             )
 
+    def test_rejects_empty_object_lock_enabled(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled></ObjectLockEnabled>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_non_enabled_object_lock(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Disabled</ObjectLockEnabled>"
+                b"</ObjectLockConfiguration>",
+            )
+
     def test_rejects_rule_without_default_retention(self):
         with self.assertRaises(ValueError):
             parse_bucket_objekt_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_rule_with_extra_children(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule>"
+                b"<DefaultRetention>"
+                b"<Mode>GOVERNANCE</Mode>"
+                b"<Days>1</Days>"
+                b"</DefaultRetention>"
+                b"<Extra/>"
+                b"</Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_missing_mode(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Days>10</Days>"
+                b"</DefaultRetention></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_invalid_mode(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Mode>INVALID</Mode>"
+                b"<Days>10</Days>"
+                b"</DefaultRetention></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_both_days_and_years(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Mode>GOVERNANCE</Mode>"
+                b"<Days>10</Days>"
+                b"<Years>1</Years>"
+                b"</DefaultRetention></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_neither_days_nor_years(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Mode>GOVERNANCE</Mode>"
+                b"</DefaultRetention></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_non_positive_days(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Mode>GOVERNANCE</Mode>"
+                b"<Days>0</Days>"
+                b"</DefaultRetention></Rule>"
+                b"</ObjectLockConfiguration>",
+            )
+
+    def test_rejects_non_positive_years(self):
+        with self.assertRaises(ValueError):
+            parse_bucket_objekt_lock(
+                b"<ObjectLockConfiguration>"
+                b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
+                b"<Rule><DefaultRetention>"
+                b"<Mode>COMPLIANCE</Mode>"
+                b"<Years>0</Years>"
+                b"</DefaultRetention></Rule>"
                 b"</ObjectLockConfiguration>",
             )
 
