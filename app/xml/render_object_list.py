@@ -8,7 +8,7 @@ from app.models.objekt import Objekt
 from app.s3.datetime import format_datetime
 
 
-def render_objekt_list(
+def render_object_list(
     bucket_name: str,
     prefix: str,
     max_keys: int,

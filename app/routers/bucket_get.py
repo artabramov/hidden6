@@ -13,7 +13,7 @@ from app.models.user import User
 from app.services.bucket_get import bucket_get
 from app.services.bucket_object_lock_retrieve import bucket_objekt_lock_retrieve  # noqa: E501
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
-from app.xml.render_object_list import render_objekt_list
+from app.xml.render_object_list import render_object_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
 from app.xml.render_bucket_object_lock import render_bucket_object_lock
 
@@ -109,7 +109,7 @@ async def bucket_get_router(
         max_keys=max_keys,
     )
     return Response(
-        content=render_objekt_list(
+        content=render_object_list(
             bucket_name=bucket_name,
             prefix=prefix,
             max_keys=max_keys,
