@@ -3,6 +3,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.hooks import Events, hooks
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
@@ -30,4 +31,5 @@ async def bucket_versioning_retrieve(
         resource,
     )
 
+    await hooks.emit(Events.BUCKET_VERSIONING_RETRIEVED, bucket)
     return get_bucket_versioning_status(bucket)

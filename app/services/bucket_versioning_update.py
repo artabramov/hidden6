@@ -6,6 +6,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import S3XmlMalformedError
+from app.hooks import Events, hooks
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
@@ -63,3 +64,5 @@ async def bucket_versioning_update(
             )
 
         raise
+
+    await hooks.emit(Events.BUCKET_VERSIONING_UPDATED, bucket)
