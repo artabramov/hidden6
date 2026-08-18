@@ -105,6 +105,37 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
         self.assertIsNone(bucket.default_retention_days)
         self.assertIsNone(bucket.default_retention_years)
 
+    def test_updates_default_rule_when_already_enabled(self):
+        bucket = self._bucket(
+            object_lock_enabled=True,
+            default_lock_mode="GOVERNANCE",
+            default_retention_days=10,
+        )
+
+        self._set(
+            bucket,
+            default_lock_mode="COMPLIANCE",
+            default_retention_years=2,
+        )
+
+        self.assertTrue(bucket.object_lock_enabled)
+        self.assertEqual(bucket.default_lock_mode, "COMPLIANCE")
+        self.assertIsNone(bucket.default_retention_days)
+        self.assertEqual(bucket.default_retention_years, 2)
+
+    def test_missing_enabled_does_not_enable_lock(self):
+        bucket = self._bucket()
+
+        self._set(
+            bucket,
+            default_lock_mode="GOVERNANCE",
+            default_retention_days=10,
+        )
+
+        self.assertFalse(bucket.object_lock_enabled)
+        self.assertEqual(bucket.default_lock_mode, "GOVERNANCE")
+        self.assertEqual(bucket.default_retention_days, 10)
+
     def test_non_enabled_flag_does_not_enable_lock(self):
         bucket = self._bucket()
 

@@ -29,6 +29,7 @@ class Events:
     BUCKET_VERSIONING_RETRIEVED = "bucket_versioning_retrieved"
     BUCKET_VERSIONING_UPDATED = "bucket_versioning_updated"
     BUCKET_OBJEKT_LOCK_RETRIEVED = "bucket_objekt_lock_retrieved"
+    BUCKET_OBJEKT_LOCK_UPDATED = "bucket_objekt_lock_updated"
     OBJEKT_UPLOADED = "objekt_uploaded"
     OBJEKT_LISTED = "objekt_listed"
     OBJEKT_DOWNLOADED = "objekt_downloaded"
