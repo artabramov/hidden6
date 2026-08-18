@@ -30,7 +30,7 @@ class ObjectTag(Base):
 
     object_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts.id", ondelete="CASCADE"),
+        ForeignKey("objects.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

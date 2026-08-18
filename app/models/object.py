@@ -59,7 +59,7 @@ class Objekt(Base):
     content type, or corresponding object bytes.
     """
 
-    __tablename__ = "objekts"
+    __tablename__ = "objects"
 
     id: Mapped[int] = mapped_column(
         Integer,

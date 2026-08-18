@@ -42,7 +42,7 @@ class ObjectVersion(Base):
 
     object_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("objekts.id"),
+        ForeignKey("objects.id"),
         nullable=False,
         index=True,
     )

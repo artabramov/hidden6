@@ -85,7 +85,7 @@ class TestObjektModel(unittest.TestCase):
             self.session.commit()
 
     def test_tablename(self):
-        self.assertEqual(Objekt.__tablename__, "objekts")
+        self.assertEqual(Objekt.__tablename__, "objects")
 
     def test_persists_required_fields_and_defaults(self):
         objekt = self._objekt(
