@@ -34,7 +34,7 @@ from app.s3.multipart import (
     load_multipart_parts,
     delete_multipart_parts,
 )
-from app.s3.objekt import object_mkdir, upsert_object
+from app.s3.object import object_mkdir, upsert_object
 from app.s3.paths import (
     resolve_multipart_completed_path,
     resolve_multipart_object_backup_path,

@@ -20,7 +20,7 @@ from app.errors import (  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.s3.objekt import load_object, object_mkdir, upsert_object  # noqa: E402
+from app.s3.object import load_object, object_mkdir, upsert_object  # noqa: E402
 
 load_all_models()
 
@@ -150,12 +150,12 @@ class TestObjektMkdir(unittest.IsolatedAsyncioTestCase):
     async def _run(self, isdir_value, mkdir_error=None):
         with (
             patch(
-                "app.s3.objekt.isdir",
+                "app.s3.object.isdir",
                 new_callable=AsyncMock,
                 return_value=isdir_value,
             ),
             patch(
-                "app.s3.objekt.mktree",
+                "app.s3.object.mktree",
                 new_callable=AsyncMock,
                 side_effect=mkdir_error,
             ) as mkdir_mock,

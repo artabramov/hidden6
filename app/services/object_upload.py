@@ -27,7 +27,7 @@ from app.repositories.io import (
 )
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
-from app.s3.objekt import object_mkdir, upsert_object
+from app.s3.object import object_mkdir, upsert_object
 from app.s3.paths import resolve_objekt_path, resolve_staged_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 

@@ -1,4 +1,4 @@
-# app/s3/objekt.py
+# app/s3/object.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import os
