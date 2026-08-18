@@ -1,4 +1,4 @@
-# tests/xml/test_render_objekt_lock.py
+# tests/xml/test_render_bucket_objekt_lock.py
 # SPDX-License-Identifier: GPL-3.0-only
 
 import unittest
@@ -11,7 +11,9 @@ set_minimal_app_config_env()
 from app.constants import BUCKET_VERSIONING_ENABLED, S3_XMLNS  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
-from app.xml.render_objekt_lock import render_bucket_objekt_lock  # noqa: E402
+from app.xml.render_bucket_objekt_lock import (  # noqa: E402
+    render_bucket_objekt_lock,
+)
 
 load_all_models()
 

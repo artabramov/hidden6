@@ -17,6 +17,7 @@ from app.constants import (  # noqa: E402
     S3_XMLNS,
 )
 from app.db.engine import load_all_models  # noqa: E402
+from app.models.bucket import Bucket  # noqa: E402
 from app.models.objekt import Objekt  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.routers.bucket_get import bucket_get_router  # noqa: E402
@@ -52,6 +53,10 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
             ) as mock_versioning,
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_get_router(
                 bucket_name="photos",
@@ -69,6 +74,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
             max_keys=100,
         )
         mock_versioning.assert_not_awaited()
+        mock_lock.assert_not_awaited()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.media_type, "application/xml")
 
@@ -94,6 +100,10 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_get.bucket_versioning_retrieve",
                 new_callable=AsyncMock,
             ) as mock_versioning,
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_get_router(
                 bucket_name="photos",
@@ -109,6 +119,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
             max_keys=1000,
         )
         mock_versioning.assert_not_awaited()
+        mock_lock.assert_not_awaited()
         body = response.body.decode()
         self.assertIn("<KeyCount>0</KeyCount>", body)
         self.assertNotIn("<Contents>", body)
@@ -127,6 +138,10 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
             ) as mock_list,
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_get_router(
                 bucket_name="photos",
@@ -141,6 +156,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
             bucket_name="photos",
         )
         mock_list.assert_not_awaited()
+        mock_lock.assert_not_awaited()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.media_type, "application/xml")
 
@@ -166,6 +182,10 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
             ) as mock_list,
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_get_router(
                 bucket_name="photos",
@@ -175,6 +195,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_list.assert_not_awaited()
+        mock_lock.assert_not_awaited()
         body = response.body.decode()
         self.assertIn(
             f"<Status>{BUCKET_VERSIONING_SUSPENDED}</Status>",
@@ -195,6 +216,10 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 "app.routers.bucket_get.bucket_get",
                 new_callable=AsyncMock,
             ) as mock_list,
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_lock,
         ):
             response = await bucket_get_router(
                 bucket_name="photos",
@@ -204,6 +229,133 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
             )
 
         mock_list.assert_not_awaited()
+        mock_lock.assert_not_awaited()
         body = response.body.decode()
         self.assertIn("<VersioningConfiguration", body)
         self.assertNotIn("<Status>", body)
+
+    async def test_returns_object_lock_xml_without_default_rule(self):
+        user = User(id=1, username="alice", is_root=False)
+        session = MagicMock()
+        bucket = Bucket(
+            id=7,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+
+        with (
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+                return_value=bucket,
+            ) as mock_lock,
+            patch(
+                "app.routers.bucket_get.bucket_versioning_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_versioning,
+            patch(
+                "app.routers.bucket_get.bucket_get",
+                new_callable=AsyncMock,
+            ) as mock_list,
+        ):
+            response = await bucket_get_router(
+                bucket_name="photos",
+                session=session,
+                current_user=user,
+                objekt_lock="",
+            )
+
+        mock_lock.assert_awaited_once_with(
+            session=session,
+            current_user=user,
+            bucket_name="photos",
+        )
+        mock_versioning.assert_not_awaited()
+        mock_list.assert_not_awaited()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.media_type, "application/xml")
+
+        body = response.body.decode()
+        self.assertIn("<ObjectLockConfiguration", body)
+        self.assertIn(f'xmlns="{S3_XMLNS}"', body)
+        self.assertIn("<ObjectLockEnabled>Enabled</ObjectLockEnabled>", body)
+        self.assertNotIn("<Rule>", body)
+
+    async def test_returns_object_lock_xml_with_default_retention(self):
+        user = User(id=1, username="alice", is_root=False)
+        session = MagicMock()
+        bucket = Bucket(
+            id=7,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+            default_lock_mode="GOVERNANCE",
+            default_retention_days=10,
+        )
+
+        with (
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+                return_value=bucket,
+            ),
+            patch(
+                "app.routers.bucket_get.bucket_get",
+                new_callable=AsyncMock,
+            ) as mock_list,
+        ):
+            response = await bucket_get_router(
+                bucket_name="photos",
+                session=session,
+                current_user=user,
+                objekt_lock="",
+            )
+
+        mock_list.assert_not_awaited()
+        body = response.body.decode()
+        self.assertIn("<Mode>GOVERNANCE</Mode>", body)
+        self.assertIn("<Days>10</Days>", body)
+
+    async def test_object_lock_query_takes_precedence_over_versioning(self):
+        user = User(id=1, username="alice", is_root=False)
+        session = MagicMock()
+        bucket = Bucket(
+            id=7,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+
+        with (
+            patch(
+                "app.routers.bucket_get.bucket_objekt_lock_retrieve",
+                new_callable=AsyncMock,
+                return_value=bucket,
+            ) as mock_lock,
+            patch(
+                "app.routers.bucket_get.bucket_versioning_retrieve",
+                new_callable=AsyncMock,
+            ) as mock_versioning,
+            patch(
+                "app.routers.bucket_get.bucket_get",
+                new_callable=AsyncMock,
+            ) as mock_list,
+        ):
+            response = await bucket_get_router(
+                bucket_name="photos",
+                session=session,
+                current_user=user,
+                objekt_lock="",
+                versioning="",
+            )
+
+        mock_lock.assert_awaited_once()
+        mock_versioning.assert_not_awaited()
+        mock_list.assert_not_awaited()
+        body = response.body.decode()
+        self.assertIn("<ObjectLockConfiguration", body)
+        self.assertNotIn("<VersioningConfiguration", body)

@@ -11,9 +11,11 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_get import bucket_get
+from app.services.bucket_objekt_lock_retrieve import bucket_objekt_lock_retrieve  # noqa: E501
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
 from app.xml.render_objekt_list import render_objekt_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
+from app.xml.render_bucket_objekt_lock import render_bucket_objekt_lock
 
 router = APIRouter(include_in_schema=False)
 
@@ -57,6 +59,7 @@ async def bucket_get_router(
     bucket_name: str,
     session: AsyncSession = Depends(require_session),
     current_user: User = Depends(require_auth),
+    objekt_lock: Annotated[str | None, Query(alias="object-lock")] = None,
     versioning: Annotated[str | None, Query()] = None,
     prefix: Annotated[str, Query()] = "",
     max_keys: Annotated[
@@ -72,6 +75,19 @@ async def bucket_get_router(
 
     `OBJEKT_LISTED` — hook executed after the object list is retrieved.
     """
+    if objekt_lock is not None:
+        bucket = await bucket_objekt_lock_retrieve(
+            session=session,
+            current_user=current_user,
+            bucket_name=bucket_name,
+        )
+
+        return Response(
+            content=render_bucket_objekt_lock(bucket),
+            status_code=status.HTTP_200_OK,
+            media_type="application/xml",
+        )
+
     if versioning is not None:
         versioning_status = await bucket_versioning_retrieve(
             session=session,

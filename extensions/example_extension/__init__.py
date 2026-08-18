@@ -59,6 +59,10 @@ async def bucket_versioning_updated(bucket: Bucket) -> None:
     ...
 
 
+async def bucket_objekt_lock_retrieved(bucket: Bucket) -> None:
+    ...
+
+
 async def objekt_uploaded(objekt: Objekt) -> None:
     ...
 
@@ -82,6 +86,7 @@ def register(hook_manager: HookManager) -> None:
     hook_manager.on(Events.BUCKET_LISTED, bucket_listed)
     hook_manager.on(Events.BUCKET_VERSIONING_RETRIEVED, bucket_versioning_retrieved)  # noqa: E501
     hook_manager.on(Events.BUCKET_VERSIONING_UPDATED, bucket_versioning_updated)  # noqa: E501
+    hook_manager.on(Events.BUCKET_OBJEKT_LOCK_RETRIEVED, bucket_objekt_lock_retrieved)  # noqa: E501
     hook_manager.on(Events.OBJEKT_UPLOADED, objekt_uploaded)
     hook_manager.on(Events.OBJEKT_LISTED, objekt_listed)
     hook_manager.on(Events.OBJEKT_DOWNLOADED, objekt_downloaded)

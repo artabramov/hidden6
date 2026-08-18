@@ -4,6 +4,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import S3ObjectLockConfigurationNotFoundError
+from app.hooks import Events, hooks
 from app.models.bucket import Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
@@ -35,4 +36,5 @@ async def bucket_objekt_lock_retrieve(
     if not bucket.object_lock_enabled:
         raise S3ObjectLockConfigurationNotFoundError(resource)
 
+    await hooks.emit(Events.BUCKET_OBJEKT_LOCK_RETRIEVED, bucket)
     return bucket
