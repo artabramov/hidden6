@@ -74,4 +74,4 @@ async def bucket_objekt_lock_update(
 
         raise
 
-    await hooks.emit(Events.BUCKET_OBJEKT_LOCK_UPDATED, bucket)
+    await hooks.emit(Events.BUCKET_OBJECT_LOCK_UPDATED, bucket)

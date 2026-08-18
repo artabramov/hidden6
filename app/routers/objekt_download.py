@@ -70,7 +70,7 @@ async def objekt_download_router(
     Content-Type, Content-Length, ETag, and Last-Modified headers
     without a body — AWS CLI issues HeadObject before every copy.
 
-    `OBJEKT_DOWNLOADED` — hook executed after the object is resolved.
+    `OBJECT_DOWNLOADED` — hook executed after the object is resolved.
     """
     objekt, object_path = await objekt_download(
         session=session,

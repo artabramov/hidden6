@@ -73,7 +73,7 @@ async def bucket_get_router(
     With `?versioning`, return the bucket versioning configuration.
     Otherwise list objects whose keys start with the requested prefix.
 
-    `OBJEKT_LISTED` — hook executed after the object list is retrieved.
+    `OBJECT_LISTED` — hook executed after the object list is retrieved.
     """
     if objekt_lock is not None:
         bucket = await bucket_objekt_lock_retrieve(

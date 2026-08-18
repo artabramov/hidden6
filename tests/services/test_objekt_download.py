@@ -91,7 +91,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self.load_objekt.assert_awaited_once()
         self.isfile.assert_awaited_once_with("/mnt/buckets/photos/2024/cat.png")
         self.emit.assert_awaited_once_with(
-            Events.OBJEKT_DOWNLOADED,
+            Events.OBJECT_DOWNLOADED,
             self.objekt,
         )
 

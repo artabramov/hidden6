@@ -136,7 +136,7 @@ class TestBucketObjektLockUpdate(unittest.IsolatedAsyncioTestCase):
         repo.commit.assert_awaited_once()
         repo.rollback.assert_not_awaited()
         emit.assert_awaited_once_with(
-            Events.BUCKET_OBJEKT_LOCK_UPDATED,
+            Events.BUCKET_OBJECT_LOCK_UPDATED,
             bucket,
         )
 

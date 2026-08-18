@@ -44,5 +44,5 @@ async def bucket_get(
 
     objekts = await repo.select_all(Objekt, **filters)
 
-    await hooks.emit(Events.OBJEKT_LISTED, objekts)
+    await hooks.emit(Events.OBJECT_LISTED, objekts)
     return objekts

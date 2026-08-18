@@ -155,7 +155,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.repo.commit.assert_awaited_once()
         self.delete.assert_not_awaited()
         self.assertIs(objekt, self.objekt)
-        self.emit.assert_awaited_once_with(Events.OBJEKT_UPLOADED, objekt)
+        self.emit.assert_awaited_once_with(Events.OBJECT_UPLOADED, objekt)
 
     async def test_overwrites_existing_object_and_cleans_backup(self):
         self._build_mocks(object_exists=True)
@@ -448,7 +448,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         self.assertIs(objekt, self.objekt)
         self.emit.assert_awaited_once_with(
-            Events.OBJEKT_UPLOADED,
+            Events.OBJECT_UPLOADED,
             objekt,
         )
         self.assertIn(

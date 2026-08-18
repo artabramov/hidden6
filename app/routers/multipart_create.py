@@ -95,7 +95,7 @@ async def multipart_create_router(
     `?uploadId=` the parts listed in the request body are assembled
     into the final object (CompleteMultipartUpload).
 
-    `OBJEKT_UPLOADED` — hook executed after the object is assembled.
+    `OBJECT_UPLOADED` — hook executed after the object is assembled.
     """
     resource = f"/{bucket_name}/{object_key}"
 

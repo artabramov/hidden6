@@ -36,5 +36,5 @@ async def bucket_objekt_lock_retrieve(
     if not bucket.object_lock_enabled:
         raise S3ObjectLockConfigurationNotFoundError(resource)
 
-    await hooks.emit(Events.BUCKET_OBJEKT_LOCK_RETRIEVED, bucket)
+    await hooks.emit(Events.BUCKET_OBJECT_LOCK_RETRIEVED, bucket)
     return bucket

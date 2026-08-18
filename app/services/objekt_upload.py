@@ -299,5 +299,5 @@ async def objekt_upload(
                 backup_path,
             )
 
-    await hooks.emit(Events.OBJEKT_UPLOADED, objekt)
+    await hooks.emit(Events.OBJECT_UPLOADED, objekt)
     return objekt

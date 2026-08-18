@@ -84,7 +84,7 @@ async def objekt_upload_router(
     the body is stored as a single part of that multipart upload
     (UploadPart) instead of becoming an object of its own (PutObject).
 
-    `OBJEKT_UPLOADED` — hook executed after the object is uploaded.
+    `OBJECT_UPLOADED` — hook executed after the object is uploaded.
     """
     resource = f"/{bucket_name}/{object_key}"
 

@@ -49,5 +49,5 @@ async def objekt_download(
     if not await isfile(object_path):
         raise S3ObjectNotFoundError(resource)
 
-    await hooks.emit(Events.OBJEKT_DOWNLOADED, objekt)
+    await hooks.emit(Events.OBJECT_DOWNLOADED, objekt)
     return objekt, object_path

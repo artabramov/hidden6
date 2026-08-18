@@ -66,7 +66,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
             limit=1000,
         )
         self.assertEqual(result, [objekt])
-        emit_mock.assert_awaited_once_with(Events.OBJEKT_LISTED, [objekt])
+        emit_mock.assert_awaited_once_with(Events.OBJECT_LISTED, [objekt])
 
     async def test_lists_objects_with_prefix(self):
         objekt = Objekt(
@@ -168,7 +168,7 @@ class TestBucketGet(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result, [])
-        emit_mock.assert_awaited_once_with(Events.OBJEKT_LISTED, [])
+        emit_mock.assert_awaited_once_with(Events.OBJECT_LISTED, [])
 
     async def test_bucket_not_found_raises_error(self):
         repo = self._build_repo()

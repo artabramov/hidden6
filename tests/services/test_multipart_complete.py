@@ -223,7 +223,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.delete.assert_not_awaited()
         self.assertIs(objekt, self.objekt)
         self.emit.assert_awaited_once_with(
-            Events.OBJEKT_UPLOADED,
+            Events.OBJECT_UPLOADED,
             objekt,
         )
 
