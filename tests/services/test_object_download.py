@@ -75,7 +75,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         )
         return repo
 
-    async def test_returns_objekt_and_path(self):
+    async def test_returns_object_and_path(self):
         self._build_mocks()
 
         objekt, path = await object_download(
@@ -123,7 +123,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
 
         self.load_object.assert_not_awaited()
 
-    async def test_missing_objekt_raises(self):
+    async def test_missing_object_raises(self):
         self._build_mocks()
         self.load_object.side_effect = S3ObjectNotFoundError(
             "/photos/2024/cat.png",

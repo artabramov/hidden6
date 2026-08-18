@@ -129,7 +129,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 request=self._build_request(OBJECT_LOCK_BODY),
                 session=session,
                 current_user=user,
-                objekt_lock="",
+                object_lock="",
             )
 
         mock_lock.assert_awaited_once_with(
@@ -166,7 +166,7 @@ class TestBucketPutRouter(unittest.IsolatedAsyncioTestCase):
                 request=self._build_request(OBJECT_LOCK_BODY),
                 session=session,
                 current_user=user,
-                objekt_lock="",
+                object_lock="",
                 versioning="",
             )
 

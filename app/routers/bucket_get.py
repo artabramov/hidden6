@@ -59,7 +59,7 @@ async def bucket_get_router(
     bucket_name: str,
     session: AsyncSession = Depends(require_session),
     current_user: User = Depends(require_auth),
-    objekt_lock: Annotated[str | None, Query(alias="object-lock")] = None,
+    object_lock: Annotated[str | None, Query(alias="object-lock")] = None,
     versioning: Annotated[str | None, Query()] = None,
     prefix: Annotated[str, Query()] = "",
     max_keys: Annotated[
@@ -75,7 +75,7 @@ async def bucket_get_router(
 
     `OBJECT_LISTED` — hook executed after the object list is retrieved.
     """
-    if objekt_lock is not None:
+    if object_lock is not None:
         bucket = await bucket_object_lock_retrieve(
             session=session,
             current_user=current_user,

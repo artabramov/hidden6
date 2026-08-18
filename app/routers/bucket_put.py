@@ -61,7 +61,7 @@ async def bucket_put_router(
     session: AsyncSession = Depends(require_session),
     current_user: User = Depends(require_auth),
     versioning: Annotated[str | None, Query()] = None,
-    objekt_lock: Annotated[str | None, Query(alias="object-lock")] = None,
+    object_lock: Annotated[str | None, Query(alias="object-lock")] = None,
 ) -> Response:
     """
     Handle S3 PUT operations addressed to a bucket.
@@ -72,7 +72,7 @@ async def bucket_put_router(
 
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
-    if objekt_lock is not None:
+    if object_lock is not None:
         await bucket_object_lock_update(
             session=session,
             current_user=current_user,

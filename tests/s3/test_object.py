@@ -137,7 +137,7 @@ class TestObjektLoad(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3ObjectNotFoundError):
             await load_object(repo, bucket, "gone.txt", "/photos/gone.txt")
 
-    async def test_missing_objekt_raises(self):
+    async def test_missing_object_raises(self):
         bucket = Bucket(id=7, user_id=1, bucket_name="photos")
         repo = MagicMock()
         repo.select = AsyncMock(return_value=None)

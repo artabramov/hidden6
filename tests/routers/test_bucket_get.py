@@ -264,7 +264,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 session=session,
                 current_user=user,
-                objekt_lock="",
+                object_lock="",
             )
 
         mock_lock.assert_awaited_once_with(
@@ -311,7 +311,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 session=session,
                 current_user=user,
-                objekt_lock="",
+                object_lock="",
             )
 
         mock_list.assert_not_awaited()
@@ -349,7 +349,7 @@ class TestBucketGetRouter(unittest.IsolatedAsyncioTestCase):
                 bucket_name="photos",
                 session=session,
                 current_user=user,
-                objekt_lock="",
+                object_lock="",
                 versioning="",
             )
 
