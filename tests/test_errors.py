@@ -19,6 +19,7 @@ from app.errors import (
     S3InvalidAccessKeyIdError,
     S3InvalidBucketNameError,
     S3NotImplementedError,
+    S3ObjectLockConfigurationNotFoundError,
     S3ObjektBodyIncompleteError,
     S3ObjektKeyConflictError,
     S3ObjektKeyInvalidError,
@@ -187,6 +188,11 @@ class TestS3ErrorSubclasses(unittest.TestCase):
             S3IllegalVersioningConfigurationError,
             S3ErrorCode.ILLEGAL_VERSIONING_CONFIGURATION,
             status.HTTP_400_BAD_REQUEST,
+        ),
+        (
+            S3ObjectLockConfigurationNotFoundError,
+            S3ErrorCode.OBJECT_LOCK_CONFIGURATION_NOT_FOUND,
+            status.HTTP_404_NOT_FOUND,
         ),
     )
 

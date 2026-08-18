@@ -59,6 +59,7 @@ class S3ErrorCode:
     OBJEKT_PART_INVALID = "InvalidPart"
     OBJEKT_PART_ORDER_INVALID = "InvalidPartOrder"
     OBJEKT_PART_TOO_SMALL = "EntityTooSmall"
+    OBJECT_LOCK_CONFIGURATION_NOT_FOUND = "ObjectLockConfigurationNotFoundError"  # noqa: E501
 
 
 class S3Error(Exception):
@@ -390,5 +391,20 @@ class S3NotImplementedError(S3Error):
                 "this server."
             ),
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            resource=resource,
+        )
+
+
+class S3ObjectLockConfigurationNotFoundError(S3Error):
+    """Raised when the bucket has no Object Lock configuration (404)."""
+
+    def __init__(self, resource: str | None = None) -> None:
+        super().__init__(
+            code=S3ErrorCode.OBJECT_LOCK_CONFIGURATION_NOT_FOUND,
+            message=(
+                "The Object Lock configuration does not exist "
+                "for this bucket."
+            ),
+            status_code=status.HTTP_404_NOT_FOUND,
             resource=resource,
         )
