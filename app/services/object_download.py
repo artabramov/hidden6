@@ -11,7 +11,7 @@ from app.models.user import User
 from app.repositories.io import isfile
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
-from app.s3.objekt import load_objekt
+from app.s3.objekt import load_object
 from app.s3.paths import resolve_objekt_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
@@ -44,7 +44,7 @@ async def objekt_download(
 
     repo = ORMRepository(session)
     bucket = await load_bucket(repo, bucket_name, current_user, resource)
-    objekt = await load_objekt(repo, bucket, objekt_key, resource)
+    objekt = await load_object(repo, bucket, objekt_key, resource)
 
     if not await isfile(object_path):
         raise S3ObjectNotFoundError(resource)

@@ -59,8 +59,8 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=self.bucket,
         )
-        self.load_objekt = self._patch(
-            "load_objekt",
+        self.load_object = self._patch(
+            "load_object",
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
@@ -88,7 +88,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
         self.assertIs(objekt, self.objekt)
         self.assertEqual(path, "/mnt/buckets/photos/2024/cat.png")
         self.load_bucket.assert_awaited_once()
-        self.load_objekt.assert_awaited_once()
+        self.load_object.assert_awaited_once()
         self.isfile.assert_awaited_once_with("/mnt/buckets/photos/2024/cat.png")
         self.emit.assert_awaited_once_with(
             Events.OBJECT_DOWNLOADED,
@@ -107,7 +107,7 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
             )
 
         self.load_bucket.assert_not_awaited()
-        self.load_objekt.assert_not_awaited()
+        self.load_object.assert_not_awaited()
 
     async def test_missing_bucket_raises(self):
         self._build_mocks()
@@ -121,11 +121,11 @@ class TestObjektDownload(unittest.IsolatedAsyncioTestCase):
                 objekt_key="2024/cat.png",
             )
 
-        self.load_objekt.assert_not_awaited()
+        self.load_object.assert_not_awaited()
 
     async def test_missing_objekt_raises(self):
         self._build_mocks()
-        self.load_objekt.side_effect = S3ObjectNotFoundError(
+        self.load_object.side_effect = S3ObjectNotFoundError(
             "/photos/2024/cat.png",
         )
 

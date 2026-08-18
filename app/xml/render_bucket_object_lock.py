@@ -5,7 +5,7 @@ from app.constants import S3_XMLNS
 from app.models.bucket import Bucket
 
 
-def render_bucket_objekt_lock(bucket: Bucket) -> str:
+def render_bucket_object_lock(bucket: Bucket) -> str:
     """
     Render an S3-compatible ObjectLockConfiguration XML response.
     """

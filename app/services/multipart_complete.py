@@ -34,7 +34,7 @@ from app.s3.multipart import (
     load_multipart_parts,
     delete_multipart_parts,
 )
-from app.s3.objekt import objekt_mkdir, upsert_objekt
+from app.s3.objekt import object_mkdir, upsert_object
 from app.s3.paths import (
     resolve_multipart_completed_path,
     resolve_multipart_object_backup_path,
@@ -207,9 +207,9 @@ async def multipart_complete(
                 if not await isdir(bucket_path):
                     raise S3BucketNotFoundError(resource)
 
-                await objekt_mkdir(object_path, resource)
+                await object_mkdir(object_path, resource)
 
-                objekt = await upsert_objekt(
+                objekt = await upsert_object(
                     repo=repo,
                     bucket=bucket,
                     user=current_user,

@@ -16,7 +16,7 @@ from app.repositories.orm import ORMRepository
 from app.s3.bucket import bucket_default_object_lock
 
 
-async def load_objekt(
+async def load_object(
     repo: ORMRepository,
     bucket: Bucket,
     object_key: str,
@@ -40,7 +40,7 @@ async def load_objekt(
     return objekt
 
 
-async def objekt_mkdir(object_path: str, resource: str) -> None:
+async def object_mkdir(object_path: str, resource: str) -> None:
     """
     Create the directories carrying the key prefix. A prefix occupied
     by a stored object cannot become a directory, and neither can a
@@ -55,7 +55,7 @@ async def objekt_mkdir(object_path: str, resource: str) -> None:
         raise S3ObjectKeyConflictError(resource) from exc
 
 
-async def upsert_objekt(
+async def upsert_object(
     repo: ORMRepository,
     bucket: Bucket,
     user: User,

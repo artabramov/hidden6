@@ -10,8 +10,8 @@ from app.hooks import Events, hooks
 from app.models.user import User
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
-from app.s3.object_lock import set_bucket_objekt_lock_configuration
-from app.xml.parse_bucket_object_lock import parse_bucket_objekt_lock
+from app.s3.object_lock import set_bucket_object_lock_configuration
+from app.xml.parse_bucket_object_lock import parse_bucket_object_lock
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ async def bucket_objekt_lock_update(
             default_lock_mode,
             default_retention_days,
             default_retention_years,
-        ) = parse_bucket_objekt_lock(body)
+        ) = parse_bucket_object_lock(body)
     except ValueError as exc:
         raise S3XmlMalformedError(resource) from exc
 
@@ -49,7 +49,7 @@ async def bucket_objekt_lock_update(
         resource,
     )
 
-    set_bucket_objekt_lock_configuration(
+    set_bucket_object_lock_configuration(
         bucket=bucket,
         objekt_lock_enabled=objekt_lock_enabled,
         default_lock_mode=default_lock_mode,

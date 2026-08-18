@@ -6,7 +6,7 @@ from app.errors import S3BucketStateInvalidError
 from app.models.bucket import Bucket
 
 
-def set_bucket_objekt_lock_configuration(
+def set_bucket_object_lock_configuration(
     bucket: Bucket,
     objekt_lock_enabled: str | None,
     default_lock_mode: str | None,

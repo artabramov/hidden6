@@ -27,7 +27,7 @@ from app.repositories.io import (
 )
 from app.repositories.orm import ORMRepository
 from app.s3.bucket import load_bucket
-from app.s3.objekt import objekt_mkdir, upsert_objekt
+from app.s3.objekt import object_mkdir, upsert_object
 from app.s3.paths import resolve_objekt_path, resolve_staged_path
 from app.s3.validation import validate_bucket_name, validate_objekt_key
 
@@ -182,7 +182,7 @@ async def objekt_upload(
             etag = await get_file_hash(staged_path)
             content_type = await get_mimetype(staged_path)
 
-            await objekt_mkdir(objekt_path, resource)
+            await object_mkdir(objekt_path, resource)
 
             # Preserve the current payload in tmp before overwriting it.
             # A copy keeps the canonical object path intact until the
@@ -191,7 +191,7 @@ async def objekt_upload(
                 await copy(objekt_path, backup_path)
                 backup_created = True
 
-            objekt = await upsert_objekt(
+            objekt = await upsert_object(
                 repo=repo,
                 bucket=bucket,
                 user=current_user,

@@ -21,7 +21,7 @@ from app.models.object_version_metadata import (  # noqa: E402, F401
     ObjectVersionMetadata,
 )
 from app.models.object_version_tag import ObjectVersionTag  # noqa: E402, F401
-from app.s3.object_lock import set_bucket_objekt_lock_configuration  # noqa: E402
+from app.s3.object_lock import set_bucket_object_lock_configuration  # noqa: E402
 
 load_all_models()
 
@@ -49,7 +49,7 @@ class TestSetBucketObjektLockConfiguration(unittest.TestCase):
             "resource": RESOURCE,
         }
         defaults.update(kwargs)
-        set_bucket_objekt_lock_configuration(bucket, **defaults)
+        set_bucket_object_lock_configuration(bucket, **defaults)
 
     def test_enables_object_lock(self):
         bucket = self._bucket()

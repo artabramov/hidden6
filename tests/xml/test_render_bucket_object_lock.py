@@ -12,7 +12,7 @@ from app.constants import BUCKET_VERSIONING_ENABLED, S3_XMLNS  # noqa: E402
 from app.db.engine import load_all_models  # noqa: E402
 from app.models.bucket import Bucket  # noqa: E402
 from app.xml.render_bucket_object_lock import (  # noqa: E402
-    render_bucket_objekt_lock,
+    render_bucket_object_lock,
 )
 
 load_all_models()
@@ -31,7 +31,7 @@ class TestRenderBucketObjektLock(unittest.TestCase):
         return Bucket(**values)
 
     def test_renders_enabled_without_default_rule(self):
-        xml = render_bucket_objekt_lock(self._bucket())
+        xml = render_bucket_object_lock(self._bucket())
 
         self.assertEqual(
             xml,
@@ -46,7 +46,7 @@ class TestRenderBucketObjektLock(unittest.TestCase):
         self.assertNotIn("<DefaultRetention>", xml)
 
     def test_renders_governance_days(self):
-        xml = render_bucket_objekt_lock(
+        xml = render_bucket_object_lock(
             self._bucket(
                 default_lock_mode="GOVERNANCE",
                 default_retention_days=10,
@@ -60,7 +60,7 @@ class TestRenderBucketObjektLock(unittest.TestCase):
         self.assertNotIn("<Years>", xml)
 
     def test_renders_compliance_years(self):
-        xml = render_bucket_objekt_lock(
+        xml = render_bucket_object_lock(
             self._bucket(
                 default_lock_mode="COMPLIANCE",
                 default_retention_years=2,

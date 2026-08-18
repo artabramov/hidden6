@@ -151,12 +151,12 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=list(PART_HASHES),
         )
-        self.objekt_mkdir = self._patch(
-            "objekt_mkdir",
+        self.object_mkdir = self._patch(
+            "object_mkdir",
             new_callable=AsyncMock,
         )
-        self.upsert_objekt = self._patch(
-            "upsert_objekt",
+        self.upsert_object = self._patch(
+            "upsert_object",
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
@@ -330,7 +330,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(S3ObjectPartInvalidError):
             await self._complete()
 
-        self.upsert_objekt.assert_not_awaited()
+        self.upsert_object.assert_not_awaited()
         self.parts_delete.assert_not_awaited()
         self.repo.commit.assert_not_awaited()
         self.delete.assert_awaited_once_with(STAGED_PATH)
@@ -339,7 +339,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         await self._complete()
 
         self.assertEqual(
-            self.upsert_objekt.await_args.kwargs["etag"],
+            self.upsert_object.await_args.kwargs["etag"],
             "joined-2",
         )
 
@@ -347,7 +347,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         await self._complete()
 
         self.assertEqual(
-            self.upsert_objekt.await_args.kwargs["content_type"],
+            self.upsert_object.await_args.kwargs["content_type"],
             "image/png",
         )
 

@@ -15,7 +15,7 @@ from app.services.bucket_object_lock_retrieve import bucket_objekt_lock_retrieve
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
 from app.xml.render_object_list import render_objekt_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
-from app.xml.render_bucket_object_lock import render_bucket_objekt_lock
+from app.xml.render_bucket_object_lock import render_bucket_object_lock
 
 router = APIRouter(include_in_schema=False)
 
@@ -83,7 +83,7 @@ async def bucket_get_router(
         )
 
         return Response(
-            content=render_bucket_objekt_lock(bucket),
+            content=render_bucket_object_lock(bucket),
             status_code=status.HTTP_200_OK,
             media_type="application/xml",
         )

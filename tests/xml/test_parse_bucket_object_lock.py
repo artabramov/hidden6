@@ -4,7 +4,7 @@
 import unittest
 
 from app.constants import S3_XMLNS
-from app.xml.parse_bucket_object_lock import parse_bucket_objekt_lock
+from app.xml.parse_bucket_object_lock import parse_bucket_object_lock
 
 
 class TestParseBucketObjektLock(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
         )
 
         self.assertEqual(
-            parse_bucket_objekt_lock(body),
+            parse_bucket_object_lock(body),
             ("Enabled", None, None, None),
         )
 
@@ -32,7 +32,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
         )
 
         self.assertEqual(
-            parse_bucket_objekt_lock(body),
+            parse_bucket_object_lock(body),
             ("Enabled", "GOVERNANCE", 10, None),
         )
 
@@ -48,7 +48,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
         )
 
         self.assertEqual(
-            parse_bucket_objekt_lock(body),
+            parse_bucket_object_lock(body),
             ("Enabled", "COMPLIANCE", None, 2),
         )
 
@@ -64,7 +64,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
         ).encode()
 
         self.assertEqual(
-            parse_bucket_objekt_lock(body),
+            parse_bucket_object_lock(body),
             ("Enabled", "GOVERNANCE", 1, None),
         )
 
@@ -82,7 +82,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
         )
 
         self.assertEqual(
-            parse_bucket_objekt_lock(body),
+            parse_bucket_object_lock(body),
             ("Enabled", "GOVERNANCE", 7, None),
         )
 
@@ -90,13 +90,13 @@ class TestParseBucketObjektLock(unittest.TestCase):
         body = b"<ObjectLockConfiguration></ObjectLockConfiguration>"
 
         self.assertEqual(
-            parse_bucket_objekt_lock(body),
+            parse_bucket_object_lock(body),
             (None, None, None, None),
         )
 
     def test_rejects_unknown_children(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<Extra>nope</Extra>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
@@ -105,7 +105,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_unknown_retention_children(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -118,7 +118,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_malformed_xml(self):
         with self.assertRaises(ValueError) as cm:
-            parse_bucket_objekt_lock(b"<ObjectLockConfiguration>")
+            parse_bucket_object_lock(b"<ObjectLockConfiguration>")
 
         self.assertEqual(
             str(cm.exception),
@@ -127,13 +127,13 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_unexpected_root(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<Nope><ObjectLockEnabled>Enabled</ObjectLockEnabled></Nope>",
             )
 
     def test_rejects_empty_object_lock_enabled(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled></ObjectLockEnabled>"
                 b"</ObjectLockConfiguration>",
@@ -141,7 +141,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_non_enabled_object_lock(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Disabled</ObjectLockEnabled>"
                 b"</ObjectLockConfiguration>",
@@ -149,7 +149,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_rule_without_default_retention(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule></Rule>"
@@ -158,7 +158,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_rule_with_extra_children(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule>"
@@ -173,7 +173,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_missing_mode(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -184,7 +184,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_invalid_mode(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -196,7 +196,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_both_days_and_years(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -209,7 +209,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_neither_days_nor_years(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -220,7 +220,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_non_positive_days(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -232,7 +232,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_non_positive_years(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -244,7 +244,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_non_numeric_days(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"
@@ -256,7 +256,7 @@ class TestParseBucketObjektLock(unittest.TestCase):
 
     def test_rejects_non_numeric_years(self):
         with self.assertRaises(ValueError):
-            parse_bucket_objekt_lock(
+            parse_bucket_object_lock(
                 b"<ObjectLockConfiguration>"
                 b"<ObjectLockEnabled>Enabled</ObjectLockEnabled>"
                 b"<Rule><DefaultRetention>"

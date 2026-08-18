@@ -98,12 +98,12 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
             return_value=object_exists,
         )
-        self.objekt_mkdir = self._patch(
-            "objekt_mkdir",
+        self.object_mkdir = self._patch(
+            "object_mkdir",
             new_callable=AsyncMock,
         )
-        self.upsert_objekt = self._patch(
-            "upsert_objekt",
+        self.upsert_object = self._patch(
+            "upsert_object",
             new_callable=AsyncMock,
             return_value=self.objekt,
         )
@@ -148,7 +148,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         self.lock.assert_called_once_with(BUCKET_PATH, LockType.WRITE)
         self.isdir.assert_awaited_once_with(BUCKET_PATH)
         self.upload.assert_awaited_once_with(self.body, STAGED_PATH)
-        self.objekt_mkdir.assert_awaited_once_with(OBJECT_PATH, RESOURCE)
+        self.object_mkdir.assert_awaited_once_with(OBJECT_PATH, RESOURCE)
         self.isfile.assert_awaited_once_with(OBJECT_PATH)
         self.copy.assert_not_awaited()
         self.rename.assert_awaited_once_with(STAGED_PATH, OBJECT_PATH)
@@ -172,7 +172,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
         await self._upload()
 
-        kwargs = self.upsert_objekt.await_args.kwargs
+        kwargs = self.upsert_object.await_args.kwargs
         self.assertIs(kwargs["bucket"], self.bucket)
         self.assertIs(kwargs["user"], self.user)
         self.assertEqual(kwargs["object_key"], "2024/cat.png")
@@ -186,7 +186,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
         await self._upload()
 
         self.assertEqual(
-            self.upsert_objekt.await_args.kwargs["content_type"],
+            self.upsert_object.await_args.kwargs["content_type"],
             OBJECT_CONTENT_TYPE_DEFAULT,
         )
 
@@ -241,7 +241,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_key_conflict_on_mkdir_cleans_staged_path(self):
         self._build_mocks()
-        self.objekt_mkdir.side_effect = S3ObjectKeyConflictError(RESOURCE)
+        self.object_mkdir.side_effect = S3ObjectKeyConflictError(RESOURCE)
 
         with self.assertRaises(S3ObjectKeyConflictError):
             await self._upload()
@@ -286,7 +286,7 @@ class TestObjektUpload(unittest.IsolatedAsyncioTestCase):
 
     async def test_upsert_failure_discards_backup_when_object_existed(self):
         self._build_mocks(object_exists=True)
-        self.upsert_objekt.side_effect = RuntimeError("db down")
+        self.upsert_object.side_effect = RuntimeError("db down")
 
         with self.assertRaises(RuntimeError):
             await self._upload()

@@ -4,7 +4,7 @@
 from xml.etree import ElementTree
 
 
-def parse_bucket_objekt_lock(
+def parse_bucket_object_lock(
     body: bytes,
 ) -> tuple[str | None, str | None, int | None, int | None]:
     """
@@ -25,7 +25,7 @@ def parse_bucket_objekt_lock(
     if _strip_element(root.tag) != "ObjectLockConfiguration":
         raise ValueError("Malformed ObjectLockConfiguration.")
 
-    objekt_lock_enabled = None
+    object_lock_enabled = None
     default_lock_mode = None
     default_retention_days = None
     default_retention_years = None
@@ -37,9 +37,9 @@ def parse_bucket_objekt_lock(
             if not element.text:
                 raise ValueError("Malformed ObjectLockConfiguration.")
 
-            objekt_lock_enabled = element.text.strip()
+            object_lock_enabled = element.text.strip()
 
-            if objekt_lock_enabled != "Enabled":
+            if object_lock_enabled != "Enabled":
                 raise ValueError("Malformed ObjectLockConfiguration.")
 
         elif name == "Rule":
@@ -53,7 +53,7 @@ def parse_bucket_objekt_lock(
             raise ValueError("Malformed ObjectLockConfiguration.")
 
     return (
-        objekt_lock_enabled,
+        object_lock_enabled,
         default_lock_mode,
         default_retention_days,
         default_retention_years,
