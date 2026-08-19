@@ -11,8 +11,8 @@ from app.dependencies.require_gocryptfs import require_gocryptfs
 from app.dependencies.require_session import require_session
 from app.models.user import User
 from app.services.bucket_create import bucket_create
-from app.services.bucket_versioning_update import bucket_versioning_update
 from app.services.bucket_object_lock_update import bucket_object_lock_update
+from app.services.bucket_versioning_update import bucket_versioning_update
 
 router = APIRouter(include_in_schema=False)
 

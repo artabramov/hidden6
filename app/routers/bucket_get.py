@@ -13,9 +13,9 @@ from app.models.user import User
 from app.services.bucket_get import bucket_get
 from app.services.bucket_object_lock_retrieve import bucket_object_lock_retrieve  # noqa: E501
 from app.services.bucket_versioning_retrieve import bucket_versioning_retrieve
-from app.xml.render_object_list import render_object_list
 from app.xml.render_bucket_versioning import render_bucket_versioning
 from app.xml.render_bucket_object_lock import render_bucket_object_lock
+from app.xml.render_object_list import render_object_list
 
 router = APIRouter(include_in_schema=False)
 
@@ -53,7 +53,7 @@ _MAX_KEYS_DEFAULT = 1000
     status_code=status.HTTP_200_OK,
     response_class=Response,
     dependencies=[Depends(require_gocryptfs())],
-    summary="List objects or get bucket versioning.",
+    summary="List objects or retrieve bucket configuration.",
 )
 async def bucket_get_router(
     bucket_name: str,
@@ -70,7 +70,8 @@ async def bucket_get_router(
     """
     Handle S3 GET operations addressed to a bucket.
 
-    With `?versioning`, return the bucket versioning configuration.
+    With `?object-lock`, return the Object Lock configuration.
+    With `?versioning`, return the versioning configuration.
     Otherwise list objects whose keys start with the requested prefix.
 
     `OBJECT_LISTED` — hook executed after the object list is retrieved.
