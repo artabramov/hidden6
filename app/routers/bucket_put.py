@@ -70,6 +70,10 @@ async def bucket_put_router(
     request body. With `?versioning`, apply the versioning configuration.
     Otherwise create the bucket for the authenticated user.
 
+    `BUCKET_OBJECT_LOCK_UPDATED` — hook executed after the Object Lock
+    configuration is updated.
+    `BUCKET_VERSIONING_UPDATED` — hook executed after the versioning
+    configuration is updated.
     `BUCKET_CREATED` — hook executed after the bucket is created.
     """
     if object_lock is not None:

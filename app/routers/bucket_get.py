@@ -74,6 +74,10 @@ async def bucket_get_router(
     With `?versioning`, return the versioning configuration.
     Otherwise list objects whose keys start with the requested prefix.
 
+    `BUCKET_OBJECT_LOCK_RETRIEVED` — hook executed after the Object Lock
+    configuration is retrieved.
+    `BUCKET_VERSIONING_RETRIEVED` — hook executed after the versioning
+    configuration is retrieved.
     `OBJECT_LISTED` — hook executed after the object list is retrieved.
     """
     if object_lock is not None:
