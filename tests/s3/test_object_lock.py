@@ -14,7 +14,7 @@ from app.constants import (  # noqa: E402
     BUCKET_VERSIONING_SUSPENDED,
 )
 from app.db.engine import load_all_models  # noqa: E402
-from app.errors import S3BucketStateInvalidError  # noqa: E402
+from app.errors import S3BucketStateInvalidError, S3XmlMalformedError  # noqa: E402
 from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object_version import S3ObjectVersion  # noqa: E402, F401
 from app.models.object_version_metadata import (  # noqa: E402, F401
@@ -123,24 +123,28 @@ class TestSetBucketObjectLockConfiguration(unittest.TestCase):
         self.assertIsNone(bucket.default_retention_days)
         self.assertEqual(bucket.default_retention_years, 2)
 
-    def test_missing_enabled_does_not_enable_lock(self):
+    def test_rejects_missing_enabled_when_lock_disabled(self):
         bucket = self._bucket()
 
-        self._set(
-            bucket,
-            default_lock_mode="GOVERNANCE",
-            default_retention_days=10,
-        )
+        with self.assertRaises(S3XmlMalformedError) as cm:
+            self._set(
+                bucket,
+                default_lock_mode="GOVERNANCE",
+                default_retention_days=10,
+            )
 
+        self.assertEqual(cm.exception.resource, RESOURCE)
         self.assertFalse(bucket.object_lock_enabled)
-        self.assertEqual(bucket.default_lock_mode, "GOVERNANCE")
-        self.assertEqual(bucket.default_retention_days, 10)
+        self.assertIsNone(bucket.default_lock_mode)
+        self.assertIsNone(bucket.default_retention_days)
 
-    def test_non_enabled_flag_does_not_enable_lock(self):
+    def test_rejects_non_enabled_flag_when_lock_disabled(self):
         bucket = self._bucket()
 
-        self._set(bucket, object_lock_enabled="Disabled")
+        with self.assertRaises(S3XmlMalformedError) as cm:
+            self._set(bucket, object_lock_enabled="Disabled")
 
+        self.assertEqual(cm.exception.resource, RESOURCE)
         self.assertFalse(bucket.object_lock_enabled)
 
     def test_rejects_when_versioning_disabled(self):

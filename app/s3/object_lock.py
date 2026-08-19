@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 from app.constants import BUCKET_VERSIONING_ENABLED
-from app.errors import S3BucketStateInvalidError
+from app.errors import S3BucketStateInvalidError, S3XmlMalformedError
 from app.models.bucket import S3Bucket
 
 
@@ -17,14 +17,18 @@ def set_bucket_object_lock_configuration(
     """
     Apply an S3 Object Lock configuration to a bucket.
 
-    Object Lock requires bucket versioning to be Enabled. Once enabled,
-    Object Lock remains enabled. An absent default retention rule removes
-    only the bucket default and does not disable Object Lock.
+    Object Lock requires bucket versioning to be Enabled. Initial
+    enablement requires ObjectLockEnabled=Enabled. Once enabled,
+    Object Lock remains enabled. An absent default retention rule
+    removes only the bucket default.
     """
     if bucket.versioning_status != BUCKET_VERSIONING_ENABLED:
         raise S3BucketStateInvalidError(resource)
 
-    if object_lock_enabled == "Enabled":
+    if not bucket.object_lock_enabled:
+        if object_lock_enabled != "Enabled":
+            raise S3XmlMalformedError(resource)
+
         bucket.object_lock_enabled = True
 
     bucket.default_lock_mode = default_lock_mode
