@@ -132,12 +132,16 @@ def resolve_multipart_object_backup_path(
 def resolve_version_path(
     versions_dir: str,
     bucket_id: int,
-    version_id: str,
+    version_id: int,
 ) -> str:
     """
-    Filesystem path of a retained non-current object version.
+    Resolve the filesystem path for a retained object version.
     """
-    return os.path.join(versions_dir, str(bucket_id), version_id)
+    return os.path.join(
+        versions_dir,
+        str(bucket_id),
+        str(version_id),
+    )
 
 
 def resolve_staged_path(
