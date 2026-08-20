@@ -10,6 +10,11 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
+from app.constants import (  # noqa: E402
+    BUCKET_VERSIONING_DISABLED,
+    BUCKET_VERSIONING_ENABLED,
+    BUCKET_VERSIONING_SUSPENDED,
+)
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
@@ -59,7 +64,13 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.log = self._patch("log")
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
-        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(
+            id=7,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_DISABLED,
+            object_lock_enabled=False,
+        )
         self.multipart = S3ObjectMultipart(
             id=5,
             bucket_id=7,
@@ -101,7 +112,7 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
                 MagicMock(hex="bakhex"),
             ],
         )
-        self._patch(
+        self.load_bucket = self._patch(
             "load_bucket",
             new_callable=AsyncMock,
             return_value=self.bucket,
@@ -165,6 +176,21 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
         self.delete = self._patch("delete", new_callable=AsyncMock)
         self.rmtree = self._patch("rmtree", new_callable=AsyncMock)
         self.emit = self._patch("hooks.emit", new_callable=AsyncMock)
+
+    def _make_bucket(self, **kwargs) -> S3Bucket:
+        defaults = {
+            "id": 7,
+            "user_id": 1,
+            "bucket_name": "photos",
+            "versioning_status": BUCKET_VERSIONING_DISABLED,
+            "object_lock_enabled": False,
+        }
+        defaults.update(kwargs)
+        return S3Bucket(**defaults)
+
+    def _set_bucket(self, **kwargs) -> None:
+        self.bucket = self._make_bucket(**kwargs)
+        self.load_bucket.return_value = self.bucket
 
     def _build_parts(self, hashes=None, numbers=None):
         hashes = hashes or PART_HASHES
@@ -599,3 +625,81 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "staged_path=%s",
             self.log.exception.call_args.args[0],
         )
+
+    async def test_rejects_disabled_bucket_with_object_lock(self):
+        self._set_bucket(
+            versioning_status=BUCKET_VERSIONING_DISABLED,
+            object_lock_enabled=True,
+        )
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._complete()
+
+        self.assertEqual(str(cm.exception), "Unknown bucket state")
+        self.upsert_object.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_rejects_suspended_bucket_with_object_lock(self):
+        self._set_bucket(
+            versioning_status=BUCKET_VERSIONING_SUSPENDED,
+            object_lock_enabled=True,
+        )
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._complete()
+
+        self.assertEqual(str(cm.exception), "Unknown bucket state")
+        self.upsert_object.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_rejects_missing_versioning_status(self):
+        self._set_bucket(versioning_status=None)
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._complete()
+
+        self.assertEqual(str(cm.exception), "Unknown bucket state")
+        self.upsert_object.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_versioning_enabled_without_object_lock_not_implemented(self):
+        self._set_bucket(
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=False,
+        )
+
+        with self.assertRaises(NameError):
+            await self._complete()
+
+        self.upsert_object.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_versioning_enabled_with_object_lock_not_implemented(self):
+        self._set_bucket(
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+
+        with self.assertRaises(NameError):
+            await self._complete()
+
+        self.upsert_object.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_versioning_suspended_not_implemented(self):
+        self._set_bucket(
+            versioning_status=BUCKET_VERSIONING_SUSPENDED,
+            object_lock_enabled=False,
+        )
+
+        with self.assertRaises(NameError):
+            await self._complete()
+
+        self.upsert_object.assert_not_awaited()
+        self.emit.assert_not_awaited()
