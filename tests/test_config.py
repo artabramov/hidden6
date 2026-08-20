@@ -43,3 +43,23 @@ class TestConfigSqlitePaths(unittest.TestCase):
             config.SQLITE_URL,
             "sqlite+aiosqlite:////var/lib/mountpoint/db/hidden.db",
         )
+
+    def test_mountpoint_dirs_are_derived_from_install_mountpoint(self):
+        config = self.get_config()
+
+        self.assertEqual(
+            config.MOUNTPOINT_DB_DIR,
+            "/var/lib/mountpoint/db",
+        )
+        self.assertEqual(
+            config.MOUNTPOINT_BUCKETS_DIR,
+            "/var/lib/mountpoint/buckets",
+        )
+        self.assertEqual(
+            config.MOUNTPOINT_VERSIONS_DIR,
+            "/var/lib/mountpoint/versions",
+        )
+        self.assertEqual(
+            config.MOUNTPOINT_TMP_DIR,
+            "/var/lib/mountpoint/tmp",
+        )

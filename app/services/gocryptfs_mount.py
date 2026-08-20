@@ -61,6 +61,9 @@ async def gocryptfs_mount(master_password: str) -> None:
             if not await isdir(config.MOUNTPOINT_BUCKETS_DIR):
                 await mktree(config.MOUNTPOINT_BUCKETS_DIR)
 
+            if not await isdir(config.MOUNTPOINT_VERSIONS_DIR):
+                await mktree(config.MOUNTPOINT_VERSIONS_DIR)
+
             if not await isdir(config.MOUNTPOINT_TMP_DIR):
                 await mktree(config.MOUNTPOINT_TMP_DIR)
 
