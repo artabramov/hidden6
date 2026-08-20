@@ -53,6 +53,9 @@ Internally, when the storage is unlocked, the application accesses the
 decrypted cipherdir through a gocryptfs mountpoint. A watchdog monitors
 the passphrase and unmounts the filesystem if it becomes unavailable.
 
+Decrypted data remains internal to the application and is accessible
+externally only through the S3 API.
+
 ```text
         Internals                      Externals
 
@@ -76,19 +79,6 @@ the passphrase and unmounts the filesystem if it becomes unavailable.
 │ (FUSE layer)          │     ┃ (encrypted storage)    ┃
 └───────────────────────┘     ┗━━━━━━━━━━━━━━━━━━━━━━━━┛
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## Project layout
 
