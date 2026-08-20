@@ -126,6 +126,51 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.assertFalse(version.legal_hold)
         self.assertIsInstance(version.created_at, int)
 
+    def test_null_version_id_persists(self):
+        version = self._version(version_id=None, etag="a" * 32)
+        self.session.add(version)
+        self.session.commit()
+        self.session.refresh(version)
+
+        self.assertIsNone(version.version_id)
+
+    def test_null_version_delete_marker_persists(self):
+        version = self._delete_marker(version_id=None)
+        self.session.add(version)
+        self.session.commit()
+        self.session.refresh(version)
+
+        self.assertIsNone(version.version_id)
+        self.assertTrue(version.delete_marker)
+
+    def test_multiple_null_version_ids_allowed(self):
+        self.session.add(self._version(version_id=None, etag="a" * 32))
+
+        other = S3Object(
+            bucket_id=self.bucket.id,
+            user_id=self.user.id,
+            object_key="other.txt",
+            size_bytes=1,
+            etag="d" * 32,
+            content_type="text/plain",
+        )
+        self.session.add(other)
+        self.session.commit()
+        self.session.refresh(other)
+
+        self.session.add(
+            self._version(
+                object_id=other.id,
+                version_id=None,
+                etag="e" * 32,
+            ),
+        )
+        self.session.commit()
+
+        rows = self.session.scalars(select(S3ObjectVersion)).all()
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(row.version_id is None for row in rows))
+
     def test_same_object_may_have_many_versions(self):
         self.session.add(self._version(version_id="a" * 32, etag="a" * 32))
         self.session.add(
