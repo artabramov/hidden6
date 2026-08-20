@@ -25,12 +25,12 @@ from app.db.base import Base
 
 class S3ObjectVersion(Base):
     """
-    Non-current S3 object version or delete marker.
+    Noncurrent state of an S3 object.
 
-    Stores version-specific metadata for a previous state of an object
-    key. Object version bytes are stored separately from current object
-    bytes. Delete markers contain metadata only and have no corresponding
-    object bytes.
+    Stores version-specific metadata for a previous object state.
+    The version ID may be NULL for the S3 null version retained after
+    versioning is enabled or resumed. Delete markers contain metadata
+    only and have no payload.
     """
 
     __tablename__ = "objects_versions"
@@ -71,10 +71,11 @@ class S3ObjectVersion(Base):
         index=True,
     )
 
-    # S3 version identifier returned to clients as VersionId.
-    version_id: Mapped[str] = mapped_column(
+    # S3 version ID of this noncurrent object state.
+    # NULL represents the S3 null version.
+    version_id: Mapped[str | None] = mapped_column(
         String(32),
-        nullable=False,
+        nullable=True,
         unique=True,
     )
 
