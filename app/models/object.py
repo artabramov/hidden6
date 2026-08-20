@@ -126,9 +126,9 @@ class S3Object(Base):
         nullable=True,
     )
 
-    # S3 version identifier for the current state
-    # of this object key.
-    version_id: Mapped[str | None] = mapped_column(
+    # S3 version UUID of the current object state.
+    # NULL represents the S3 null version.
+    version_uuid: Mapped[str | None] = mapped_column(
         String(32),
         nullable=True,
         unique=True,

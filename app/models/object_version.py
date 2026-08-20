@@ -28,7 +28,7 @@ class S3ObjectVersion(Base):
     Noncurrent state of an S3 object.
 
     Stores version-specific metadata for a previous object state.
-    The version ID may be NULL for the S3 null version retained after
+    The version UUID may be NULL for the S3 null version retained after
     versioning is enabled or resumed. Delete markers contain metadata
     only and have no payload.
     """
@@ -71,9 +71,9 @@ class S3ObjectVersion(Base):
         index=True,
     )
 
-    # S3 version ID of this noncurrent object state.
+    # S3 version UUID of this noncurrent object state.
     # NULL represents the S3 null version.
-    version_id: Mapped[str | None] = mapped_column(
+    version_uuid: Mapped[str | None] = mapped_column(
         String(32),
         nullable=True,
         unique=True,
