@@ -7,6 +7,11 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
+from app.constants import (
+    BUCKET_VERSIONING_DISABLED,
+    BUCKET_VERSIONING_ENABLED,
+    BUCKET_VERSIONING_SUSPENDED,
+)
 from app.errors import (
     S3BucketNotFoundError,
     S3ObjectKeyConflictError,
@@ -209,38 +214,82 @@ async def multipart_complete(
 
                 await object_mkdir(object_path, resource)
 
-                s3_object = await upsert_object(
-                    repo=repo,
-                    bucket=bucket,
-                    user=current_user,
-                    object_key=object_key,
-                    size_bytes=size_bytes,
-                    etag=construct_etag(stored_etags),
-                    content_type=multipart.content_type,
-                )
+                versioning_status = bucket.versioning_status
+                object_lock_enabled = bool(bucket.object_lock_enabled)
 
-                # Backing up an existing object requires copying its
-                # full payload under the bucket WRITE lock. This cost
-                # is accepted to preserve the previous object until
-                # the transaction commits or can be rolled back.
-                if await isfile(object_path):
-                    await copy(object_path, backup_path)
-                    backup_created = True
+                if (
+                    versioning_status == BUCKET_VERSIONING_DISABLED
+                    and not object_lock_enabled
+                ):
+                    # Completion creates or replaces the current null
+                    # version in place. No version history is retained
+                    # and object lock does not apply.
 
-                try:
-                    await rename(staged_path, object_path)
-                except (IsADirectoryError, NotADirectoryError) as exc:
-                    raise S3ObjectKeyConflictError(resource) from exc
-                object_written = True
+                    if await isfile(object_path):
+                        await copy(object_path, backup_path)
+                        backup_created = True
 
-                await rename(upload_path, cleanup_path)
-                upload_moved = True
+                    s3_object = await upsert_object(
+                        repo=repo,
+                        bucket=bucket,
+                        user=current_user,
+                        object_key=object_key,
+                        size_bytes=size_bytes,
+                        etag=construct_etag(stored_etags),
+                        content_type=multipart.content_type,
+                    )
 
-                # Parts have no ON DELETE CASCADE; clear them before
-                # the parent upload row, then commit.
-                await delete_multipart_parts(repo, multipart)
-                await repo.delete(multipart)
-                await repo.commit()
+                    try:
+                        await rename(staged_path, object_path)
+                    except (IsADirectoryError, NotADirectoryError) as exc:
+                        raise S3ObjectKeyConflictError(resource) from exc
+                    object_written = True
+
+                    await rename(upload_path, cleanup_path)
+                    upload_moved = True
+
+                    # Parts have no ON DELETE CASCADE; clear them
+                    # before the parent upload row, then commit.
+                    await delete_multipart_parts(repo, multipart)
+                    await repo.delete(multipart)
+                    await repo.commit()
+
+                elif (
+                    versioning_status == BUCKET_VERSIONING_ENABLED
+                    and object_lock_enabled
+                ):
+                    # Completion creates a new current version with a
+                    # unique version ID. The previous current state is
+                    # preserved in version history. Object lock
+                    # configuration applies only to the new version
+                    # and does not prevent a protected current version
+                    # from being replaced.
+                    pass
+
+                elif (
+                    versioning_status == BUCKET_VERSIONING_ENABLED
+                    and not object_lock_enabled
+                ):
+                    # Completion creates a new current version with a
+                    # unique version ID. The previous current state is
+                    # preserved in version history.
+                    pass
+
+                elif (
+                    versioning_status == BUCKET_VERSIONING_SUSPENDED
+                    and not object_lock_enabled
+                ):
+                    # Completion creates a new null current version.
+                    # A uniquely versioned current state is preserved
+                    # in history, while an existing null version or
+                    # null delete marker is replaced in place.
+                    pass
+
+                else:
+                    # Any other combination violates bucket state
+                    # invariants: object lock may exist only while
+                    # versioning is Enabled.
+                    raise RuntimeError("Unknown bucket state")
 
             except Exception:
                 try:

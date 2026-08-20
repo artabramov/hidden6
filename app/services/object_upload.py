@@ -154,6 +154,7 @@ async def object_upload(
 
             versioning_status = bucket.versioning_status
             object_lock_enabled = bool(bucket.object_lock_enabled)
+
             if (
                 versioning_status == BUCKET_VERSIONING_DISABLED
                 and not object_lock_enabled

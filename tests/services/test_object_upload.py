@@ -9,7 +9,12 @@ from tests.helpers import set_minimal_app_config_env
 
 set_minimal_app_config_env()
 
-from app.constants import OBJECT_CONTENT_TYPE_DEFAULT  # noqa: E402
+from app.constants import (  # noqa: E402
+    BUCKET_VERSIONING_DISABLED,
+    BUCKET_VERSIONING_ENABLED,
+    BUCKET_VERSIONING_SUSPENDED,
+    OBJECT_CONTENT_TYPE_DEFAULT,
+)
 from app.db.engine import load_all_models  # noqa: E402
 from app.errors import (  # noqa: E402
     S3BucketNotFoundError,
@@ -38,7 +43,13 @@ class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1, username="alice", is_root=False)
         self.session = MagicMock()
         self.body = MagicMock()
-        self.bucket = S3Bucket(id=7, user_id=1, bucket_name="photos")
+        self.bucket = S3Bucket(
+            id=7,
+            user_id=1,
+            bucket_name="photos",
+            versioning_status=BUCKET_VERSIONING_DISABLED,
+            object_lock_enabled=False,
+        )
         self.s3_object = S3Object(
             id=3,
             bucket_id=7,
@@ -61,7 +72,18 @@ class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
         ctx.__aexit__.return_value = None
         return ctx
 
-    def _build_mocks(self, *, mimetype="image/png", object_exists=False):
+    def _make_bucket(self, **kwargs) -> S3Bucket:
+        defaults = {
+            "id": 7,
+            "user_id": 1,
+            "bucket_name": "photos",
+            "versioning_status": BUCKET_VERSIONING_DISABLED,
+            "object_lock_enabled": False,
+        }
+        defaults.update(kwargs)
+        return S3Bucket(**defaults)
+
+    def _build_mocks(self, *, mimetype="image/png", object_exists=False, bucket=None):
         config = MagicMock()
         config.MOUNTPOINT_BUCKETS_DIR = "/mnt/buckets"
         config.MOUNTPOINT_TMP_DIR = "/mnt/tmp"
@@ -69,6 +91,9 @@ class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
         self.repo = MagicMock()
         self.repo.commit = AsyncMock()
         self.repo.rollback = AsyncMock()
+
+        if bucket is not None:
+            self.bucket = bucket
 
         self._patch("get_config", return_value=config)
         self._patch("ORMRepository", return_value=self.repo)
@@ -475,3 +500,87 @@ class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(messages), 2)
         self.assertIn("msg=rollback_failed", messages[0])
         self.assertIn("msg=cleanup_failed", messages[1])
+
+    async def test_rejects_disabled_bucket_with_object_lock(self):
+        bucket = self._make_bucket(
+            versioning_status=BUCKET_VERSIONING_DISABLED,
+            object_lock_enabled=True,
+        )
+        self._build_mocks(bucket=bucket)
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "Unknown bucket state")
+        self.upsert_object.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_rejects_suspended_bucket_with_object_lock(self):
+        bucket = self._make_bucket(
+            versioning_status=BUCKET_VERSIONING_SUSPENDED,
+            object_lock_enabled=True,
+        )
+        self._build_mocks(bucket=bucket)
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "Unknown bucket state")
+        self.upsert_object.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_rejects_missing_versioning_status(self):
+        bucket = self._make_bucket(versioning_status=None)
+        self._build_mocks(bucket=bucket)
+
+        with self.assertRaises(RuntimeError) as cm:
+            await self._upload()
+
+        self.assertEqual(str(cm.exception), "Unknown bucket state")
+        self.upsert_object.assert_not_awaited()
+        self.repo.rollback.assert_awaited_once()
+        self.delete.assert_awaited_once_with(STAGED_PATH)
+        self.emit.assert_not_awaited()
+
+    async def test_versioning_enabled_without_object_lock_not_implemented(self):
+        bucket = self._make_bucket(
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=False,
+        )
+        self._build_mocks(bucket=bucket)
+
+        with self.assertRaises(NameError):
+            await self._upload()
+
+        self.upsert_object.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_versioning_enabled_with_object_lock_not_implemented(self):
+        bucket = self._make_bucket(
+            versioning_status=BUCKET_VERSIONING_ENABLED,
+            object_lock_enabled=True,
+        )
+        self._build_mocks(bucket=bucket)
+
+        with self.assertRaises(NameError):
+            await self._upload()
+
+        self.upsert_object.assert_not_awaited()
+        self.emit.assert_not_awaited()
+
+    async def test_versioning_suspended_not_implemented(self):
+        bucket = self._make_bucket(
+            versioning_status=BUCKET_VERSIONING_SUSPENDED,
+            object_lock_enabled=False,
+        )
+        self._build_mocks(bucket=bucket)
+
+        with self.assertRaises(NameError):
+            await self._upload()
+
+        self.upsert_object.assert_not_awaited()
+        self.emit.assert_not_awaited()
