@@ -7,7 +7,12 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_config
-from app.constants import OBJECT_CONTENT_TYPE_DEFAULT
+from app.constants import (
+    BUCKET_VERSIONING_DISABLED,
+    BUCKET_VERSIONING_ENABLED,
+    BUCKET_VERSIONING_SUSPENDED,
+    OBJECT_CONTENT_TYPE_DEFAULT,
+)
 from app.errors import S3BucketNotFoundError, S3ObjectKeyConflictError
 from app.hooks import Events, hooks
 from app.locks import LockType, locks
@@ -53,54 +58,17 @@ log = logging.getLogger(__name__)
 # be removed.
 
 # TODO: Add S3 object versioning to the upload transaction.
+# Noncurrent object states must be stored as S3ObjectVersion rows, with
+# payloads preserved in the versions store when present. Delete markers
+# require only DB history.
 #
-# PUT Object behavior depends on the bucket versioning state and on the
-# version ID of the current object state.
+# Filesystem and DB changes must remain one compensated transaction.
+# Rollback must restore both the previous current metadata and its
+# payload when applicable.
 #
-# Disabled:
-#     Keep the current behavior. The object has the S3 null version
-#     (internally version_id = NULL), PUT replaces it in place, and no
-#     historical S3ObjectVersion row is created.
-#
-# Enabled:
-#     Every PUT creates a new current object state with a unique
-#     version_id. If a current state already exists, preserve it as an
-#     S3ObjectVersion before publishing the new payload. This also applies
-#     to objects that predate versioning and therefore have a null
-#     version ID: the old null version becomes noncurrent and the new
-#     current state receives a unique version ID.
-#
-#     If the current state is a delete marker, preserve the marker as a
-#     noncurrent S3ObjectVersion and publish the new object as the current
-#     version. Delete markers have metadata but no payload to preserve.
-#
-# Suspended:
-#     Every new PUT creates the S3 null version (version_id = NULL).
-#
-#     If the current state has a unique version ID, preserve it as a
-#     noncurrent S3ObjectVersion and publish a new null current version.
-#
-#     If the current state is already the null version, overwrite that
-#     null version in place. It must not be retained as another
-#     S3ObjectVersion because S3 keeps at most one null version per key.
-#
-#     If the current state is a uniquely identified delete marker,
-#     preserve the marker as a noncurrent S3ObjectVersion and publish a
-#     new null current version.
-#
-#     If the current state is a null delete marker, replace the marker
-#     with the new null object state rather than retaining the marker as
-#     history.
-#
-# Filesystem and DB changes must remain one compensated transaction:
-# current payloads that become noncurrent must be moved/copied to the
-# versions store before the canonical bucket/key path is replaced, while
-# delete markers require only DB history. Rollback must restore both the
-# previous current metadata and its payload when applicable.
-#
-# A successful PUT should return the new current version ID through
-# x-amz-version-id when versioning is Enabled or Suspended. Disabled
-# buckets expose the null version without a version header.
+# A successful PUT must return x-amz-version-id for versioned and
+# suspended buckets. Disabled buckets expose the null version without
+# this header.
 
 async def object_upload(
     session: AsyncSession,
@@ -184,30 +152,73 @@ async def object_upload(
 
             await object_mkdir(object_path, resource)
 
-            # Preserve the current payload in tmp before overwriting it.
-            # A copy keeps the canonical object path intact until the
-            # new payload is ready to replace it.
-            if await isfile(object_path):
-                await copy(object_path, backup_path)
-                backup_created = True
+            versioning_status = bucket.versioning_status
+            object_lock_enabled = bool(bucket.object_lock_enabled)
+            if (
+                versioning_status == BUCKET_VERSIONING_DISABLED
+                and not object_lock_enabled
+            ):
+                # PUT creates or replaces the current null version in
+                # place. No version history is retained and object lock
+                # does not apply.
 
-            s3_object = await upsert_object(
-                repo=repo,
-                bucket=bucket,
-                user=current_user,
-                object_key=object_key,
-                size_bytes=size_bytes,
-                etag=etag,
-                content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
-            )
+                if await isfile(object_path):
+                    await copy(object_path, backup_path)
+                    backup_created = True
 
-            try:
-                await rename(staged_path, object_path)
-            except (IsADirectoryError, NotADirectoryError) as exc:
-                raise S3ObjectKeyConflictError(resource) from exc
+                s3_object = await upsert_object(
+                    repo=repo,
+                    bucket=bucket,
+                    user=current_user,
+                    object_key=object_key,
+                    size_bytes=size_bytes,
+                    etag=etag,
+                    content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
+                )
 
-            object_written = True
-            await repo.commit()
+                try:
+                    await rename(staged_path, object_path)
+                except (IsADirectoryError, NotADirectoryError) as exc:
+                    raise S3ObjectKeyConflictError(resource) from exc
+
+                object_written = True
+                await repo.commit()
+
+            elif (
+                versioning_status == BUCKET_VERSIONING_ENABLED
+                and object_lock_enabled
+            ):
+                # PUT creates a new current version with a unique
+                # version ID. The previous current state is preserved
+                # in version history. Object lock configuration applies
+                # only to the new version and does not prevent a
+                # protected current version from being replaced.
+                pass
+
+            elif (
+                versioning_status == BUCKET_VERSIONING_ENABLED
+                and not object_lock_enabled
+            ):
+                # PUT creates a new current version with a unique
+                # version ID. The previous current state is preserved
+                # in version history.
+                pass
+
+            elif (
+                versioning_status == BUCKET_VERSIONING_SUSPENDED
+                and not object_lock_enabled
+            ):
+                # PUT creates a new null current version. A uniquely
+                # versioned current state is preserved in history,
+                # while an existing null version or null delete marker
+                # is replaced in place.
+                pass
+
+            else:
+                # Any other combination violates bucket state
+                # invariants: object lock may exist only while
+                # versioning is enabled.
+                raise RuntimeError("Unknown bucket state")
 
         # Reconcile DB and filesystem state before releasing the bucket
         # lock, so no request can observe an intermediate state.
