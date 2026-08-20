@@ -105,7 +105,7 @@ class TestObjectModel(unittest.TestCase):
         self.assertEqual(s3_object.size_bytes, 1024)
         self.assertEqual(s3_object.etag, "d41d8cd98f00b204e9800998ecf8427e")
         self.assertEqual(s3_object.content_type, "image/jpeg")
-        self.assertIsNone(s3_object.version_id)
+        self.assertIsNone(s3_object.version_uuid)
         self.assertFalse(s3_object.delete_marker)
         self.assertIsNone(s3_object.lock_mode)
         self.assertIsNone(s3_object.retain_until)
@@ -147,12 +147,12 @@ class TestObjectModel(unittest.TestCase):
         keys = self.session.scalars(select(S3Object.object_key)).all()
         self.assertEqual(keys.count("readme.txt"), 2)
 
-    def test_version_id_must_be_unique(self):
-        self.session.add(self._object(object_key="a.txt", version_id="a" * 32))
+    def test_version_uuid_must_be_unique(self):
+        self.session.add(self._object(object_key="a.txt", version_uuid="a" * 32))
         self.session.commit()
 
         self.session.add(
-            self._object(object_key="b.txt", version_id="a" * 32),
+            self._object(object_key="b.txt", version_uuid="a" * 32),
         )
         with self.assertRaises(IntegrityError):
             self.session.commit()

@@ -73,7 +73,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         defaults = {
             "object_id": self.s3_object.id,
             "user_id": self.user.id,
-            "version_id": "a" * 32,
+            "version_uuid": "a" * 32,
             "modified_at": 1_704_067_200,
             "size_bytes": 1,
             "etag": "b" * 32,
@@ -102,7 +102,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
 
     def test_persists_required_fields_and_defaults(self):
         version = self._version(
-            version_id="c" * 32,
+            version_uuid="c" * 32,
             modified_at=1_704_153_600,
             size_bytes=1024,
             etag="d41d8cd98f00b204e9800998ecf8427e",
@@ -115,7 +115,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.assertIsNotNone(version.id)
         self.assertEqual(version.object_id, self.s3_object.id)
         self.assertEqual(version.user_id, self.user.id)
-        self.assertEqual(version.version_id, "c" * 32)
+        self.assertEqual(version.version_uuid, "c" * 32)
         self.assertEqual(version.modified_at, 1_704_153_600)
         self.assertEqual(version.size_bytes, 1024)
         self.assertEqual(version.etag, "d41d8cd98f00b204e9800998ecf8427e")
@@ -126,25 +126,25 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.assertFalse(version.legal_hold)
         self.assertIsInstance(version.created_at, int)
 
-    def test_null_version_id_persists(self):
-        version = self._version(version_id=None, etag="a" * 32)
+    def test_null_version_uuid_persists(self):
+        version = self._version(version_uuid=None, etag="a" * 32)
         self.session.add(version)
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertIsNone(version.version_id)
+        self.assertIsNone(version.version_uuid)
 
     def test_null_version_delete_marker_persists(self):
-        version = self._delete_marker(version_id=None)
+        version = self._delete_marker(version_uuid=None)
         self.session.add(version)
         self.session.commit()
         self.session.refresh(version)
 
-        self.assertIsNone(version.version_id)
+        self.assertIsNone(version.version_uuid)
         self.assertTrue(version.delete_marker)
 
-    def test_multiple_null_version_ids_allowed(self):
-        self.session.add(self._version(version_id=None, etag="a" * 32))
+    def test_multiple_null_version_uuids_allowed(self):
+        self.session.add(self._version(version_uuid=None, etag="a" * 32))
 
         other = S3Object(
             bucket_id=self.bucket.id,
@@ -161,7 +161,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.session.add(
             self._version(
                 object_id=other.id,
-                version_id=None,
+                version_uuid=None,
                 etag="e" * 32,
             ),
         )
@@ -169,13 +169,13 @@ class TestS3ObjectVersionModel(unittest.TestCase):
 
         rows = self.session.scalars(select(S3ObjectVersion)).all()
         self.assertEqual(len(rows), 2)
-        self.assertTrue(all(row.version_id is None for row in rows))
+        self.assertTrue(all(row.version_uuid is None for row in rows))
 
     def test_same_object_may_have_many_versions(self):
-        self.session.add(self._version(version_id="a" * 32, etag="a" * 32))
+        self.session.add(self._version(version_uuid="a" * 32, etag="a" * 32))
         self.session.add(
             self._version(
-                version_id="b" * 32,
+                version_uuid="b" * 32,
                 size_bytes=2,
                 etag="b" * 32,
             ),
@@ -189,8 +189,8 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         ).all()
         self.assertEqual(len(rows), 2)
 
-    def test_version_id_must_be_unique(self):
-        self.session.add(self._version(version_id="a" * 32))
+    def test_version_uuid_must_be_unique(self):
+        self.session.add(self._version(version_uuid="a" * 32))
         self.session.commit()
 
         other = S3Object(
@@ -208,7 +208,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.session.add(
             self._version(
                 object_id=other.id,
-                version_id="a" * 32,
+                version_uuid="a" * 32,
                 etag="c" * 32,
             ),
         )
@@ -216,7 +216,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
             self.session.commit()
 
     def test_delete_marker_has_no_payload(self):
-        version = self._delete_marker(version_id="d" * 32)
+        version = self._delete_marker(version_uuid="d" * 32)
         self.session.add(version)
         self.session.commit()
         self.session.refresh(version)
@@ -231,7 +231,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
 
     def test_object_lock_fields(self):
         version = self._version(
-            version_id="d" * 32,
+            version_uuid="d" * 32,
             lock_mode="COMPLIANCE",
             retain_until=1_704_067_200,
             legal_hold=True,
@@ -277,7 +277,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self._assert_rejects(self._version(size_bytes=-1))
 
     def test_relationship_back_to_object(self):
-        version = self._version(version_id="e" * 32)
+        version = self._version(version_uuid="e" * 32)
         self.session.add(version)
         self.session.commit()
 
@@ -294,9 +294,9 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         )
 
     def test_object_relationship_to_versions(self):
-        self.session.add(self._version(version_id="a" * 32))
+        self.session.add(self._version(version_uuid="a" * 32))
         self.session.add(
-            self._version(version_id="b" * 32, size_bytes=2, etag="b" * 32),
+            self._version(version_uuid="b" * 32, size_bytes=2, etag="b" * 32),
         )
         self.session.commit()
 
@@ -306,11 +306,11 @@ class TestS3ObjectVersionModel(unittest.TestCase):
             .options(selectinload(S3Object.object_versions)),
         )
 
-        ids = sorted(v.version_id for v in loaded.object_versions)
+        ids = sorted(v.version_uuid for v in loaded.object_versions)
         self.assertEqual(ids, ["a" * 32, "b" * 32])
 
     def test_relationship_back_to_user(self):
-        version = self._version(version_id="f" * 32)
+        version = self._version(version_uuid="f" * 32)
         self.session.add(version)
         self.session.commit()
 
@@ -323,7 +323,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.assertEqual(loaded.object_version_user.id, self.user.id)
 
     def test_relationship_access_without_eager_load_raises(self):
-        self.session.add(self._version(version_id="a" * 32))
+        self.session.add(self._version(version_uuid="a" * 32))
         self.session.commit()
 
         loaded = self.session.scalar(
@@ -334,7 +334,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
             _ = loaded.object_versions
 
     def test_object_delete_is_restricted(self):
-        self.session.add(self._version(version_id="a" * 32))
+        self.session.add(self._version(version_uuid="a" * 32))
         self.session.commit()
 
         self.session.delete(self.s3_object)
@@ -342,7 +342,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
             self.session.commit()
 
     def test_bucket_delete_is_restricted(self):
-        self.session.add(self._version(version_id="a" * 32))
+        self.session.add(self._version(version_uuid="a" * 32))
         self.session.commit()
 
         self.session.delete(self.bucket)
@@ -355,7 +355,7 @@ class TestS3ObjectVersionModel(unittest.TestCase):
         self.session.commit()
         self.session.refresh(root)
 
-        self.session.add(self._version(version_id="a" * 32, user_id=root.id))
+        self.session.add(self._version(version_uuid="a" * 32, user_id=root.id))
         self.session.commit()
 
         self.session.delete(root)

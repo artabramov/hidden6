@@ -68,7 +68,7 @@ class TestS3ObjectVersionTagModel(unittest.TestCase):
         self.version = S3ObjectVersion(
             object_id=self.s3_object.id,
             user_id=self.user.id,
-            version_id="a" * 32,
+            version_uuid="a" * 32,
             modified_at=1_704_067_200,
             size_bytes=1,
             etag="b" * 32,
@@ -128,7 +128,7 @@ class TestS3ObjectVersionTagModel(unittest.TestCase):
         other = S3ObjectVersion(
             object_id=self.s3_object.id,
             user_id=self.user.id,
-            version_id="b" * 32,
+            version_uuid="b" * 32,
             modified_at=1_704_067_200,
             size_bytes=2,
             etag="c" * 32,
@@ -171,7 +171,7 @@ class TestS3ObjectVersionTagModel(unittest.TestCase):
             self.version.id,
         )
         self.assertEqual(
-            loaded.object_version_tag_object_version.version_id,
+            loaded.object_version_tag_object_version.version_uuid,
             "a" * 32,
         )
 
