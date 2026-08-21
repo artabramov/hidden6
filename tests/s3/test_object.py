@@ -203,7 +203,7 @@ class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
         repo.update = AsyncMock(side_effect=lambda obj: obj)
         return repo
 
-    async def _upsert(self, repo):
+    async def _upsert(self, repo, *, version_uuid=None):
         return await upsert_object(
             repo=repo,
             bucket=self.bucket,
@@ -212,6 +212,7 @@ class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
             size_bytes=12,
             etag="etag123",
             content_type="image/png",
+            version_uuid=version_uuid,
         )
 
     async def test_inserts_new_object(self):
@@ -227,6 +228,7 @@ class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(s3_object.size_bytes, 12)
         self.assertEqual(s3_object.etag, "etag123")
         self.assertEqual(s3_object.content_type, "image/png")
+        self.assertIsNone(s3_object.version_uuid)
         self.assertFalse(s3_object.delete_marker)
         self.assertIsNone(s3_object.lock_mode)
         self.assertIsNone(s3_object.retain_until)
@@ -252,6 +254,7 @@ class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(existing.size_bytes, 12)
         self.assertEqual(existing.etag, "etag123")
         self.assertEqual(existing.content_type, "image/png")
+        self.assertIsNone(existing.version_uuid)
         self.assertFalse(existing.delete_marker)
         self.assertIsInstance(existing.modified_at, int)
 
@@ -271,6 +274,30 @@ class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(existing.size_bytes, 12)
         self.assertEqual(existing.etag, "etag123")
         self.assertEqual(existing.content_type, "image/png")
+
+    async def test_sets_version_uuid_on_insert(self):
+        repo = self._build_repo(None)
+
+        s3_object = await self._upsert(repo, version_uuid="c" * 32)
+
+        self.assertEqual(s3_object.version_uuid, "c" * 32)
+
+    async def test_sets_version_uuid_on_update(self):
+        existing = S3Object(
+            id=3,
+            bucket_id=7,
+            user_id=1,
+            object_key="2024/cat.png",
+            size_bytes=1,
+            etag="old",
+            content_type="text/plain",
+            version_uuid="a" * 32,
+        )
+        repo = self._build_repo(existing)
+
+        await self._upsert(repo, version_uuid="b" * 32)
+
+        self.assertEqual(existing.version_uuid, "b" * 32)
 
     async def test_applies_bucket_default_retention_days(self):
         self.bucket.object_lock_enabled = True

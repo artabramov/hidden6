@@ -377,6 +377,13 @@ class TestMultipartComplete(unittest.IsolatedAsyncioTestCase):
             "image/png",
         )
 
+    async def test_uses_null_version_uuid_for_disabled_bucket(self):
+        await self._complete()
+
+        self.assertIsNone(
+            self.upsert_object.await_args.kwargs["version_uuid"],
+        )
+
     async def test_rejects_mismatched_client_etag(self):
         parts = self._build_parts(
             hashes=[PART_HASHES[0], hashlib.md5(b"other").hexdigest()],

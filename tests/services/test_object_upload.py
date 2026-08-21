@@ -204,6 +204,7 @@ class TestObjectUpload(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(kwargs["size_bytes"], 12)
         self.assertEqual(kwargs["etag"], "etag123")
         self.assertEqual(kwargs["content_type"], "image/png")
+        self.assertIsNone(kwargs["version_uuid"])
 
     async def test_unknown_mimetype_falls_back_to_octet_stream(self):
         self._build_mocks(mimetype=None)
