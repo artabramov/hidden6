@@ -10,6 +10,7 @@ from app.errors import (
 )
 from app.models.bucket import S3Bucket
 from app.models.object import S3Object
+from app.models.object_version import S3ObjectVersion
 from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository
@@ -65,10 +66,10 @@ async def upsert_object(
     content_type: str,
 ) -> S3Object:
     """
-    Insert the S3Object row for a new key or update the existing row when
-    the key is overwritten. The current state becomes an object with a
-    payload (not a delete marker). Bucket default Object Lock retention
-    is applied to the new current state.
+    Insert the S3Object row for a new key or update the existing row
+    when the key is overwritten. The current state becomes an object
+    with a payload (not a delete marker). Bucket default object lock
+    retention is applied to the new current state.
     """
     lock_mode, retain_until = bucket_default_object_lock(bucket)
 
@@ -103,3 +104,30 @@ async def upsert_object(
     s3_object.modified_at = int(time.time())
 
     return await repo.update(s3_object)
+
+
+async def create_object_version(
+    repo: ORMRepository,
+    s3_object: S3Object,
+) -> S3ObjectVersion:
+    """
+    Preserve the current object state as a noncurrent version.
+
+    The returned row is flushed so its internal ID can be used
+    to address the retained payload in version storage.
+    """
+    version = S3ObjectVersion(
+        object_id=s3_object.id,
+        user_id=s3_object.user_id,
+        modified_at=s3_object.modified_at,
+        version_uuid=s3_object.version_uuid,
+        size_bytes=s3_object.size_bytes,
+        etag=s3_object.etag,
+        content_type=s3_object.content_type,
+        delete_marker=s3_object.delete_marker,
+        lock_mode=s3_object.lock_mode,
+        retain_until=s3_object.retain_until,
+        legal_hold=s3_object.legal_hold,
+    )
+
+    return await repo.insert(version)
