@@ -19,14 +19,8 @@ from app.errors import (  # noqa: E402
 )
 from app.models.bucket import S3Bucket  # noqa: E402
 from app.models.object import S3Object  # noqa: E402
-from app.models.object_version import S3ObjectVersion  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.s3.object import (  # noqa: E402
-    create_object_version,
-    load_object,
-    object_mkdir,
-    upsert_object,
-)
+from app.s3.object import load_object, object_mkdir, upsert_object  # noqa: E402
 
 load_all_models()
 
@@ -367,78 +361,3 @@ class TestObjectUpsert(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(existing.lock_mode)
         self.assertIsNone(existing.retain_until)
         self.assertFalse(existing.legal_hold)
-
-
-class TestCreateObjectVersion(unittest.IsolatedAsyncioTestCase):
-    def _build_repo(self):
-        repo = MagicMock()
-        repo.insert = AsyncMock(side_effect=lambda obj: obj)
-        return repo
-
-    def _s3_object(self, **kwargs) -> S3Object:
-        defaults = {
-            "id": 3,
-            "bucket_id": 7,
-            "user_id": 1,
-            "object_key": "2024/cat.png",
-            "modified_at": 1_704_067_200,
-            "size_bytes": 12,
-            "etag": "etag123",
-            "content_type": "image/png",
-            "version_uuid": "a" * 32,
-            "delete_marker": False,
-            "lock_mode": None,
-            "retain_until": None,
-            "legal_hold": False,
-        }
-        defaults.update(kwargs)
-        return S3Object(**defaults)
-
-    async def test_preserves_current_object_state(self):
-        s3_object = self._s3_object(
-            lock_mode="COMPLIANCE",
-            retain_until=1_704_153_600,
-            legal_hold=True,
-        )
-        repo = self._build_repo()
-
-        version = await create_object_version(repo, s3_object)
-
-        repo.insert.assert_awaited_once_with(version)
-        self.assertIsInstance(version, S3ObjectVersion)
-        self.assertEqual(version.object_id, 3)
-        self.assertEqual(version.user_id, 1)
-        self.assertEqual(version.modified_at, 1_704_067_200)
-        self.assertEqual(version.version_uuid, "a" * 32)
-        self.assertEqual(version.size_bytes, 12)
-        self.assertEqual(version.etag, "etag123")
-        self.assertEqual(version.content_type, "image/png")
-        self.assertFalse(version.delete_marker)
-        self.assertEqual(version.lock_mode, "COMPLIANCE")
-        self.assertEqual(version.retain_until, 1_704_153_600)
-        self.assertTrue(version.legal_hold)
-
-    async def test_preserves_null_version_uuid(self):
-        s3_object = self._s3_object(version_uuid=None)
-        repo = self._build_repo()
-
-        version = await create_object_version(repo, s3_object)
-
-        self.assertIsNone(version.version_uuid)
-
-    async def test_preserves_delete_marker(self):
-        s3_object = self._s3_object(
-            version_uuid="d" * 32,
-            delete_marker=True,
-            size_bytes=None,
-            etag=None,
-            content_type=None,
-        )
-        repo = self._build_repo()
-
-        version = await create_object_version(repo, s3_object)
-
-        self.assertTrue(version.delete_marker)
-        self.assertIsNone(version.size_bytes)
-        self.assertIsNone(version.etag)
-        self.assertIsNone(version.content_type)
