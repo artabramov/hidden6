@@ -3,6 +3,7 @@
 
 import time
 
+from app.constants import SECONDS_PER_DAY, SECONDS_PER_YEAR
 from app.errors import (
     S3AccessDeniedError,
     S3BucketNotFoundError,
@@ -10,9 +11,6 @@ from app.errors import (
 from app.models.bucket import S3Bucket
 from app.models.user import User
 from app.repositories.orm import ORMRepository
-
-_SECONDS_PER_DAY = 24 * 60 * 60
-_SECONDS_PER_YEAR = 365 * _SECONDS_PER_DAY
 
 
 async def load_bucket(
@@ -50,9 +48,9 @@ def bucket_default_object_lock(
     now = int(time.time()) if now is None else now
 
     if bucket.default_retention_days is not None:
-        retain_until = now + bucket.default_retention_days * _SECONDS_PER_DAY
+        retain_until = now + bucket.default_retention_days * SECONDS_PER_DAY
     elif bucket.default_retention_years is not None:
-        retain_until = now + bucket.default_retention_years * _SECONDS_PER_YEAR
+        retain_until = now + bucket.default_retention_years * SECONDS_PER_YEAR
     else:
         return None, None
 
