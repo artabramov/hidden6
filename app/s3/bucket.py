@@ -20,8 +20,8 @@ async def load_bucket(
     resource: str,
 ) -> S3Bucket:
     """
-    Load the bucket addressed by an object operation and authorize the
-    caller against it (ADR-21): the owner and root are allowed.
+    Load a bucket for an object operation and verify that the user
+    is allowed to access it.
     """
     bucket = await repo.select(S3Bucket, bucket_name=bucket_name)
 
@@ -38,9 +38,8 @@ def bucket_default_object_lock(
     now: int | None = None,
 ) -> tuple[str | None, int | None]:
     """
-    Object Lock fields applied to a new object version from the bucket
-    default retention rule. Returns (None, None) when Object Lock is
-    off or no default retention is configured.
+    Resolve the default object lock mode and retention deadline
+    for a new object version.
     """
     if not bucket.object_lock_enabled or bucket.default_lock_mode is None:
         return None, None
