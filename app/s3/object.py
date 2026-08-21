@@ -64,6 +64,7 @@ async def upsert_object(
     size_bytes: int,
     etag: str,
     content_type: str,
+    version_uuid: str | None,
 ) -> S3Object:
     """
     Insert the S3Object row for a new key or update the existing row
@@ -87,6 +88,7 @@ async def upsert_object(
             size_bytes=size_bytes,
             etag=etag,
             content_type=content_type,
+            version_uuid=version_uuid,
             delete_marker=False,
             lock_mode=lock_mode,
             retain_until=retain_until,
@@ -94,14 +96,15 @@ async def upsert_object(
         return await repo.insert(s3_object)
 
     s3_object.user_id = user.id
+    s3_object.modified_at = int(time.time())
     s3_object.size_bytes = size_bytes
     s3_object.etag = etag
     s3_object.content_type = content_type
+    s3_object.version_uuid = version_uuid
     s3_object.delete_marker = False
     s3_object.lock_mode = lock_mode
     s3_object.retain_until = retain_until
     s3_object.legal_hold = False
-    s3_object.modified_at = int(time.time())
 
     return await repo.update(s3_object)
 

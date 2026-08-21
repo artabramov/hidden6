@@ -237,6 +237,7 @@ async def multipart_complete(
                         size_bytes=size_bytes,
                         etag=construct_etag(stored_etags),
                         content_type=multipart.content_type,
+                        version_uuid=None,
                     )
 
                     try:

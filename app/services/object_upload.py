@@ -175,6 +175,7 @@ async def object_upload(
                     size_bytes=size_bytes,
                     etag=etag,
                     content_type=content_type or OBJECT_CONTENT_TYPE_DEFAULT,
+                    version_uuid=None,
                 )
 
                 try:
