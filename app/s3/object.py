@@ -13,7 +13,7 @@ from app.models.object import S3Object
 from app.models.user import User
 from app.repositories.io import isdir, mktree
 from app.repositories.orm import ORMRepository
-from app.s3.bucket import bucket_default_object_lock
+from app.s3.bucket import get_bucket_default_object_lock
 
 
 async def load_object(
@@ -71,7 +71,7 @@ async def upsert_object(
     with a payload (not a delete marker). Bucket default object lock
     retention is applied to the new current state.
     """
-    lock_mode, retain_until = bucket_default_object_lock(bucket)
+    lock_mode, retain_until = get_bucket_default_object_lock(bucket)
 
     s3_object = await repo.select(
         S3Object,

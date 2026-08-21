@@ -33,13 +33,15 @@ async def load_bucket(
     return bucket
 
 
-def bucket_default_object_lock(
+def get_bucket_default_object_lock(
     bucket: S3Bucket,
     now: int | None = None,
 ) -> tuple[str | None, int | None]:
     """
-    Resolve the default object lock mode and retention deadline
-    for a new object version.
+    Get the default Object Lock settings for a new object version.
+    The first value is the lock mode, and the second is the retention
+    deadline as a Unix timestamp. Returns (None, None) when no default
+    retention is configured.
     """
     if not bucket.object_lock_enabled or bucket.default_lock_mode is None:
         return None, None
