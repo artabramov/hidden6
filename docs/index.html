@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidden</title>
+    <link href="styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="container-fluid d-flex justify-content-center mt-5 pt-5">
+      <img src="img/hidden-hat.png" class="img-fluid" style="width: 100%; max-width: 32em;" loading="lazy">
+    </div>
+
+    <div class="container display-1 text-center mt-3 mb-3">
+      <span class="hidden">D</span><span class="hidden">e</span><span class="hidden">s</span><span class="hidden">i</span><span class="hidden">g</span><span class="hidden">n</span><span class="hidden">e</span><span class="hidden">d</span>
+      <span class="hidden">t</span><span class="hidden">o</span>
+      <span class="hidden">b</span><span class="hidden">e</span>
+      <span class="hidden">h</span><span class="hidden">i</span><span class="hidden">d</span><span class="hidden">d</span><span class="hidden">e</span><span class="hidden">n</span>
+    </div>
+
+    <div class="d-flex justify-content-center mb-6">
+      <div class="fs-4 text-center" style="max-width: 30em;">
+        A self-hosted, security-focused file storage powered by gocryptfs.
+        Fully encrypted. File versioning. Multi-user access. REST API.
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center mb-3">
+      <div class="text-center" style="max-width: 44em;">
+        Built as two independent components. The core service provides encrypted storage and a REST API. Any client can interact with the service through the API, including the optional web interface.
+      </div>
+    </div>
+
+    <div class="text-center mb-6">
+      <div class="d-inline-block mx-3 align-top" style="max-width: 240px;">
+        <a href="https://github.com/artabramov/hidden" target="_blank" class="btn btn-lg btn-primary w-100">
+          Core service <i class="bi bi-arrow-right"></i>
+        </a>
+        <div class="small text-muted mt-2">
+          Released under <b>GPL-3</b>. Available for
+          code review, audits, and modification.
+        </div>
+      </div>
+
+      <div class="d-inline-block mx-3 align-top" style="max-width: 240px;">
+        <a href="#" target="_blank" class="btn btn-lg btn-secondary w-100 disabled">
+          Web interface
+        </a>
+        <div class="small text-muted mt-2">
+          Under development. Will be released
+          as an optional Docker container.
+        </div>
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-auto">
+          <img src="img/telegram.png" style="width: 100px;" loading="lazy">
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          Subscribe to <b>Telegram</b> for updates,
+          release announcements, security advisories,
+          and upcoming events:
+          <a href="https://t.me/hiddenupdates" class="link-primary text-decoration-none">
+            <b>t.me/hiddenupdates</b>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        What is Hidden?
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center">
+        It's a secure box for your private data.<br>
+        Only you can get the files you put in.
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-2">
+          <img src="img/box.png" class="img-fluid" style="width: 100%;" loading="lazy">
+        </div>
+        <div class="col-12 col-sm-6 col-md-5">
+          The primary directive of the app is to protect data at rest at any cost.
+          Built as the opposite of cloud storage services, it keeps all data local.
+          <br><br>
+          Built on an encrypted filesystem, the internal storage is designed to
+          withstand full host compromise, including unauthorized filesystem
+          access and physical device loss. Even if encrypted data is obtained
+          from disk, <b>the original contents cannot be recovered without the secret
+          key and master password</b>.
+        </div>
+      </div>
+    </div>
+
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        Open only when needed
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center" style="max-width: 30em;">
+        Data remain encrypted at rest and are accessible only while the
+        storage is unlocked. Once work is complete, it is closed again.
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-3 text-start mb-5 mt-3">
+          <i class="bi bi-key fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm mb-2">
+            Secret<br>
+            key
+          </div>
+          <div>
+            The secret key is used to unlock the encrypted storage. It is stored only in encrypted form and can be decrypted only with the master password.
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3 text-start mb-5 mt-3">
+          <i class="bi bi-input-cursor fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm mb-2">
+            Master<br>
+            password
+          </div>
+          <div>
+            The master password protects the secret key and is never stored by the application. Its validity is verified by attempting to decrypt the key.
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-3 text-start bg-dark text-light rounded px-4 py-3 mb-5">
+          <i class="bi bi-lock fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm mb-2">
+            Auto<br>
+            close
+          </div>
+          <div>
+            The storage can be closed manually at any time. It is also closed automatically when the key becomes unavailable or the application is restarted.
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        How internal storage works
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center" style="max-width: 36em;">
+        Files are encrypted, filenames are obfuscated, and metadata is hidden by-design.
+        The same protection applies to revisions, thumbnails, and application metadata.
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5 me-3">
+          <div class="fs-4 fw-normal">1</div>
+          <div class="fs-4 fw-bold lh-sm">
+            Upload<br>gateway
+          </div>
+          <div class="mt-2">
+            Uploaded files are routed to storage that is protected by gocryptfs.
+          </div>
+          <div class="mt-3">
+            <img src="img/step1.png" class="w-100">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5 me-3">
+          <div class="fs-4 fw-normal">2</div>
+          <div class="fs-4 fw-bold lh-sm">
+            Automated<br>encryption
+          </div>
+          <div class="mt-2">
+            The gocryptfs cipher enforces encryption for all data written inside.
+          </div>
+          <div class="mt-3">
+            <img src="img/step2.png" class="w-100">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5 me-3">
+          <div class="fs-4 fw-normal">3</div>
+          <div class="fs-4 fw-bold lh-sm">
+            Masked<br>filenames
+          </div>
+          <div class="mt-2">
+            File and folder names are transparently obfuscated and unreadable.
+          </div>
+          <div class="mt-3">
+            <img src="img/step3.png" class="w-100">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5 me-3">
+          <div class="fs-4 fw-normal">4</div>
+          <div class="fs-4 fw-bold lh-sm">
+            Shielded<br>metadata
+          </div>
+          <div class="mt-2">
+            Database, revisions, and thumbnails persist entirely in the storage.
+          </div>
+          <div class="mt-3">
+            <img src="img/step4.png" class="w-100">
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <div class="fs-4 fw-normal">5</div>
+          <div class="fs-4 fw-bold lh-sm">
+            Secret-key<br>protection
+          </div>
+          <div class="mt-2">
+            Encrypted data cannot be decrypted without the key and master password.
+          </div>
+          <div class="mt-3">
+            <img src="img/step5.png" class="w-100">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        Data remains portable
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center" style="max-width: 34em;">
+        Internal data is stored in two volumes. They can be used to restore the application or mount the encrypted storage directly with gocryptfs.
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-3 text-start mb-5 mt-3">
+          <i class="bi bi-sd-card fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm mb-2">
+            Secrets<br>
+            volume
+          </div>
+          <div>
+            The secrets volume contains the encrypted secret key and other security-related data. It cannot be used without the master password, but should still be stored separately from the encrypted data.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 text-start mb-5 mt-3">
+          <i class="bi bi-database fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm mb-2">
+            Cipherdir<br>
+            volume
+          </div>
+          <div>
+            The cipherdir volume contains the encrypted storage itself. Without the secrets volume and the master password, its contents remain inaccessible. The volume can be backed up safely because it contains only encrypted data.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        Beyond filesystem encryption
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center" style="max-width: 32em;">
+        The application extends the encrypted filesystem with authentication, role-based access control, versioning, and other safeguards.
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <i class="bi bi-shield-check fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm">
+            Local<br/>
+            operation
+          </div>
+          <div class="mt-2">
+            No internet required. There is no implicit data traffic, analytics collection, cloud services, or AI.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <i class="bi bi-person-badge fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm">
+            Restricted<br/>
+            access
+          </div>
+          <div class="mt-2">
+            Role-based access minimizes accidental
+            or malicious data modification and loss.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <i class="bi bi-qr-code-scan fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm">
+            Multi-factor<br/>
+            authentication
+          </div>
+          <div class="mt-2">
+            Multi-factor authentication with one-time codes
+            is used as an additional line of defense.
+          </div>
+        </div>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <i class="bi bi-clock-history fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm">
+            Version<br/>
+            history
+          </div>
+          <div class="mt-2">
+            With head-based versioning, the latest file state is the head; earlier revisions are retrievable.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <i class="bi bi-lock fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm">
+            Write<br>
+            protection
+          </div>
+          <div class="mt-2">
+            When folder is write protected, files or other folders within it cannot be modified.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <i class="bi bi-collection fs-1"></i>
+          <div class="fs-4 fw-bold lh-sm">
+            Audit<br/>
+            log
+          </div>
+          <div class="mt-2">
+            Records security-relevant events, user actions, authentication attempts, and other operations.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        Rich REST API
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center" style="max-width: 36em;">
+        A feature-complete REST API for automation, integrations, and custom clients.
+        Fully functional out of the box and open to external tools and integrations.
+      </div>
+    </div>
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-4 mx-3">
+          <img src="img/swagger.png" class="img-fluid rounded" style="box-shadow: 0 0 8px rgba(0,0,0,.2); border-radius: .5rem; width: 100%;" loading="lazy">
+        </div>
+        <div class="col-12 col-sm-6 col-md-3 mx-3">
+          <div class="mt-5">
+            <b>Encrypted storage</b> keeps all files and metadata inside a gocryptfs-protected filesystem. Data remains unreadable at rest and becomes accessible only while the storage is mounted.
+          </div>
+          <div class="mt-4">
+            <b>Two-step authentication</b> with full support for MFA one-time passwords using standard authenticator apps and recovery code.
+          </div>
+          <div class="mt-4">
+            <b>Users</b> can be registered, activated, updated, and assigned roles through a set of user management features.
+          </div>
+          <div class="mt-4">
+            <b>Folders</b> allow organizing files into a clear, hierarchical structure for easier navigation and management.
+          </div>
+          <div class="mt-4">
+            <b>Files</b> can include an additional summary, comments, and custom tags for faster search and filtering. When a file with the same name is uploaded again, it is not simply overwritten — a new revision is created and the full history of changes is preserved.
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        Typical deployment scenarios
+      </div>
+    </div>
+    
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-4 text-center" style="max-width: 26em;">
+        Suitable for personal, professional, and self-hosted environments where data remains under local control.
+      </div>
+    </div>
+
+
+    <div class="container mb-10">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <div class="fs-4 fw-bold lh-sm">
+            Personal<br/>
+            archives
+          </div>
+          <div class="mt-2">
+            Financial documents, photos, media collections, notes, scans, personal backups, credentials, and private records.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <div class="fs-4 fw-bold lh-sm">
+            Team<br/>
+            collaboration
+          </div>
+          <div class="mt-2">
+            Contracts, production assets, internal documentation, and shared project materials for teams and studios.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <div class="fs-4 fw-bold lh-sm">
+            Self-hosted<br/>
+            cloud
+          </div>
+          <div class="mt-2">
+            A private alternative to consumer cloud storage services for households, homelabs, and personal infrastructure.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <div class="fs-4 fw-bold lh-sm">
+            Document<br/>
+            repositories
+          </div>
+          <div class="mt-2">
+            Legal, accounting, research, administrative, and compliance-related documents requiring controlled access.
+          </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-2 text-start mb-5">
+          <div class="fs-4 fw-bold lh-sm">
+            Storage<br/>
+            integrations
+          </div>
+          <div class="mt-2">
+            Encrypted storage exposed through a REST API for integrations, automation, custom applications, and archival workloads.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mb-2">
+      <div class="display-5">
+        Web interface (coming soon)
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center mb-5">
+      <div class="fs-5 text-center" style="max-width: 25em;">
+        A lightweight web interface focused on the essentials.
+        No clutter, no distractions, no unnecessary complexity.
+      </div>
+    </div>
+
+    <div class="container-fluid d-flex justify-content-center mb-10"  style="width: 100%; max-width: 40em;">
+      <div id="carouselExample" class="carousel slide rounded" style="box-shadow: 0 0 8px rgba(0,0,0,.2); border-radius: .5rem;" data-bs-ride="carousel">
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            <img src="img/slide-1.png" class="d-block rounded w-100" alt="Hidden">
+          </div>
+          <div class="carousel-item">
+            <img src="img/slide-2.png" class="d-block rounded w-100" alt="Hidden">
+          </div>
+          <div class="carousel-item">
+            <img src="img/slide-3.png" class="d-block rounded w-100" alt="Hidden">
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-dark text-light pt-3 pb-5 px-5">
+      <div class="container mt-5">
+        <div class="row justify-content-center">
+
+          <div class="col-auto text-start mb-4 me-3">
+            <div class="fs-4 fw-bold">
+              Quick links
+            </div>
+            <div class="mt-2">
+              <a href="https://github.com/artabramov/hidden" target="_blank" class="link-secondary text-decoration-none">
+                github.com/artabramov/hidden
+              </a><br>
+              <a href="https://t.me/hiddenupdates" class="link-secondary text-decoration-none">
+                </i> t.me/hiddenupdates
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
